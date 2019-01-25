@@ -1,7 +1,6 @@
 package com.zhongweixian.wechat.service;
 
-import com.google.zxing.NotFoundException;
-import com.google.zxing.WriterException;
+import com.zhongweixian.wechat.domain.BaseUserCache;
 import com.zhongweixian.wechat.domain.request.component.BaseRequest;
 import com.zhongweixian.wechat.domain.response.*;
 import com.zhongweixian.wechat.domain.shared.ChatRoomDescription;
@@ -14,37 +13,40 @@ import com.zhongweixian.wechat.utils.QRCodeUtils;
 import com.zhongweixian.wechat.utils.WechatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.stream.Collectors;
 
-@Component
-public class LoginService {
-    private static final Logger logger = LoggerFactory.getLogger(LoginService.class);
+/**
+ * 每个登录用一个线程来维护
+ */
+public class LoginThread implements Runnable {
+    private static final Logger logger = LoggerFactory.getLogger(LoginThread.class);
 
-    @Autowired
     private CacheService cacheService;
-    @Autowired
     private SyncServie syncServie;
-    @Autowired
     private WechatHttpServiceInternal wechatHttpServiceInternal;
 
-    @Value("${jeeves.auto-relogin-when-qrcode-expired}")
-    private boolean AUTO_RELOGIN_WHEN_QRCODE_EXPIRED;
-
-    @Value("${jeeves.max-qr-refresh-times}")
-    private int MAX_QR_REFRESH_TIMES;
+    public LoginThread(CacheService cacheService, SyncServie syncServie, WechatHttpServiceInternal wechatHttpServiceInternal) {
+        this.cacheService = cacheService;
+        this.syncServie = syncServie;
+        this.wechatHttpServiceInternal = wechatHttpServiceInternal;
+    }
 
     private int qrRefreshTimes = 0;
 
     private String qrUrl;
 
     public String showQrcode() {
+        int a = 0;
+        while (qrUrl == null && a < 100) {
+            try {
+                Thread.sleep(200L);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            a++;
+        }
         return qrUrl;
     }
 
@@ -56,7 +58,7 @@ public class LoginService {
             //1 uuid
             String uuid = wechatHttpServiceInternal.getUUID();
             cacheService.setUuid(uuid);
-            logger.info("[1] uuid completed");
+            logger.info("uuid completed: uuid{}", uuid);
             //2 qr
             byte[] qrData = wechatHttpServiceInternal.getQR(uuid);
             ByteArrayInputStream stream = new ByteArrayInputStream(qrData);
@@ -70,8 +72,11 @@ public class LoginService {
             logger.info("[3] statReport completed");
             //4 login
             LoginResult loginResponse;
+
+            BaseUserCache userCache = new BaseUserCache();
             while (true) {
                 loginResponse = wechatHttpServiceInternal.login(uuid);
+                logger.info("loginResponse:{}", loginResponse.toString());
                 if (LoginCode.SUCCESS.getCode().equals(loginResponse.getCode())) {
                     if (loginResponse.getHostUrl() == null) {
                         throw new WechatException("hostUrl can't be found");
@@ -99,6 +104,7 @@ public class LoginService {
                     logger.info("[*] login status = " + loginResponse.getCode());
                 }
             }
+
             logger.info("[4] login completed");
             //5 redirect login
             Token token = wechatHttpServiceInternal.openNewloginpage(loginResponse.getRedirectUrl());
@@ -107,6 +113,12 @@ public class LoginService {
                 cacheService.setsKey(token.getSkey());
                 cacheService.setSid(token.getWxsid());
                 cacheService.setUin(token.getWxuin());
+                userCache.setUuid(uuid);
+                userCache.setUin(token.getWxuin());
+                userCache.setSid(token.getWxsid());
+                userCache.setsKey(token.getSkey());
+                userCache.setPassTicket(token.getPass_ticket());
+
                 BaseRequest baseRequest = new BaseRequest();
                 baseRequest.setUin(cacheService.getUin());
                 baseRequest.setSid(cacheService.getSid());
@@ -135,22 +147,29 @@ public class LoginService {
             //9 get contact
             long seq = 0;
             do {
-                GetContactResponse getContactResponse = wechatHttpServiceInternal.getContact(cacheService.getHostUrl(), cacheService.getBaseRequest().getSkey(), seq);
-                WechatUtils.checkBaseResponse(getContactResponse);
-                logger.info("[*] getContactResponse seq = " + getContactResponse.getSeq());
-                logger.info("[*] getContactResponse memberCount = " + getContactResponse.getMemberCount());
-                seq = getContactResponse.getSeq();
-                cacheService.getIndividuals().addAll(getContactResponse.getMemberList().stream().filter(WechatUtils::isIndividual).collect(Collectors.toSet()));
-                cacheService.getMediaPlatforms().addAll(getContactResponse.getMemberList().stream().filter(WechatUtils::isMediaPlatform).collect(Collectors.toSet()));
+                ContactResponse contactResponse = wechatHttpServiceInternal.getContact(cacheService.getHostUrl(), cacheService.getBaseRequest().getSkey(), seq);
+                WechatUtils.checkBaseResponse(contactResponse);
+                logger.info("[*] getContactResponse seq = " + contactResponse.getSeq());
+                logger.info("[*] getContactResponse memberCount = " + contactResponse.getMemberCount());
+                contactResponse.getMemberList().forEach(contact -> {
+                    userCache.getChatContants().put(contact.getUserName(), contact);
+                });
+
+                seq = contactResponse.getSeq();
+                cacheService.getIndividuals().addAll(contactResponse.getMemberList().stream().filter(WechatUtils::isIndividual).collect(Collectors.toSet()));
+                cacheService.getMediaPlatforms().addAll(contactResponse.getMemberList().stream().filter(WechatUtils::isMediaPlatform).collect(Collectors.toSet()));
             } while (seq > 0);
             logger.info("[9] get contact completed");
             //10 batch get contact
             ChatRoomDescription[] chatRoomDescriptions = initResponse.getContactList().stream()
                     .filter(x -> x != null && WechatUtils.isChatRoom(x))
                     .map(x -> {
-                        ChatRoomDescription description = new ChatRoomDescription();
-                        description.setUserName(x.getUserName());
-                        return description;
+                        ChatRoomDescription chatRoomDescription = new ChatRoomDescription();
+                        chatRoomDescription.setUserName(x.getNickName());
+                        chatRoomDescription.setChatRoomId(x.getUserName());
+                        userCache.getChatRooms().put(chatRoomDescription.getChatRoomId(), chatRoomDescription);
+                        logger.info(" chatRoom name :{} , id :{} ", chatRoomDescription.getUserName(), chatRoomDescription.getChatRoomId());
+                        return chatRoomDescription;
                     })
                     .toArray(ChatRoomDescription[]::new);
             if (chatRoomDescriptions.length > 0) {
@@ -159,18 +178,24 @@ public class LoginService {
                         cacheService.getBaseRequest(),
                         chatRoomDescriptions);
                 WechatUtils.checkBaseResponse(batchGetContactResponse);
-                logger.info("[*] batchGetContactResponse count = " + batchGetContactResponse.getCount());
                 cacheService.getChatRooms().addAll(batchGetContactResponse.getContactList());
             }
             logger.info("[10] batch get contact completed");
             cacheService.setAlive(true);
+            userCache.setAlive(true);
+            cacheService.cacheUser(userCache);
             logger.info("[*] login process completed");
             logger.info("[*] start listening");
             while (true) {
                 syncServie.listen();
             }
         } catch (Exception ex) {
-            logger.error("{}" , ex);
+            logger.error("{}", ex);
         }
+    }
+
+    @Override
+    public void run() {
+        login();
     }
 }

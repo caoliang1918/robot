@@ -1,5 +1,6 @@
 package com.zhongweixian.wechat.service;
 
+import com.zhongweixian.wechat.domain.BaseUserCache;
 import com.zhongweixian.wechat.domain.request.component.BaseRequest;
 import com.zhongweixian.wechat.domain.shared.Contact;
 import com.zhongweixian.wechat.domain.shared.Owner;
@@ -8,11 +9,23 @@ import com.zhongweixian.wechat.domain.shared.SyncKey;
 import com.zhongweixian.wechat.utils.DeviceIdGenerator;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 @Component
 public class CacheService {
+
+    private Map<String, BaseUserCache> mapUserCache = new HashMap<>();
+
+    public BaseUserCache getUserCache(String uid) {
+        return mapUserCache.get(uid);
+    }
+
+    public void cacheUser(BaseUserCache baseUserCache) {
+        mapUserCache.put(baseUserCache.getUin(), baseUserCache);
+    }
 
     public void reset() {
         this.hostUrl = null;

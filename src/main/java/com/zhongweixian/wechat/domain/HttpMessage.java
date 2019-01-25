@@ -13,9 +13,14 @@ public class HttpMessage implements Serializable {
      */
     private Long id;
     /**
-     * 发送时间
+     * client 发送时间
      */
     private Date date;
+
+    /**
+     * 微信发送时间
+     */
+    private Date sendTime;
     /**
      * 消息体
      */
@@ -58,11 +63,20 @@ public class HttpMessage implements Serializable {
         this.option = option;
     }
 
+    public Date getSendTime() {
+        return sendTime;
+    }
+
+    public void setSendTime(Date sendTime) {
+        this.sendTime = sendTime;
+    }
+
     @Override
     public String toString() {
         return "HttpMessage{" +
                 "id=" + id +
                 ", date=" + date +
+                ", sendTime=" + sendTime +
                 ", content='" + content + '\'' +
                 ", option='" + option + '\'' +
                 '}';

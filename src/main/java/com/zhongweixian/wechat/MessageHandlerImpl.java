@@ -3,6 +3,7 @@ package com.zhongweixian.wechat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.zhongweixian.wechat.domain.shared.*;
+import com.zhongweixian.wechat.service.CacheService;
 import com.zhongweixian.wechat.service.MessageHandler;
 import com.zhongweixian.wechat.service.WechatHttpService;
 import com.zhongweixian.wechat.utils.MessageUtils;
@@ -24,9 +25,12 @@ public class MessageHandlerImpl implements MessageHandler {
     @Autowired
     private WechatHttpService wechatHttpService;
 
+    @Autowired
+    private CacheService cacheService;
+
     @Override
     public void onReceivingChatRoomTextMessage(Message message) {
-        logger.info("onReceivingChatRoomTextMessage");
+        logger.info("onReceivingChatRoomTextMessage , groupName:{}" );
         logger.info("from chatroom:{} ", message.getFromUserName());
         logger.info("from person: {} , name :{}", MessageUtils.getSenderOfChatRoomTextMessage(message.getContent()));
         logger.info("to: {}", message.getToUserName());

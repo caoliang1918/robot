@@ -5,8 +5,7 @@ import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
-import com.zhongweixian.wechat.service.LoginService;
-import com.zhongweixian.wechat.service.WechatHttpService;
+import com.zhongweixian.wechat.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,6 +15,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Created by caoliang on 2019/1/15
@@ -26,15 +26,21 @@ import java.io.OutputStream;
 public class LoginController {
 
     @Autowired
-    private WechatHttpService wechatHttpService;
+    private ExecutorService executorService;
 
     @Autowired
-    private LoginService loginService;
+    private CacheService cacheService;
+    @Autowired
+    private SyncServie syncServie;
+    @Autowired
+    private WechatHttpServiceInternal wechatHttpServiceInternal;
+
 
     @GetMapping("login")
     public void qrcode(HttpServletRequest request, HttpServletResponse response) throws IOException, WriterException {
-        loginService.login();
-        String qrUrl = loginService.showQrcode();
+        LoginThread loginThread = new LoginThread(cacheService, syncServie, wechatHttpServiceInternal);
+        executorService.execute(loginThread);
+        String qrUrl = loginThread.showQrcode();
         if (qrUrl == null) {
             return;
         }

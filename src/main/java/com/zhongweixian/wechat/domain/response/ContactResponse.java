@@ -9,7 +9,7 @@ import com.zhongweixian.wechat.domain.shared.Contact;
 import java.util.Set;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class GetContactResponse extends WechatHttpResponseBase {
+public class ContactResponse extends WechatHttpResponseBase {
     @JsonProperty
     private int MemberCount;
     @JsonProperty

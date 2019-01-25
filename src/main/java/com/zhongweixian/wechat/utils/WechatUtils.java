@@ -3,13 +3,17 @@ package com.zhongweixian.wechat.utils;
 import com.zhongweixian.wechat.domain.response.component.WechatHttpResponseBase;
 import com.zhongweixian.wechat.domain.shared.Contact;
 import com.zhongweixian.wechat.exception.WechatException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 
 public class WechatUtils {
+    private static Logger logger = LoggerFactory.getLogger(WechatUtils.class);
     public static void checkBaseResponse(WechatHttpResponseBase response) {
         if (response.getBaseResponse().getRet() != 0) {
-            throw new WechatException(response.getClass().getSimpleName() + " ret = " + response.getBaseResponse().getRet());
+            logger.error("ret={}" , response.getBaseResponse().getRet());
+            throw new WechatException(response.getClass().getSimpleName () + " ret = " + response.getBaseResponse().getRet());
         }
     }
 

@@ -41,7 +41,7 @@ public class WechatHttpService {
         Set<Contact> contacts = new HashSet<>();
         long seq = 0;
         do {
-            GetContactResponse response = wechatHttpServiceInternal.getContact(cacheService.getHostUrl(), cacheService.getsKey(), seq);
+            ContactResponse response = wechatHttpServiceInternal.getContact(cacheService.getHostUrl(), cacheService.getsKey(), seq);
             WechatUtils.checkBaseResponse(response);
             seq = response.getSeq();
             contacts.addAll(response.getMemberList());

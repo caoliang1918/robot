@@ -43,7 +43,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Component
-class WechatHttpServiceInternal {
+public class WechatHttpServiceInternal {
     private Logger logger = LoggerFactory.getLogger(WechatHttpServiceInternal.class);
 
     @Value("${wechat.url.entry}")
@@ -155,6 +155,7 @@ class WechatHttpServiceInternal {
         //It's now at entry page.
         this.originValue = WECHAT_URL_ENTRY;
         this.refererValue = WECHAT_URL_ENTRY.replaceAll("/$", "");
+        logger.info("open() ,originValue:{} , refererValue:{} , domain:{} ", originValue, refererValue, domain);
     }
 
     /**
@@ -361,18 +362,17 @@ class WechatHttpServiceInternal {
      * @param skey    skey
      * @param seq     seq
      * @return contact information
-     * @throws IOException if the http response body can't be convert to {@link GetContactResponse}
+     * @throws IOException if the http response body can't be convert to {@link ContactResponse}
      */
-    GetContactResponse getContact(String hostUrl, String skey, long seq) throws IOException {
+    ContactResponse getContact(String hostUrl, String skey, long seq) throws IOException {
         long rnd = System.currentTimeMillis();
         final String url = String.format(WECHAT_URL_GET_CONTACT, hostUrl, rnd, seq, escape(skey));
         HttpHeaders customHeader = new HttpHeaders();
         customHeader.setAccept(Arrays.asList(MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN, MediaType.ALL));
         customHeader.set(HttpHeaders.REFERER, hostUrl + "/");
         HeaderUtils.assign(customHeader, getHeader);
-        ResponseEntity<String> responseEntity
-                = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(customHeader), String.class);
-        return jsonMapper.readValue(WechatUtils.textDecode(responseEntity.getBody()), GetContactResponse.class);
+        ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(customHeader), String.class);
+        return jsonMapper.readValue(WechatUtils.textDecode(responseEntity.getBody()), ContactResponse.class);
     }
 
     /**
@@ -393,22 +393,19 @@ class WechatHttpServiceInternal {
         request.setList(list);
         HttpHeaders customHeader = createPostCustomHeader();
         HeaderUtils.assign(customHeader, postHeader);
-        ResponseEntity<String> responseEntity
-                = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(request, customHeader), String.class);
+        ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(request, customHeader), String.class);
         return jsonMapper.readValue(WechatUtils.textDecode(responseEntity.getBody()), BatchGetContactResponse.class);
     }
 
     /**
-     * Periodically request to server
-     *
-     * @param hostUrl hostUrl
-     * @param uin     uin
-     * @param sid     sid
-     * @param skey    skey
-     * @param syncKey syncKey
-     * @return synccheck response
-     * @throws IOException        if the http response body can't be convert to {@link SyncCheckResponse}
-     * @throws URISyntaxException if url is invalid
+     * @param hostUrl
+     * @param uin
+     * @param sid
+     * @param skey
+     * @param syncKey
+     * @return
+     * @throws IOException
+     * @throws URISyntaxException
      */
     SyncCheckResponse syncCheck(String hostUrl, String uin, String sid, String skey, SyncKey syncKey) throws IOException, URISyntaxException {
         final Pattern pattern = Pattern.compile("window.synccheck=\\{retcode:\"(\\d+)\",selector:\"(\\d+)\"\\}");
@@ -511,7 +508,6 @@ class WechatHttpServiceInternal {
         request.setMsg(msg);
         HttpHeaders customHeader = createPostCustomHeader();
         HeaderUtils.assign(customHeader, postHeader);
-        logger.info("send text:{}", request);
         ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(request, customHeader), String.class);
         return jsonMapper.readValue(WechatUtils.textDecode(responseEntity.getBody()), SendMsgResponse.class);
     }
@@ -527,9 +523,8 @@ class WechatHttpServiceInternal {
         request.setBaseRequest(baseRequest);
         HttpHeaders customHeader = createPostCustomHeader();
         HeaderUtils.assign(customHeader, postHeader);
-        logger.info("request:{}", request.toString());
         ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(request, customHeader), String.class);
-        logger.info("撤销消息:{}", responseEntity.toString());
+        logger.info("撤销消息 {} , {}", messageId, responseEntity.getStatusCode());
     }
 
     OpLogResponse setAlias(String hostUrl, BaseRequest baseRequest, String newAlias, String userName) throws IOException {

@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 @Component
 public class SyncServie {
     private static final Logger logger = LoggerFactory.getLogger(SyncServie.class);
+
     @Autowired
     private CacheService cacheService;
     @Autowired

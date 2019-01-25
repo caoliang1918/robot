@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.zhongweixian.wechat.domain.request.component.BaseRequest;
 
+import java.util.Date;
+
 /**
  * Created by caoliang on 2019/1/14
  */
@@ -19,12 +21,18 @@ public class RevokeRequst {
     @JsonProperty
     private String ClientMsgId;
 
+    private String content;
+
+    private Date date;
+
     public RevokeRequst() {
     }
 
-    public RevokeRequst(String toUserName, String clientMsgId) {
+    public RevokeRequst(String toUserName, String clientMsgId , String content) {
         ToUserName = toUserName;
         ClientMsgId = clientMsgId;
+        this.content = content;
+        this.date = new Date();
     }
 
     public BaseRequest getBaseRequest() {
@@ -57,5 +65,21 @@ public class RevokeRequst {
 
     public void setClientMsgId(String clientMsgId) {
         ClientMsgId = clientMsgId;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public Date getDate() {
+        return date;
+    }
+
+    public void setDate(Date date) {
+        this.date = date;
     }
 }

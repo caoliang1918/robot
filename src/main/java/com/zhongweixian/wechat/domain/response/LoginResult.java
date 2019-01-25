@@ -28,4 +28,13 @@ public class LoginResult {
     public void setHostUrl(String hostUrl) {
         this.hostUrl = hostUrl;
     }
+
+    @Override
+    public String toString() {
+        return "LoginResult{" +
+                "code='" + code + '\'' +
+                ", redirectUrl='" + redirectUrl + '\'' +
+                ", hostUrl='" + hostUrl + '\'' +
+                '}';
+    }
 }

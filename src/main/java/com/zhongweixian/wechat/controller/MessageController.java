@@ -1,26 +1,17 @@
 package com.zhongweixian.wechat.controller;
 
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.MultiFormatWriter;
-import com.google.zxing.WriterException;
-import com.google.zxing.client.j2se.MatrixToImageWriter;
-import com.google.zxing.common.BitMatrix;
 import com.zhongweixian.wechat.domain.HttpMessage;
 import com.zhongweixian.wechat.domain.request.RevokeRequst;
 import com.zhongweixian.wechat.domain.response.SendMsgResponse;
-import com.zhongweixian.wechat.service.LoginService;
 import com.zhongweixian.wechat.service.WechatHttpService;
-import org.apache.commons.lang3.StringUtils;
+import com.zhongweixian.wechat.utils.Levenshtein;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.*;
 
 /**
@@ -34,7 +25,7 @@ public class MessageController {
     @Autowired
     private WechatHttpService wechatHttpService;
 
-    Map<Long, List<RevokeRequst>> messageMap = new HashMap<>();
+    Map<Long, RevokeRequst> messageMap = new HashMap<>();
 
 
     private Set<String> toUsers = new HashSet<>();
@@ -42,20 +33,26 @@ public class MessageController {
 
     @PostMapping("sendMessage")
     public String send(@RequestBody HttpMessage httpMessage) {
+        System.out.println("\n");
         try {
-            logger.info("send message : {}", httpMessage);
-            for (String user : toUsers) {
-                if ("create".equals(httpMessage.getOption())) {
-                    SendMsgResponse response = wechatHttpService.sendText(user, httpMessage.getContent());
-                    //保存消息
-                    putMessage(httpMessage.getId(), new RevokeRequst(user, response.getMsgID()));
-                } else {
-                    RevokeRequst revokeRequst = getRevoke(httpMessage.getId());
-                    if (revokeRequst != null) {
-                        wechatHttpService.revoke(revokeRequst.getClientMsgId(), user);
-                    }
-                    wechatHttpService.sendText(user, httpMessage.getContent());
+            SendMsgResponse response = null;
+            httpMessage.setSendTime(new Date());
+
+            if ("delete".equals(httpMessage.getOption()) || "update".equals(httpMessage.getOption())) {
+                RevokeRequst revokeRequst = messageMap.get(httpMessage.getId());
+                if (revokeRequst != null) {
+                    messageMap.remove(httpMessage.getId());
+                    wechatHttpService.revoke(revokeRequst.getClientMsgId(), revokeRequst.getToUserName());
                 }
+                if ("delete".equals(httpMessage.getOption())) {
+                    return "delete ok";
+                }
+            }
+            for (String user : toUsers) {
+                response = wechatHttpService.sendText(user, httpMessage.getContent());
+                //保存消息
+                putMessage(httpMessage.getId(), new RevokeRequst(user, response.getMsgID(), httpMessage.getContent()));
+                logger.info("send message : {} ,  {} , {} , {}", response.getMsgID(), httpMessage.getId(), httpMessage.getOption(), httpMessage.getContent());
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -75,22 +72,28 @@ public class MessageController {
         return "is ok";
     }
 
-    private void putMessage(Long httpMessageId, RevokeRequst revokeRequst) {
-        List<RevokeRequst> revokeRequsts = messageMap.get(httpMessageId);
-        if (CollectionUtils.isEmpty(revokeRequsts)) {
-            revokeRequsts = new ArrayList<>();
+    private void putMessage(Long httpMessageId, RevokeRequst revokeRequst) throws IOException {
+        /**
+         * 判断相似度
+         */
+        Levenshtein levenshtein = new Levenshtein();
+        Date now = new Date();
+        Iterator<Long> iterable = messageMap.keySet().iterator();
+        while (iterable.hasNext()) {
+            RevokeRequst exist = messageMap.get(iterable.next());
+            if (exist != null) {
+                if (now.getTime() - exist.getDate().getTime() > 100 * 1000L) {
+                    iterable.remove();
+                    continue;
+                }
+                if (levenshtein.getSimilarityRatio(exist.getContent(), revokeRequst.getContent()) > 0.6F) {
+                    wechatHttpService.revoke(exist.getClientMsgId(), exist.getToUserName());
+                    iterable.remove();
+                    continue;
+                }
+            }
         }
-        revokeRequsts.add(revokeRequst);
-    }
-
-    private RevokeRequst getRevoke(Long httpMessageId) {
-        List<RevokeRequst> revokeRequsts = messageMap.get(httpMessageId);
-        if (CollectionUtils.isEmpty(revokeRequsts)) {
-            return null;
-        }
-        RevokeRequst revokeRequst = revokeRequsts.get(0);
-        revokeRequsts.remove(revokeRequst);
-        return revokeRequst;
+        messageMap.put(httpMessageId, revokeRequst);
     }
 
 
