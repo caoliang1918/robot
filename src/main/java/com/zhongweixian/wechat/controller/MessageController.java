@@ -25,7 +25,7 @@ public class MessageController {
     @Autowired
     private WechatHttpService wechatHttpService;
 
-    Map<Long, RevokeRequst> messageMap = new HashMap<>();
+    Map<Long, List<RevokeRequst>> messageMap = new HashMap<>();
 
 
     private Set<String> toUsers = new HashSet<>();
@@ -33,27 +33,34 @@ public class MessageController {
 
     @PostMapping("sendMessage")
     public String send(@RequestBody HttpMessage httpMessage) {
+        if (CollectionUtils.isEmpty(toUsers)){
+            return "is ok";
+        }
         System.out.println("\n");
         try {
             SendMsgResponse response = null;
             httpMessage.setSendTime(new Date());
-
+            List<RevokeRequst> revokeRequsts = null;
             if ("delete".equals(httpMessage.getOption()) || "update".equals(httpMessage.getOption())) {
-                RevokeRequst revokeRequst = messageMap.get(httpMessage.getId());
-                if (revokeRequst != null) {
+               revokeRequsts = messageMap.get(httpMessage.getId());
+                if (!CollectionUtils.isEmpty(revokeRequsts)) {
+                    for (RevokeRequst revokeRequst:revokeRequsts){
+                        wechatHttpService.revoke(revokeRequst.getClientMsgId(), revokeRequst.getToUserName());
+                    }
                     messageMap.remove(httpMessage.getId());
-                    wechatHttpService.revoke(revokeRequst.getClientMsgId(), revokeRequst.getToUserName());
                 }
                 if ("delete".equals(httpMessage.getOption())) {
                     return "delete ok";
                 }
             }
+            revokeRequsts = new ArrayList<>();
             for (String user : toUsers) {
                 response = wechatHttpService.sendText(user, httpMessage.getContent());
                 //保存消息
-                putMessage(httpMessage.getId(), new RevokeRequst(user, response.getMsgID(), httpMessage.getContent()));
+                revokeRequsts.add(new RevokeRequst(user, response.getMsgID(), httpMessage.getContent()));
                 logger.info("send message : {} ,  {} , {} , {}", response.getMsgID(), httpMessage.getId(), httpMessage.getOption(), httpMessage.getContent());
             }
+            messageMap.put(httpMessage.getId() , revokeRequsts);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -80,7 +87,7 @@ public class MessageController {
         Date now = new Date();
         Iterator<Long> iterable = messageMap.keySet().iterator();
         while (iterable.hasNext()) {
-            RevokeRequst exist = messageMap.get(iterable.next());
+            RevokeRequst exist = messageMap.get(iterable.next()).get(0);
             if (exist != null) {
                 if (now.getTime() - exist.getDate().getTime() > 100 * 1000L) {
                     iterable.remove();
@@ -93,7 +100,12 @@ public class MessageController {
                 }
             }
         }
-        messageMap.put(httpMessageId, revokeRequst);
+        List<RevokeRequst> revokeRequsts = messageMap.get(httpMessageId);
+        if (revokeRequsts==null){
+            revokeRequsts = new ArrayList<>();
+        }
+        revokeRequsts.add(revokeRequst);
+        messageMap.put(httpMessageId, revokeRequsts);
     }
 
 
