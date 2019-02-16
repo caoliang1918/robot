@@ -3,6 +3,7 @@ package com.zhongweixian.wechat.controller;
 import com.zhongweixian.wechat.domain.HttpMessage;
 import com.zhongweixian.wechat.domain.request.RevokeRequst;
 import com.zhongweixian.wechat.domain.response.SendMsgResponse;
+import com.zhongweixian.wechat.service.CacheService;
 import com.zhongweixian.wechat.service.WechatHttpService;
 import com.zhongweixian.wechat.utils.Levenshtein;
 import org.slf4j.Logger;
@@ -25,16 +26,25 @@ public class MessageController {
     @Autowired
     private WechatHttpService wechatHttpService;
 
-    Map<Long, List<RevokeRequst>> messageMap = new HashMap<>();
+    @Autowired
+    private CacheService cacheService;
 
+    private Map<Long, List<RevokeRequst>> messageMap = new HashMap<>();
 
+    private String[] array = new String[]{"美股新闻机器人群", "11班"};
     private Set<String> toUsers = new HashSet<>();
 
 
     @PostMapping("sendMessage")
     public String send(@RequestBody HttpMessage httpMessage) {
-        if (CollectionUtils.isEmpty(toUsers)){
-            return "is ok";
+        if (CollectionUtils.isEmpty(toUsers)) {
+            cacheService.getUserCache("2334107403").getChatRooms().values().forEach(room -> {
+                for (String s : array) {
+                    if (room.getUserName().equals(s)) {
+                        toUsers.add(room.getChatRoomId());
+                    }
+                }
+            });
         }
         System.out.println("\n");
         try {
@@ -42,9 +52,9 @@ public class MessageController {
             httpMessage.setSendTime(new Date());
             List<RevokeRequst> revokeRequsts = null;
             if ("delete".equals(httpMessage.getOption()) || "update".equals(httpMessage.getOption())) {
-               revokeRequsts = messageMap.get(httpMessage.getId());
+                revokeRequsts = messageMap.get(httpMessage.getId());
                 if (!CollectionUtils.isEmpty(revokeRequsts)) {
-                    for (RevokeRequst revokeRequst:revokeRequsts){
+                    for (RevokeRequst revokeRequst : revokeRequsts) {
                         wechatHttpService.revoke(revokeRequst.getClientMsgId(), revokeRequst.getToUserName());
                     }
                     messageMap.remove(httpMessage.getId());
@@ -60,7 +70,7 @@ public class MessageController {
                 revokeRequsts.add(new RevokeRequst(user, response.getMsgID(), httpMessage.getContent()));
                 logger.info("send message : {} ,  {} , {} , {}", response.getMsgID(), httpMessage.getId(), httpMessage.getOption(), httpMessage.getContent());
             }
-            messageMap.put(httpMessage.getId() , revokeRequsts);
+            messageMap.put(httpMessage.getId(), revokeRequsts);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -101,7 +111,7 @@ public class MessageController {
             }
         }
         List<RevokeRequst> revokeRequsts = messageMap.get(httpMessageId);
-        if (revokeRequsts==null){
+        if (revokeRequsts == null) {
             revokeRequsts = new ArrayList<>();
         }
         revokeRequsts.add(revokeRequst);

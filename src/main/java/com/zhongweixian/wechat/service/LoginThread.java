@@ -4,6 +4,7 @@ import com.zhongweixian.wechat.domain.BaseUserCache;
 import com.zhongweixian.wechat.domain.request.component.BaseRequest;
 import com.zhongweixian.wechat.domain.response.*;
 import com.zhongweixian.wechat.domain.shared.ChatRoomDescription;
+import com.zhongweixian.wechat.domain.shared.Contact;
 import com.zhongweixian.wechat.domain.shared.Token;
 import com.zhongweixian.wechat.enums.LoginCode;
 import com.zhongweixian.wechat.enums.StatusNotifyCode;
@@ -15,6 +16,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -52,10 +55,14 @@ public class LoginThread implements Runnable {
 
     public void login() {
         try {
-            //0 entry
+            /**
+             *
+             */
             wechatHttpServiceInternal.open(qrRefreshTimes);
             logger.info("[0] entry completed");
-            //1 uuid
+            /**
+             * 获取uuid
+             */
             String uuid = wechatHttpServiceInternal.getUUID();
             cacheService.setUuid(uuid);
             logger.info("uuid completed: uuid{}", uuid);
@@ -143,49 +150,67 @@ public class LoginThread implements Runnable {
                             cacheService.getBaseRequest(),
                             cacheService.getOwner().getUserName(), StatusNotifyCode.INITED.getCode());
             WechatUtils.checkBaseResponse(statusNotifyResponse);
-            logger.info("[8] status notify completed");
             //9 get contact
             long seq = 0;
+            //好友
+            List<ChatRoomDescription> chatRooms = new ArrayList<>();
+            //群组(这里包含已经保存的技能组和最近聊天的技能组)
+            List<Contact> chatContact = new ArrayList<>();
             do {
                 ContactResponse contactResponse = wechatHttpServiceInternal.getContact(cacheService.getHostUrl(), cacheService.getBaseRequest().getSkey(), seq);
                 WechatUtils.checkBaseResponse(contactResponse);
+                for (Contact contact : contactResponse.getMemberList()) {
+
+
+                }
                 logger.info("[*] getContactResponse seq = " + contactResponse.getSeq());
                 logger.info("[*] getContactResponse memberCount = " + contactResponse.getMemberCount());
                 contactResponse.getMemberList().forEach(contact -> {
-                    userCache.getChatContants().put(contact.getUserName(), contact);
+                    if (WechatUtils.isChatRoom(contact)) {
+                        ChatRoomDescription chatRoomDescription = new ChatRoomDescription();
+                        chatRoomDescription.setChatRoomId(contact.getUserName());
+                        chatRoomDescription.setUserName(contact.getNickName());
+                        userCache.getChatRooms().put(chatRoomDescription.getChatRoomId(), chatRoomDescription);
+                        logger.info("chatRoom name :{} , id :{} ", chatRoomDescription.getUserName(), chatRoomDescription.getChatRoomId());
+                        chatRooms.add(chatRoomDescription);
+                    } else {
+                        logger.debug("nickName:{} , remarkName:{} , userName:{}", contact.getNickName(), contact.getRemarkName(), contact.getUserName());
+                        userCache.getChatContants().put(contact.getUserName(), contact);
+                    }
                 });
-
                 seq = contactResponse.getSeq();
                 cacheService.getIndividuals().addAll(contactResponse.getMemberList().stream().filter(WechatUtils::isIndividual).collect(Collectors.toSet()));
                 cacheService.getMediaPlatforms().addAll(contactResponse.getMemberList().stream().filter(WechatUtils::isMediaPlatform).collect(Collectors.toSet()));
             } while (seq > 0);
-            logger.info("[9] get contact completed");
-            //10 batch get contact
-            ChatRoomDescription[] chatRoomDescriptions = initResponse.getContactList().stream()
-                    .filter(x -> x != null && WechatUtils.isChatRoom(x))
-                    .map(x -> {
-                        ChatRoomDescription chatRoomDescription = new ChatRoomDescription();
-                        chatRoomDescription.setUserName(x.getNickName());
-                        chatRoomDescription.setChatRoomId(x.getUserName());
-                        userCache.getChatRooms().put(chatRoomDescription.getChatRoomId(), chatRoomDescription);
-                        logger.info(" chatRoom name :{} , id :{} ", chatRoomDescription.getUserName(), chatRoomDescription.getChatRoomId());
-                        return chatRoomDescription;
-                    })
-                    .toArray(ChatRoomDescription[]::new);
-            if (chatRoomDescriptions.length > 0) {
+
+
+            initResponse.getContactList().stream()
+                    .filter(x -> WechatUtils.isChatRoom(x)).forEach(x -> {
+                ChatRoomDescription chatRoomDescription = new ChatRoomDescription();
+                chatRoomDescription.setUserName(x.getNickName());
+                chatRoomDescription.setChatRoomId(x.getUserName());
+                userCache.getChatRooms().put(chatRoomDescription.getChatRoomId(), chatRoomDescription);
+                logger.info("chatRoom name :{} , id :{} ", chatRoomDescription.getUserName(), chatRoomDescription.getChatRoomId());
+                chatRooms.add(chatRoomDescription);
+            });
+
+
+            logger.info("chatRoomDescriptions size : {}", chatRooms.size());
+           /* if (chatRoomDescriptions.length > 0) {
                 BatchGetContactResponse batchGetContactResponse = wechatHttpServiceInternal.batchGetContact(
                         cacheService.getHostUrl(),
                         cacheService.getBaseRequest(),
                         chatRoomDescriptions);
                 WechatUtils.checkBaseResponse(batchGetContactResponse);
                 cacheService.getChatRooms().addAll(batchGetContactResponse.getContactList());
-            }
-            logger.info("[10] batch get contact completed");
+                batchGetContactResponse.getContactList().forEach(room->{
+                    logger.info("22222 chatRoom name :{} , id :{} ", room.getNickName(), room.getChatRoomId());
+                });
+
+            }*/
             cacheService.setAlive(true);
             userCache.setAlive(true);
             cacheService.cacheUser(userCache);
-            logger.info("[*] login process completed");
-            logger.info("[*] start listening");
             while (true) {
                 syncServie.listen();
             }

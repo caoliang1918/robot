@@ -30,7 +30,7 @@ public class MessageHandlerImpl implements MessageHandler {
 
     @Override
     public void onReceivingChatRoomTextMessage(Message message) {
-        logger.info("onReceivingChatRoomTextMessage , groupName:{}" );
+        logger.info("onReceivingChatRoomTextMessage , groupName:{}" , cacheService.getUserCache("2334107403").getChatContants().get(message.getFromUserName()));
         logger.info("from chatroom:{} ", message.getFromUserName());
         logger.info("from person: {} , name :{}", MessageUtils.getSenderOfChatRoomTextMessage(message.getContent()));
         logger.info("to: {}", message.getToUserName());
@@ -46,7 +46,7 @@ public class MessageHandlerImpl implements MessageHandler {
 
     @Override
     public void onReceivingPrivateTextMessage(Message message) throws IOException {
-        logger.info("onReceivingPrivateTextMessage");
+        logger.info("from my message to userName:{}" , cacheService.getUserCache("2334107403").getChatContants().get(message.getToUserName()).getRemarkName());
         logger.info("from:{} ", message.getFromUserName());
         logger.info("to:{}", message.getToUserName());
         logger.info("content:{}", message.getContent());

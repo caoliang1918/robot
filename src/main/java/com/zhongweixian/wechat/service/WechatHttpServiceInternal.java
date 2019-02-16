@@ -128,9 +128,8 @@ public class WechatHttpServiceInternal {
     }
 
     /**
-     * Open the entry page.
      *
-     * @param retryTimes retry times of qr scan
+     * @param retryTimes
      */
     void open(int retryTimes) {
         final String url = WECHAT_URL_ENTRY;
@@ -428,7 +427,7 @@ public class WechatHttpServiceInternal {
         try {
             responseEntity = restTemplate.exchange(uri, HttpMethod.GET, new HttpEntity<>(customHeader), String.class);
         } catch (Exception e) {
-            logger.error("{}", e);
+            //logger.error("{}", e);
         }
         if (responseEntity == null || !HttpStatus.OK.equals(responseEntity.getStatusCode())) {
             return null;

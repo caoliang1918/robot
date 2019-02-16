@@ -61,7 +61,7 @@ public class SyncServie {
         }
         int retCode = syncCheckResponse.getRetcode();
         int selector = syncCheckResponse.getSelector();
-        logger.info(String.format("[SYNCCHECK] retcode = %s, selector = %s", retCode, selector));
+        logger.debug(String.format("[SYNCCHECK] retcode = %s, selector = %s", retCode, selector));
         if (retCode == RetCode.NORMAL.getCode()) {
             //有新消息
             if (selector == Selector.NEW_MESSAGE.getCode()) {
