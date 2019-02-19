@@ -31,7 +31,7 @@ public class SyncServie {
     private CacheService cacheService;
     @Autowired
     private WechatHttpServiceInternal wechatHttpService;
-    @Autowired(required = false)
+
     private MessageHandler messageHandler;
 
     @Value("${wechat.url.get_msg_img}")
@@ -39,14 +39,8 @@ public class SyncServie {
 
     private final static String RED_PACKET_CONTENT = "收到红包，请在手机上查看";
 
-    @PostConstruct
-    public void setMessageHandler() {
-        if (messageHandler == null) {
-            this.messageHandler = new DefaultMessageHandler();
-        }
-    }
 
-    public void listen() throws IOException, URISyntaxException {
+    public Integer listen() throws IOException, URISyntaxException {
         SyncCheckResponse syncCheckResponse = wechatHttpService.syncCheck(
                 cacheService.getSyncUrl(),
                 cacheService.getBaseRequest().getUin(),
@@ -57,11 +51,11 @@ public class SyncServie {
          * 可能存在为空
          */
         if (syncCheckResponse == null) {
-            return;
+            return RetCode.NORMAL.getCode();
         }
         int retCode = syncCheckResponse.getRetcode();
         int selector = syncCheckResponse.getSelector();
-        logger.debug(String.format("[SYNCCHECK] retcode = %s, selector = %s", retCode, selector));
+        logger.info(String.format("[SYNCCHECK] retcode = %s, selector = %s", retCode, selector));
         if (retCode == RetCode.NORMAL.getCode()) {
             //有新消息
             if (selector == Selector.NEW_MESSAGE.getCode()) {
@@ -80,8 +74,9 @@ public class SyncServie {
                 throw new WechatException("syncCheckResponse ret = " + retCode);
             }
         } else {
-            throw new WechatException("syncCheckResponse selector = " + selector);
+            return RetCode.LOGOUT2.getCode();
         }
+        return RetCode.NORMAL.getCode();
     }
 
     private SyncResponse sync() throws IOException {
@@ -292,5 +287,14 @@ public class SyncServie {
                 messageHandler.onMediaPlatformsDeleted(mediaPlatforms);
             }
         }
+    }
+
+
+    public MessageHandler getMessageHandler() {
+        return messageHandler;
+    }
+
+    public void setMessageHandler(MessageHandler messageHandler) {
+        this.messageHandler = messageHandler;
     }
 }

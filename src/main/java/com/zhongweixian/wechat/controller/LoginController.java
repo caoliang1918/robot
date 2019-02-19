@@ -34,11 +34,13 @@ public class LoginController {
     private SyncServie syncServie;
     @Autowired
     private WechatHttpServiceInternal wechatHttpServiceInternal;
+    @Autowired
+    private WechatHttpService wechatHttpService;
 
 
     @GetMapping("login")
     public void qrcode(HttpServletRequest request, HttpServletResponse response) throws IOException, WriterException {
-        LoginThread loginThread = new LoginThread(cacheService, syncServie, wechatHttpServiceInternal);
+        LoginThread loginThread = new LoginThread(cacheService, syncServie, wechatHttpServiceInternal, wechatHttpService);
         executorService.execute(loginThread);
         String qrUrl = loginThread.showQrcode();
         if (qrUrl == null) {

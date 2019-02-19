@@ -3,6 +3,7 @@ package com.zhongweixian.wechat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.zhongweixian.wechat.domain.shared.*;
+import com.zhongweixian.wechat.exception.WechatException;
 import com.zhongweixian.wechat.service.CacheService;
 import com.zhongweixian.wechat.service.MessageHandler;
 import com.zhongweixian.wechat.service.WechatHttpService;
@@ -18,22 +19,29 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Component
-public class MessageHandlerImpl implements MessageHandler {
 
+public class MessageHandlerImpl implements MessageHandler {
     private static final Logger logger = LoggerFactory.getLogger(MessageHandlerImpl.class);
-    @Autowired
+
     private WechatHttpService wechatHttpService;
 
-    @Autowired
     private CacheService cacheService;
+
+    private String uid;
+
+    public MessageHandlerImpl(WechatHttpService wechatHttpService, CacheService cacheService, String uid) {
+        this.wechatHttpService = wechatHttpService;
+        this.cacheService = cacheService;
+        this.uid = uid;
+    }
 
     @Override
     public void onReceivingChatRoomTextMessage(Message message) {
-        logger.info("onReceivingChatRoomTextMessage , groupName:{}" , cacheService.getUserCache("2334107403").getChatContants().get(message.getFromUserName()));
-        logger.info("from chatroom:{} ", message.getFromUserName());
-        logger.info("from person: {} , name :{}", MessageUtils.getSenderOfChatRoomTextMessage(message.getContent()));
-        logger.info("to: {}", message.getToUserName());
+        ChatRoomDescription chatRoom = cacheService.getUserCache(uid).getChatRooms().get(message.getFromUserName());
+        if (chatRoom != null) {
+            logger.info("roomId:{} , roomName:{}",message.getFromUserName(), chatRoom.getUserName());
+        }
+        logger.info("from person: {} ", MessageUtils.getSenderOfChatRoomTextMessage(message.getContent()));
         logger.info("content:{}", MessageUtils.getChatRoomTextMessageContent(message.getContent()));
     }
 
@@ -45,13 +53,11 @@ public class MessageHandlerImpl implements MessageHandler {
     }
 
     @Override
-    public void onReceivingPrivateTextMessage(Message message) throws IOException {
-        logger.info("from my message to userName:{}" , cacheService.getUserCache("2334107403").getChatContants().get(message.getToUserName()).getRemarkName());
+    public void onReceivingPrivateTextMessage(Message message) throws WechatException {
+        //logger.info("from my message to userName:{}" , cacheService.getUserCache(uid).getChatContants().get(message.getToUserName()).getRemarkName());
         logger.info("from:{} ", message.getFromUserName());
         logger.info("to:{}", message.getToUserName());
         logger.info("content:{}", message.getContent());
-//        将原文回复给对方
-        //replyMessage(message);
     }
 
     @Override
@@ -61,7 +67,7 @@ public class MessageHandlerImpl implements MessageHandler {
         logger.info("fullImageUrl:{}", fullImageUrl);
 //        将图片保存在本地
         byte[] data = wechatHttpService.downloadImage(thumbImageUrl);
-        FileOutputStream fos = new FileOutputStream("thumb.jpg");
+        FileOutputStream fos = new FileOutputStream(System.currentTimeMillis() + ".jpg");
         fos.write(data);
         fos.close();
     }

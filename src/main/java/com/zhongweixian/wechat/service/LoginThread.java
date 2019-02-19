@@ -1,5 +1,6 @@
 package com.zhongweixian.wechat.service;
 
+import com.zhongweixian.wechat.MessageHandlerImpl;
 import com.zhongweixian.wechat.domain.BaseUserCache;
 import com.zhongweixian.wechat.domain.request.component.BaseRequest;
 import com.zhongweixian.wechat.domain.response.*;
@@ -7,6 +8,7 @@ import com.zhongweixian.wechat.domain.shared.ChatRoomDescription;
 import com.zhongweixian.wechat.domain.shared.Contact;
 import com.zhongweixian.wechat.domain.shared.Token;
 import com.zhongweixian.wechat.enums.LoginCode;
+import com.zhongweixian.wechat.enums.RetCode;
 import com.zhongweixian.wechat.enums.StatusNotifyCode;
 import com.zhongweixian.wechat.exception.WechatException;
 import com.zhongweixian.wechat.exception.WechatQRExpiredException;
@@ -29,11 +31,13 @@ public class LoginThread implements Runnable {
     private CacheService cacheService;
     private SyncServie syncServie;
     private WechatHttpServiceInternal wechatHttpServiceInternal;
+    private WechatHttpService wechatHttpService;
 
-    public LoginThread(CacheService cacheService, SyncServie syncServie, WechatHttpServiceInternal wechatHttpServiceInternal) {
+    public LoginThread(CacheService cacheService, SyncServie syncServie, WechatHttpServiceInternal wechatHttpServiceInternal, WechatHttpService wechatHttpService) {
         this.cacheService = cacheService;
         this.syncServie = syncServie;
         this.wechatHttpServiceInternal = wechatHttpServiceInternal;
+        this.wechatHttpService = wechatHttpService;
     }
 
     private int qrRefreshTimes = 0;
@@ -53,8 +57,7 @@ public class LoginThread implements Runnable {
         return qrUrl;
     }
 
-    public void login() {
-        try {
+    public void login() throws Exception {
             /**
              *
              */
@@ -155,7 +158,6 @@ public class LoginThread implements Runnable {
             //好友
             List<ChatRoomDescription> chatRooms = new ArrayList<>();
             //群组(这里包含已经保存的技能组和最近聊天的技能组)
-            List<Contact> chatContact = new ArrayList<>();
             do {
                 ContactResponse contactResponse = wechatHttpServiceInternal.getContact(cacheService.getHostUrl(), cacheService.getBaseRequest().getSkey(), seq);
                 WechatUtils.checkBaseResponse(contactResponse);
@@ -196,31 +198,28 @@ public class LoginThread implements Runnable {
 
 
             logger.info("chatRoomDescriptions size : {}", chatRooms.size());
-           /* if (chatRoomDescriptions.length > 0) {
-                BatchGetContactResponse batchGetContactResponse = wechatHttpServiceInternal.batchGetContact(
-                        cacheService.getHostUrl(),
-                        cacheService.getBaseRequest(),
-                        chatRoomDescriptions);
-                WechatUtils.checkBaseResponse(batchGetContactResponse);
-                cacheService.getChatRooms().addAll(batchGetContactResponse.getContactList());
-                batchGetContactResponse.getContactList().forEach(room->{
-                    logger.info("22222 chatRoom name :{} , id :{} ", room.getNickName(), room.getChatRoomId());
-                });
 
-            }*/
             cacheService.setAlive(true);
             userCache.setAlive(true);
             cacheService.cacheUser(userCache);
+
+            MessageHandler messageHandler = new MessageHandlerImpl(wechatHttpService , cacheService , userCache.getUin());
+            syncServie.setMessageHandler(messageHandler);
             while (true) {
-                syncServie.listen();
+                if (syncServie.listen()!=RetCode.NORMAL.getCode()){
+                    logger.warn("logout user:{}" , userCache.getUin());
+                    break;
+                }
             }
-        } catch (Exception ex) {
-            logger.error("{}", ex);
-        }
+
     }
 
     @Override
     public void run() {
-        login();
+        try {
+            login();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

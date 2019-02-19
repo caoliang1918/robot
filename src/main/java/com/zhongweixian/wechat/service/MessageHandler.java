@@ -4,6 +4,7 @@ import com.zhongweixian.wechat.domain.shared.ChatRoomMember;
 import com.zhongweixian.wechat.domain.shared.Contact;
 import com.zhongweixian.wechat.domain.shared.Message;
 import com.zhongweixian.wechat.domain.shared.RecommendInfo;
+import com.zhongweixian.wechat.exception.WechatException;
 
 import java.io.IOException;
 import java.util.Set;
@@ -30,7 +31,7 @@ public interface MessageHandler {
      *
      * @param message 消息体
      */
-    void onReceivingPrivateTextMessage(Message message) throws IOException;
+    void onReceivingPrivateTextMessage(Message message) throws WechatException;
 
     /**
      * 事件：收到个人聊天图片消息
