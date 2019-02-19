@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by caoliang on 2019/1/11
@@ -33,12 +34,16 @@ public class MessageController {
 
     private String[] array = new String[]{"美股新闻机器人群"};
     private Set<String> toUsers = new HashSet<>();
+    private String uid = "2334107403";
 
 
     @PostMapping("sendMessage")
     public String send(@RequestBody HttpMessage httpMessage) {
+        if (CollectionUtils.isEmpty(cacheService.getUserCache(uid).getChatRooms())) {
+            return "user not login";
+        }
         if (CollectionUtils.isEmpty(toUsers)) {
-            cacheService.getUserCache("2334107403").getChatRooms().values().forEach(room -> {
+            cacheService.getUserCache(uid).getChatRooms().values().forEach(room -> {
                 for (String s : array) {
                     if (room.getUserName().equals(s)) {
                         toUsers.add(room.getChatRoomId());
@@ -64,6 +69,7 @@ public class MessageController {
                 }
             }
             revokeRequsts = new ArrayList<>();
+            checkMessage(httpMessage.getContent());
             for (String user : toUsers) {
                 response = wechatHttpService.sendText(user, httpMessage.getContent());
                 //保存消息
@@ -89,7 +95,7 @@ public class MessageController {
         return "is ok";
     }
 
-    private void putMessage(Long httpMessageId, RevokeRequst revokeRequst) throws IOException {
+    private void checkMessage(String content) throws IOException {
         /**
          * 判断相似度
          */
@@ -97,26 +103,32 @@ public class MessageController {
         Date now = new Date();
         Iterator<Long> iterable = messageMap.keySet().iterator();
         while (iterable.hasNext()) {
-            RevokeRequst exist = messageMap.get(iterable.next()).get(0);
-            if (exist != null) {
-                if (now.getTime() - exist.getDate().getTime() > 100 * 1000L) {
-                    iterable.remove();
-                    continue;
-                }
-                if (levenshtein.getSimilarityRatio(exist.getContent(), revokeRequst.getContent()) > 0.6F) {
-                    wechatHttpService.revoke(exist.getClientMsgId(), exist.getToUserName());
-                    iterable.remove();
-                    continue;
+            List<RevokeRequst> revokeRequsts = messageMap.get(iterable.next());
+            if (CollectionUtils.isEmpty(revokeRequsts)) {
+                continue;
+            }
+            RevokeRequst revokeRequst = revokeRequsts.get(0);
+            /**
+             * 已经超时
+             */
+            if (now.getTime() - revokeRequst.getDate().getTime() > 100 * 1000L) {
+                iterable.remove();
+                continue;
+            }
+
+            /**
+             * 文本相似度
+             */
+            Boolean check = false;
+            if (levenshtein.getSimilarityRatio(revokeRequst.getContent(), content) > 0.6F) {
+                check = true;
+                for (RevokeRequst revoke : revokeRequsts) {
+                    wechatHttpService.revoke(revoke.getClientMsgId(), revoke.getToUserName());
                 }
             }
+            if (check) {
+                iterable.remove();
+            }
         }
-        List<RevokeRequst> revokeRequsts = messageMap.get(httpMessageId);
-        if (revokeRequsts == null) {
-            revokeRequsts = new ArrayList<>();
-        }
-        revokeRequsts.add(revokeRequst);
-        messageMap.put(httpMessageId, revokeRequsts);
     }
-
-
 }
