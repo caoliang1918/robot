@@ -33,7 +33,9 @@ public class MessageController {
     private Map<Long, List<RevokeRequst>> messageMap = new HashMap<>();
 
     private String[] array = new String[]{"美股新闻机器人群"};
+    private String[] option = new String[]{"SPY末日期权"};
     private Set<String> toUsers = new HashSet<>();
+    private Set<String> optionUser = new HashSet<>();
     private String uid = "2334107403";
 
 
@@ -77,6 +79,33 @@ public class MessageController {
                 logger.info("send message : {} ,  {} , {} , {}", response.getMsgID(), httpMessage.getId(), httpMessage.getOption(), httpMessage.getContent());
             }
             messageMap.put(httpMessage.getId(), revokeRequsts);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "send success";
+    }
+
+
+    @PostMapping("sendOption")
+    public String sendOption(@RequestBody HttpMessage httpMessage) {
+        System.out.println("\n");
+        try {
+            if (CollectionUtils.isEmpty(optionUser)) {
+                cacheService.getUserCache(uid).getChatRooms().values().forEach(room -> {
+                    for (String s : option) {
+                        if (room.getUserName().equals(s)) {
+                            optionUser.add(room.getChatRoomId());
+                        }
+                    }
+                });
+            }
+            SendMsgResponse response = null;
+            httpMessage.setSendTime(new Date());
+
+            for (String user : optionUser) {
+                response = wechatHttpService.sendText(user, httpMessage.getContent());
+                 logger.info("send message : {} ,  {} , {} , {}", response.getMsgID(), httpMessage.getId(), httpMessage.getOption(), httpMessage.getContent());
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
