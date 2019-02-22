@@ -74,6 +74,13 @@ public class MessageController {
             checkMessage(httpMessage.getContent());
             for (String user : toUsers) {
                 response = wechatHttpService.sendText(user, httpMessage.getContent());
+                if (response == null || response.getMsgID() == null) {
+                    if (!cacheService.getUserCache(uid).getAlive()) {
+                        toUsers.clear();
+                        optionUser.clear();
+                        break;
+                    }
+                }
                 //保存消息
                 revokeRequsts.add(new RevokeRequst(user, response.getMsgID(), httpMessage.getContent()));
                 logger.info("send message : {} ,  {} , {} , {}", response.getMsgID(), httpMessage.getId(), httpMessage.getOption(), httpMessage.getContent());
@@ -104,7 +111,7 @@ public class MessageController {
 
             for (String user : optionUser) {
                 response = wechatHttpService.sendText(user, httpMessage.getContent());
-                 logger.info("send message : {} ,  {} , {} , {}", response.getMsgID(), httpMessage.getId(), httpMessage.getOption(), httpMessage.getContent());
+                logger.info("send message : {} ,  {} , {} , {}", response.getMsgID(), httpMessage.getId(), httpMessage.getOption(), httpMessage.getContent());
             }
         } catch (IOException e) {
             e.printStackTrace();

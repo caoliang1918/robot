@@ -199,7 +199,6 @@ public class LoginThread implements Runnable {
 
             logger.info("chatRoomDescriptions size : {}", chatRooms.size());
 
-            cacheService.setAlive(true);
             userCache.setAlive(true);
             cacheService.cacheUser(userCache);
 
@@ -208,6 +207,7 @@ public class LoginThread implements Runnable {
             while (true) {
                 if (syncServie.listen()!=RetCode.NORMAL.getCode()){
                     logger.warn("logout user:{}" , userCache.getUin());
+                    userCache.setAlive(false);
                     break;
                 }
             }

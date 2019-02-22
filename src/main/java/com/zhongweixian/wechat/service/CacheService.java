@@ -45,7 +45,6 @@ public class CacheService {
         this.chatRooms.clear();
     }
 
-    private boolean alive = false;
     private String uuid;
     private String hostUrl;
     private String syncUrl;
@@ -65,13 +64,6 @@ public class CacheService {
 
     private Set<String> contactNamesWithUnreadMessage = new HashSet<>();
 
-    public boolean isAlive() {
-        return alive;
-    }
-
-    public void setAlive(boolean alive) {
-        this.alive = alive;
-    }
 
     public String getHostUrl() {
         return hostUrl;
