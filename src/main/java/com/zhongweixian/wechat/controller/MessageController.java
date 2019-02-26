@@ -41,7 +41,7 @@ public class MessageController {
 
     @PostMapping("sendMessage")
     public String send(@RequestBody HttpMessage httpMessage) {
-        if (CollectionUtils.isEmpty(cacheService.getUserCache(uid).getChatRooms())) {
+        if (cacheService.getUserCache(uid) == null || !cacheService.getUserCache(uid).getAlive()) {
             return "user not login";
         }
         if (CollectionUtils.isEmpty(toUsers)) {
