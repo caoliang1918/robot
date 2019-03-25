@@ -10,10 +10,11 @@ import java.nio.charset.StandardCharsets;
 
 public class WechatUtils {
     private static Logger logger = LoggerFactory.getLogger(WechatUtils.class);
+
     public static void checkBaseResponse(WechatHttpResponseBase response) {
         if (response.getBaseResponse().getRet() != 0) {
-            logger.error("ret={}" , response.getBaseResponse().getRet());
-            throw new WechatException(response.getClass().getSimpleName () + " ret = " + response.getBaseResponse().getRet());
+            logger.error("ret:{} , errorMsg:{}", response.getBaseResponse().getRet(), response.getBaseResponse().getErrMsg());
+            throw new WechatException(response.getClass().getSimpleName() + " ret = " + response.getBaseResponse().getRet());
         }
     }
 

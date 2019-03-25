@@ -36,12 +36,14 @@ public class MessageController {
     private String[] option = new String[]{"SPY末日期权"};
     private Set<String> toUsers = new HashSet<>();
     private Set<String> optionUser = new HashSet<>();
-    private String uid = "2334107403";
+    private String uid = "5275953";
 
 
     @PostMapping("sendMessage")
     public String send(@RequestBody HttpMessage httpMessage) {
         if (cacheService.getUserCache(uid) == null || !cacheService.getUserCache(uid).getAlive()) {
+            toUsers.clear();
+            optionUser.clear();
             return "user not login";
         }
         if (CollectionUtils.isEmpty(toUsers)) {
@@ -95,6 +97,9 @@ public class MessageController {
 
     @PostMapping("sendOption")
     public String sendOption(@RequestBody HttpMessage httpMessage) {
+        if (cacheService.getUserCache(uid) == null || !cacheService.getUserCache(uid).getAlive()) {
+            return "user not login";
+        }
         System.out.println("\n");
         try {
             if (CollectionUtils.isEmpty(optionUser)) {

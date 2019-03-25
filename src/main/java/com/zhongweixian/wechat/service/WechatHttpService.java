@@ -7,6 +7,8 @@ import com.zhongweixian.wechat.domain.shared.Contact;
 import com.zhongweixian.wechat.enums.StatusNotifyCode;
 import com.zhongweixian.wechat.exception.WechatException;
 import com.zhongweixian.wechat.utils.WechatUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +18,7 @@ import java.util.Set;
 
 @Component
 public class WechatHttpService {
+    private Logger logger = LoggerFactory.getLogger(WechatHttpService.class);
 
     @Autowired
     private WechatHttpServiceInternal wechatHttpServiceInternal;
@@ -60,12 +63,13 @@ public class WechatHttpService {
     public SendMsgResponse sendText(String userName, String content) throws IOException {
         notifyNecessary(userName);
         SendMsgResponse response = wechatHttpServiceInternal.sendText(cacheService.getHostUrl(), cacheService.getBaseRequest(), content, cacheService.getOwner().getUserName(), userName);
+        logger.info("sendMsgResponse:{}", response.toString());
         WechatUtils.checkBaseResponse(response);
         return response;
     }
 
-    public void revoke(String wxMessageId , String toUserName) throws IOException{
-        wechatHttpServiceInternal.revoke(cacheService.getHostUrl(),cacheService.getBaseRequest(),toUserName , wxMessageId);
+    public void revoke(String wxMessageId, String toUserName) throws IOException {
+        wechatHttpServiceInternal.revoke(cacheService.getHostUrl(), cacheService.getBaseRequest(), toUserName, wxMessageId);
     }
 
     /**

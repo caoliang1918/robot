@@ -26,4 +26,12 @@ public class SendMsgResponse extends WechatHttpResponseBase {
     public void setLocalID(String localID) {
         LocalID = localID;
     }
+
+    @Override
+    public String toString() {
+        return "SendMsgResponse{" +
+                "MsgID='" + MsgID + '\'' +
+                ", LocalID='" + LocalID + '\'' +
+                '}';
+    }
 }

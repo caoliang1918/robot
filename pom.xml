@@ -4,12 +4,12 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.zhongweixian</groupId>
-	<artifactId>wechat-boot</artifactId>
+	<artifactId>wechat-bot</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>wechat-boot</name>
-	<description>spring-boot for wechar boot</description>
+	<name>wechat-bot</name>
+	<description>spring-boot for wechar bot</description>
 
 	<parent>
 		<groupId>org.springframework.boot</groupId>

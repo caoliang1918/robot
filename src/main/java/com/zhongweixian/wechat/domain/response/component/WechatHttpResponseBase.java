@@ -15,4 +15,11 @@ public abstract class WechatHttpResponseBase {
     public void setBaseResponse(BaseResponse baseResponse) {
         BaseResponse = baseResponse;
     }
+
+    @Override
+    public String toString() {
+        return "WechatHttpResponseBase{" +
+                "BaseResponse=" + BaseResponse +
+                '}';
+    }
 }
