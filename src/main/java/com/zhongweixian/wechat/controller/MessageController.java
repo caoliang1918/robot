@@ -34,7 +34,7 @@ public class MessageController {
 
     private String[] array = new String[]{"美股新闻机器人群"};
     private String[] option = new String[]{"SPY末日期权"};
-    private String[] position = new String[]{"filehelp"};
+    private String[] position = new String[]{"filehelper"};
     private Set<String> toUsers = new HashSet<>();
     private Set<String> optionUser = new HashSet<>();
     private String uid = "5275953";
