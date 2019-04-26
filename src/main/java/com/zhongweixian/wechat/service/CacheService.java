@@ -27,6 +27,12 @@ public class CacheService {
         mapUserCache.put(baseUserCache.getUin(), baseUserCache);
     }
 
+    public void deleteCacheUser(String uid){
+        mapUserCache.remove(uid);
+    }
+
+
+
     public void reset() {
         this.hostUrl = null;
         this.syncUrl = null;

@@ -34,6 +34,7 @@ public class MessageController {
 
     private String[] array = new String[]{"美股新闻机器人群"};
     private String[] option = new String[]{"SPY末日期权"};
+    private String[] position = new String[]{"filehelp"};
     private Set<String> toUsers = new HashSet<>();
     private Set<String> optionUser = new HashSet<>();
     private String uid = "5275953";
@@ -44,6 +45,7 @@ public class MessageController {
         if (cacheService.getUserCache(uid) == null || !cacheService.getUserCache(uid).getAlive()) {
             toUsers.clear();
             optionUser.clear();
+            cacheService.deleteCacheUser(uid);
             return "user not login";
         }
         if (CollectionUtils.isEmpty(toUsers)) {
@@ -97,9 +99,6 @@ public class MessageController {
 
     @PostMapping("sendOption")
     public String sendOption(@RequestBody HttpMessage httpMessage) {
-        if (cacheService.getUserCache(uid) == null || !cacheService.getUserCache(uid).getAlive()) {
-            return "user not login";
-        }
         System.out.println("\n");
         try {
             if (CollectionUtils.isEmpty(optionUser)) {
@@ -124,17 +123,22 @@ public class MessageController {
         return "send success";
     }
 
-    @GetMapping("addToUser")
-    public String addGroup(String groupId) {
-        toUsers.add(groupId);
-        return "is ok";
+    @PostMapping("positionChange")
+    public String positionChange(@RequestBody HttpMessage httpMessage) {
+        try {
+            SendMsgResponse response = null;
+            httpMessage.setSendTime(new Date());
+
+            for (String user : position) {
+                response = wechatHttpService.sendText(user, httpMessage.getContent());
+                logger.info("send message : {} ,  {} , {} , {}", response.getMsgID(), httpMessage.getId(), httpMessage.getOption(), httpMessage.getContent());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "send success";
     }
 
-    @DeleteMapping("deleteGroup")
-    public String deleteGroup(String groupId) {
-        toUsers.remove(groupId);
-        return "is ok";
-    }
 
     private void checkMessage(String content) throws IOException {
         /**
