@@ -45,10 +45,16 @@ public class MessageController {
     private String uid = "5275953";
 
 
+    /**
+     * 给微信、微博推送美股实时资讯
+     *
+     * @param httpMessage
+     * @return
+     */
     @PostMapping("sendMessage")
     public String send(@RequestBody HttpMessage httpMessage) {
         try {
-            weiBoService.sendWeiBoMessage(httpMessage.getContent());
+            weiBoService.sendWeiBoMessage(httpMessage);
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
@@ -108,6 +114,12 @@ public class MessageController {
     }
 
 
+    /**
+     * 给指定的微信群推送期权数据
+     *
+     * @param httpMessage
+     * @return
+     */
     @PostMapping("sendOption")
     public String sendOption(@RequestBody HttpMessage httpMessage) {
         System.out.println("\n");
@@ -134,6 +146,12 @@ public class MessageController {
         return "send success";
     }
 
+    /**
+     * 持仓位置变更，给指定的微信好友发送消息
+     *
+     * @param httpMessage
+     * @return
+     */
     @PostMapping("positionChange")
     public String positionChange(@RequestBody HttpMessage httpMessage) {
         if (CollectionUtils.isEmpty(positions)) {
