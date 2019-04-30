@@ -6,10 +6,11 @@ import com.zhongweixian.service.WeiBoService;
 import com.zhongweixian.utils.Levenshtein;
 import com.zhongweixian.domain.response.SendMsgResponse;
 import com.zhongweixian.service.CacheService;
-import com.zhongweixian.service.WechatHttpService;
+import com.zhongweixian.service.WechatMessageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,7 +27,7 @@ public class MessageController {
     private Logger logger = LoggerFactory.getLogger(MessageController.class);
 
     @Autowired
-    private WechatHttpService wechatHttpService;
+    private WechatMessageService wechatHttpService;
 
     @Autowired
     private CacheService cacheService;
@@ -42,6 +43,8 @@ public class MessageController {
     private Set<String> toUsers = new HashSet<>();
     private Set<String> optionUser = new HashSet<>();
     private Set<String> positions = new HashSet<>();
+
+    @Value("${wx.uid}")
     private String uid = "5275953";
 
 

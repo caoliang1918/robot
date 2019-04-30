@@ -25,6 +25,7 @@ public class BaseUserCache implements Serializable {
     private String sKey;
     private String uin;
     private String sid;
+    private Token token;
 
     /**
      * 聊天群组
@@ -130,5 +131,13 @@ public class BaseUserCache implements Serializable {
 
     public void setChatContants(Map<String, Contact> chatContants) {
         this.chatContants = chatContants;
+    }
+
+    public Token getToken() {
+        return token;
+    }
+
+    public void setToken(Token token) {
+        this.token = token;
     }
 }

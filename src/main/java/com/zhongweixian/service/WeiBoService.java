@@ -35,7 +35,7 @@ public class WeiBoService {
     @Value("${weibo.Referer}")
     private String referer;
 
-    @Value("${weibo.User-Agent}")
+    @Value("${User-Agent}")
     private String userAgent;
 
     @Value("${weibo.username}")

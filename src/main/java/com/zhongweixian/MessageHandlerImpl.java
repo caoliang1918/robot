@@ -2,12 +2,12 @@ package com.zhongweixian;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.zhongweixian.domain.BaseUserCache;
 import com.zhongweixian.domain.shared.*;
-import com.zhongweixian.service.CacheService;
 import com.zhongweixian.utils.MessageUtils;
 import com.zhongweixian.exception.WechatException;
 import com.zhongweixian.service.MessageHandler;
-import com.zhongweixian.service.WechatHttpService;
+import com.zhongweixian.service.WechatMessageService;
 import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,25 +17,25 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-
+/**
+ * 接受消息类
+ */
 public class MessageHandlerImpl implements MessageHandler {
     private static final Logger logger = LoggerFactory.getLogger(MessageHandlerImpl.class);
 
-    private WechatHttpService wechatHttpService;
+    private WechatMessageService wechatHttpService;
 
-    private CacheService cacheService;
+    private BaseUserCache baseUserCache;
 
-    private String uid;
 
-    public MessageHandlerImpl(WechatHttpService wechatHttpService, CacheService cacheService, String uid) {
+    public MessageHandlerImpl(WechatMessageService wechatHttpService, BaseUserCache baseUserCache) {
         this.wechatHttpService = wechatHttpService;
-        this.cacheService = cacheService;
-        this.uid = uid;
-    }
+        this.baseUserCache = baseUserCache;
+     }
 
     @Override
     public void onReceivingChatRoomTextMessage(Message message) {
-        ChatRoomDescription chatRoom = cacheService.getUserCache(uid).getChatRooms().get(message.getFromUserName());
+        ChatRoomDescription chatRoom = baseUserCache.getChatRooms().get(message.getFromUserName());
         if (chatRoom != null) {
             logger.info("roomId:{} , roomName:{}",message.getFromUserName(), chatRoom.getUserName());
         }

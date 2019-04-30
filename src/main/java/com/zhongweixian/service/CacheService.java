@@ -17,18 +17,18 @@ import java.util.Set;
 @Component
 public class CacheService {
 
-    private Map<String, BaseUserCache> mapUserCache = new HashMap<>();
+    private Map<String, BaseUserCache> wxUserCache = new HashMap<>();
 
     public BaseUserCache getUserCache(String uid) {
-        return mapUserCache.get(uid);
+        return wxUserCache.get(uid);
     }
 
     public void cacheUser(BaseUserCache baseUserCache) {
-        mapUserCache.put(baseUserCache.getUin(), baseUserCache);
+        wxUserCache.put(baseUserCache.getUin(), baseUserCache);
     }
 
     public void deleteCacheUser(String uid){
-        mapUserCache.remove(uid);
+        wxUserCache.remove(uid);
     }
 
 

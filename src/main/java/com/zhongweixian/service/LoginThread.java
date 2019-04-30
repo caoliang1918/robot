@@ -1,5 +1,6 @@
 package com.zhongweixian.service;
 
+import com.zhongweixian.MessageHandlerImpl;
 import com.zhongweixian.domain.BaseUserCache;
 import com.zhongweixian.domain.request.component.BaseRequest;
 import com.zhongweixian.domain.response.ContactResponse;
@@ -12,11 +13,10 @@ import com.zhongweixian.domain.shared.Token;
 import com.zhongweixian.enums.LoginCode;
 import com.zhongweixian.enums.RetCode;
 import com.zhongweixian.enums.StatusNotifyCode;
-import com.zhongweixian.utils.QRCodeUtils;
-import com.zhongweixian.utils.WechatUtils;
-import com.zhongweixian.MessageHandlerImpl;
 import com.zhongweixian.exception.WechatException;
 import com.zhongweixian.exception.WechatQRExpiredException;
+import com.zhongweixian.utils.QRCodeUtils;
+import com.zhongweixian.utils.WechatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,18 +32,15 @@ public class LoginThread implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(LoginThread.class);
 
     private CacheService cacheService;
-    private SyncServie syncServie;
-    private WechatHttpServiceInternal wechatHttpServiceInternal;
     private WechatHttpService wechatHttpService;
+    private WechatMessageService wechatMessageService;
 
-    public LoginThread(CacheService cacheService, SyncServie syncServie, WechatHttpServiceInternal wechatHttpServiceInternal, WechatHttpService wechatHttpService) {
+    public LoginThread(CacheService cacheService, WechatHttpService wechatHttpService, WechatMessageService wechatMessageService) {
         this.cacheService = cacheService;
-        this.syncServie = syncServie;
-        this.wechatHttpServiceInternal = wechatHttpServiceInternal;
         this.wechatHttpService = wechatHttpService;
+        this.wechatMessageService = wechatMessageService;
     }
 
-    private int qrRefreshTimes = 0;
 
     private String qrUrl;
 
@@ -64,16 +61,15 @@ public class LoginThread implements Runnable {
         /**
          *
          */
-        wechatHttpServiceInternal.open(qrRefreshTimes);
+        wechatHttpService.start();
         logger.info("[0] entry completed");
         /**
          * 获取uuid
          */
-        String uuid = wechatHttpServiceInternal.getUUID();
-        cacheService.setUuid(uuid);
+        String uuid = wechatHttpService.getUUID();
         logger.info("uuid completed: uuid{}", uuid);
         //2 qr
-        byte[] qrData = wechatHttpServiceInternal.getQR(uuid);
+        byte[] qrData = wechatHttpService.getQR(uuid);
         ByteArrayInputStream stream = new ByteArrayInputStream(qrData);
         qrUrl = QRCodeUtils.decode(stream);
         stream.close();
@@ -81,51 +77,47 @@ public class LoginThread implements Runnable {
         logger.info("\r\n" + qr);
         logger.info("[2] qrcode completed");
         //3 statreport
-        wechatHttpServiceInternal.statReport();
+        wechatHttpService.statReport();
         logger.info("[3] statReport completed");
         //4 login
-        LoginResult loginResponse;
+        LoginResult loginResult;
 
         BaseUserCache userCache = new BaseUserCache();
         while (true) {
-            loginResponse = wechatHttpServiceInternal.login(uuid);
-            logger.info("loginResponse:{}", loginResponse.toString());
-            if (LoginCode.SUCCESS.getCode().equals(loginResponse.getCode())) {
-                if (loginResponse.getHostUrl() == null) {
+            loginResult = wechatHttpService.login(uuid);
+            logger.info("loginResult:{}", loginResult.toString());
+            if (LoginCode.SUCCESS.getCode().equals(loginResult.getCode())) {
+                if (loginResult.getHostUrl() == null) {
                     throw new WechatException("hostUrl can't be found");
                 }
-                if (loginResponse.getRedirectUrl() == null) {
+                if (loginResult.getRedirectUrl() == null) {
                     throw new WechatException("redirectUrl can't be found");
                 }
-                cacheService.setHostUrl(loginResponse.getHostUrl());
-                if (loginResponse.getHostUrl().equals("https://wechat.com")) {
+                cacheService.setHostUrl(loginResult.getHostUrl());
+                if (loginResult.getHostUrl().equals("https://wechat.com")) {
                     cacheService.setSyncUrl("https://webpush.web.wechat.com");
                     cacheService.setFileUrl("https://file.web.wechat.com");
                 } else {
-                    cacheService.setSyncUrl(loginResponse.getHostUrl().replaceFirst("^https://", "https://webpush."));
-                    cacheService.setFileUrl(loginResponse.getHostUrl().replaceFirst("^https://", "https://file."));
+                    cacheService.setSyncUrl(loginResult.getHostUrl().replaceFirst("^https://", "https://webpush."));
+                    cacheService.setFileUrl(loginResult.getHostUrl().replaceFirst("^https://", "https://file."));
                 }
                 break;
-            } else if (LoginCode.AWAIT_CONFIRMATION.getCode().equals(loginResponse.getCode())) {
+            } else if (LoginCode.AWAIT_CONFIRMATION.getCode().equals(loginResult.getCode())) {
                 logger.info("[*] login status = AWAIT_CONFIRMATION");
-            } else if (LoginCode.AWAIT_SCANNING.getCode().equals(loginResponse.getCode())) {
+            } else if (LoginCode.AWAIT_SCANNING.getCode().equals(loginResult.getCode())) {
                 logger.info("[*] login status = AWAIT_SCANNING");
-            } else if (LoginCode.EXPIRED.getCode().equals(loginResponse.getCode())) {
+            } else if (LoginCode.EXPIRED.getCode().equals(loginResult.getCode())) {
                 logger.info("[*] login status = EXPIRED");
                 throw new WechatQRExpiredException();
             } else {
-                logger.info("[*] login status = " + loginResponse.getCode());
+                logger.info("[*] login status = " + loginResult.getCode());
             }
         }
 
         logger.info("[4] login completed");
         //5 redirect login
-        Token token = wechatHttpServiceInternal.openNewloginpage(loginResponse.getRedirectUrl());
+        Token token = wechatHttpService.openNewloginpage(loginResult.getRedirectUrl());
         if (token.getRet() == 0) {
-            cacheService.setPassTicket(token.getPass_ticket());
-            cacheService.setsKey(token.getSkey());
-            cacheService.setSid(token.getWxsid());
-            cacheService.setUin(token.getWxuin());
             userCache.setUuid(uuid);
             userCache.setUin(token.getWxuin());
             userCache.setSid(token.getWxsid());
@@ -133,28 +125,29 @@ public class LoginThread implements Runnable {
             userCache.setPassTicket(token.getPass_ticket());
 
             BaseRequest baseRequest = new BaseRequest();
-            baseRequest.setUin(cacheService.getUin());
-            baseRequest.setSid(cacheService.getSid());
-            baseRequest.setSkey(cacheService.getsKey());
-            cacheService.setBaseRequest(baseRequest);
+            baseRequest.setUin(token.getWxuin());
+            baseRequest.setSid(token.getWxsid());
+            baseRequest.setSkey(token.getSkey());
+            userCache.setToken(token);
+            userCache.setBaseRequest(baseRequest);
         } else {
             throw new WechatException("token ret = " + token.getRet());
         }
         logger.info("[5] redirect login completed , wxUin:{}", token.getWxuin());
         //6 redirect
-        wechatHttpServiceInternal.redirect(cacheService.getHostUrl());
+        wechatHttpService.redirect(loginResult.getHostUrl());
         logger.info("[6] redirect completed");
         //7 init
-        InitResponse initResponse = wechatHttpServiceInternal.init(cacheService.getHostUrl(), cacheService.getBaseRequest());
+        InitResponse initResponse = wechatHttpService.init(loginResult.getHostUrl(), userCache.getBaseRequest());
         WechatUtils.checkBaseResponse(initResponse);
-        cacheService.setSyncKey(initResponse.getSyncKey());
-        cacheService.setOwner(initResponse.getUser());
+        userCache.setSyncKey(initResponse.getSyncKey());
+        userCache.setOwner(initResponse.getUser());
         logger.info("[7] init completed");
         //8 status notify
         StatusNotifyResponse statusNotifyResponse =
-                wechatHttpServiceInternal.statusNotify(cacheService.getHostUrl(),
-                        cacheService.getBaseRequest(),
-                        cacheService.getOwner().getUserName(), StatusNotifyCode.INITED.getCode());
+                wechatHttpService.statusNotify(loginResult.getHostUrl(),
+                        userCache.getBaseRequest(),
+                        initResponse.getUser().getUserName(), StatusNotifyCode.INITED.getCode());
         WechatUtils.checkBaseResponse(statusNotifyResponse);
         //9 get contact
         long seq = 0;
@@ -162,7 +155,7 @@ public class LoginThread implements Runnable {
         List<ChatRoomDescription> chatRooms = new ArrayList<>();
         //群组(这里包含已经保存的技能组和最近聊天的技能组)
         do {
-            ContactResponse contactResponse = wechatHttpServiceInternal.getContact(cacheService.getHostUrl(), cacheService.getBaseRequest().getSkey(), seq);
+            ContactResponse contactResponse = wechatHttpService.getContact(loginResult.getHostUrl(), userCache.getBaseRequest().getSkey(), seq);
             WechatUtils.checkBaseResponse(contactResponse);
             for (Contact contact : contactResponse.getMemberList()) {
 
@@ -205,8 +198,8 @@ public class LoginThread implements Runnable {
         userCache.setAlive(true);
         cacheService.cacheUser(userCache);
 
-        MessageHandler messageHandler = new MessageHandlerImpl(wechatHttpService, cacheService, userCache.getUin());
-        syncServie.setMessageHandler(messageHandler);
+        MessageHandler messageHandler = new MessageHandlerImpl(wechatMessageService, userCache);
+        SyncServie syncServie = new SyncServie(userCache, wechatHttpService, messageHandler);
         while (true) {
             if (syncServie.listen() != RetCode.NORMAL.getCode()) {
                 logger.warn("logout user:{}", userCache.getUin());
