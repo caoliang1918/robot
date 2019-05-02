@@ -59,7 +59,7 @@ public class MessageController {
     public String send(@RequestBody HttpMessage httpMessage) {
         try {
             weiBoService.sendWeiBoMessage(httpMessage);
-        } catch (UnsupportedEncodingException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         BaseUserCache userCache = cacheService.getUserCache(uid);

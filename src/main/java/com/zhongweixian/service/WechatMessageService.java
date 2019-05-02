@@ -5,9 +5,7 @@ import com.zhongweixian.domain.BaseUserCache;
 import com.zhongweixian.domain.response.*;
 import com.zhongweixian.domain.shared.ChatRoomDescription;
 import com.zhongweixian.domain.shared.Contact;
-import com.zhongweixian.enums.StatusNotifyCode;
 import com.zhongweixian.utils.WechatUtils;
-import com.zhongweixian.exception.WechatException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +20,7 @@ public class WechatMessageService {
     private Logger logger = LoggerFactory.getLogger(WechatMessageService.class);
 
     @Autowired
-    private WechatHttpService wechatHttpServiceInternal;
+    private WechatHttpService wechatHttpService;
 
     /**
      * Log out
@@ -30,7 +28,7 @@ public class WechatMessageService {
      * @throws IOException if logout fails
      */
     public void logout(BaseUserCache userCache) throws IOException {
-        wechatHttpServiceInternal.logout(userCache);
+        wechatHttpService.logout(userCache);
     }
 
     /**
@@ -43,7 +41,7 @@ public class WechatMessageService {
         Set<Contact> contacts = new HashSet<>();
         long seq = 0;
         do {
-            ContactResponse response = wechatHttpServiceInternal.getContact(userCache.getWxHost(),userCache.getsKey(), seq);
+            ContactResponse response = wechatHttpService.getContact(userCache.getWxHost(),userCache.getsKey(), seq);
             WechatUtils.checkBaseResponse(response);
             seq = response.getSeq();
             contacts.addAll(response.getMemberList());
@@ -63,14 +61,14 @@ public class WechatMessageService {
      */
     public SendMsgResponse sendText(BaseUserCache userCache, String toUserName, String content) throws IOException {
         //notifyNecessary(userName);
-        SendMsgResponse response = wechatHttpServiceInternal.sendText(userCache, content, toUserName);
+        SendMsgResponse response = wechatHttpService.sendText(userCache, content, toUserName);
         logger.info("sendMsgResponse:{}", response.toString());
         WechatUtils.checkBaseResponse(response);
         return response;
     }
 
     public void revoke(BaseUserCache userCache, String wxMessageId, String toUserName) throws IOException {
-        wechatHttpServiceInternal.revoke(userCache, toUserName, wxMessageId);
+        wechatHttpService.revoke(userCache, toUserName, wxMessageId);
     }
 
     /**
@@ -81,7 +79,7 @@ public class WechatMessageService {
      * @throws IOException if setAlias fails
      */
     public void setAlias(BaseUserCache userCache, String userName, String newAlias) throws IOException {
-        OpLogResponse response = wechatHttpServiceInternal.setAlias(userCache, newAlias, userName);
+        OpLogResponse response = wechatHttpService.setAlias(userCache, newAlias, userName);
         WechatUtils.checkBaseResponse(response);
     }
 
@@ -99,7 +97,7 @@ public class WechatMessageService {
                     description.setUserName(x);
                     return description;
                 }).toArray(ChatRoomDescription[]::new);
-        BatchGetContactResponse response = wechatHttpServiceInternal.batchGetContact(userCache, descriptions);
+        BatchGetContactResponse response = wechatHttpService.batchGetContact(userCache, descriptions);
         WechatUtils.checkBaseResponse(response);
         return response.getContactList();
     }
@@ -113,13 +111,13 @@ public class WechatMessageService {
      * @throws IOException
      */
     public void createChatRoom(BaseUserCache userCache, String[] userNames, String topic) throws IOException {
-        CreateChatRoomResponse response = wechatHttpServiceInternal.createChatRoom(userCache, userNames, topic);
+        CreateChatRoomResponse response = wechatHttpService.createChatRoom(userCache, userNames, topic);
         WechatUtils.checkBaseResponse(response);
         //invoke BatchGetContact after CreateChatRoom
         ChatRoomDescription description = new ChatRoomDescription();
         description.setUserName(response.getChatRoomName());
         ChatRoomDescription[] descriptions = new ChatRoomDescription[]{description};
-        BatchGetContactResponse batchGetContactResponse = wechatHttpServiceInternal.batchGetContact(userCache, descriptions);
+        BatchGetContactResponse batchGetContactResponse = wechatHttpService.batchGetContact(userCache, descriptions);
         WechatUtils.checkBaseResponse(batchGetContactResponse);
         //userCache.getChatRooms().addAll(batchGetContactResponse.getContactList());
     }
@@ -132,7 +130,7 @@ public class WechatMessageService {
      * @throws IOException if remove chatroom member fails
      */
     public void deleteChatRoomMember(BaseUserCache userCache, String chatRoomUserName, String userName) throws IOException {
-        DeleteChatRoomMemberResponse response = wechatHttpServiceInternal.deleteChatRoomMember(userCache, chatRoomUserName, userName);
+        DeleteChatRoomMemberResponse response = wechatHttpService.deleteChatRoomMember(userCache, chatRoomUserName, userName);
         WechatUtils.checkBaseResponse(response);
     }
 
@@ -145,7 +143,7 @@ public class WechatMessageService {
      * @throws IOException
      */
     public void addChatRoomMember(BaseUserCache userCache, String chatRoomUserName, String userName) throws IOException {
-        AddChatRoomMemberResponse response = wechatHttpServiceInternal.addChatRoomMember(userCache, chatRoomUserName, userName);
+        AddChatRoomMemberResponse response = wechatHttpService.addChatRoomMember(userCache, chatRoomUserName, userName);
         WechatUtils.checkBaseResponse(response);
         userCache.getChatRoomMembers().get(chatRoomUserName).getMemberList().addAll(response.getMemberList());
     }
@@ -157,7 +155,7 @@ public class WechatMessageService {
      * @return image data
      */
     public byte[] downloadImage(BaseUserCache userCache, String url) {
-        return wechatHttpServiceInternal.downloadImage(userCache, url);
+        return wechatHttpService.downloadImage(userCache, url);
     }
 
 

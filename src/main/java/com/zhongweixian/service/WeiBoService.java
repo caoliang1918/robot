@@ -133,7 +133,7 @@ public class WeiBoService {
     }
 
 
-    public void sendWeiBoMessage(HttpMessage httpMessage) throws UnsupportedEncodingException {
+    public void sendWeiBoMessage(HttpMessage httpMessage){
         WeiBoRequest request = new WeiBoRequest(httpMessage.getContent());
         if ("delete".equals(httpMessage.getOption()) || "update".equals(httpMessage.getOption())) {
             deleteWeiBo(messageMap.get(httpMessage.getId()));
@@ -145,7 +145,12 @@ public class WeiBoService {
         checkMessage(httpMessage);
 
         HttpHeaders headers = httpHeaders;
-        String formData = "location=v6_content_home&text=" + URLEncoder.encode(httpMessage.getContent(), "UTF-8") + "&appkey=&style_type=1&pic_id=&tid=&pdetail=&mid=&isReEdit=false&rank=0&rankid=&module=stissue&pub_source=main_&pub_type=dialog&isPri=0&_t=0";
+        String formData = null;
+        try {
+            formData = "location=v6_content_home&text=" + URLEncoder.encode(httpMessage.getContent(), "UTF-8") + "&appkey=&style_type=1&pic_id=&tid=&pdetail=&mid=&isReEdit=false&rank=0&rankid=&module=stissue&pub_source=main_&pub_type=dialog&isPri=0&_t=0";
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
         ResponseEntity<String> responseEntity = new RestTemplate().exchange(SEND_URL + System.currentTimeMillis(), HttpMethod.POST,
                 new HttpEntity<>(formData, headers), String.class);
 

@@ -66,15 +66,15 @@ public class WechatHttpService {
     private String WECHAT_URL_SYNC_CHECK = "https://webpush.%s/cgi-bin/mmwebwx-bin/synccheck";
     private String WECHAT_URL_SYNC = WECHAT_OPTION_URL+"/webwxsync?sid=%s&skey=%s";
     private String WECHAT_URL_GET_CONTACT = WECHAT_OPTION_URL + "/webwxgetcontact?r=%s&seq=%s&skey=%s";
-    private String WECHAT_URL_SEND_MSG = WECHAT_OPTION_URL + "webwxsendmsg";
-    private String WECHAT_URL_REVOKE_MSG = WECHAT_OPTION_URL + "webwxrevokemsg";
-    private String WECHAT_URL_LOGOUT = WECHAT_OPTION_URL + "webwxlogout?redirect=1&type=1&skey=%s";
-    private String WECHAT_URL_BATCH_GET_CONTACT = WECHAT_OPTION_URL + "webwxbatchgetcontact?type=ex&r=%s";
-    private String WECHAT_URL_OP_LOG = WECHAT_OPTION_URL + "webwxoplog";
-    private String WECHAT_URL_VERIFY_USER = WECHAT_OPTION_URL + "webwxverifyuser";
-    private String WECHAT_URL_CREATE_CHATROOM = WECHAT_OPTION_URL + "webwxcreatechatroom?r=%s";
-    private String WECHAT_URL_DELETE_CHATROOM_MEMBER = WECHAT_OPTION_URL + "webwxupdatechatroom?fun=delmember";
-    private String WECHAT_URL_ADD_CHATROOM_MEMBER = WECHAT_OPTION_URL + "webwxupdatechatroom?fun=addmember";
+    private String WECHAT_URL_SEND_MSG = WECHAT_OPTION_URL + "/webwxsendmsg";
+    private String WECHAT_URL_REVOKE_MSG = WECHAT_OPTION_URL + "/webwxrevokemsg";
+    private String WECHAT_URL_LOGOUT = WECHAT_OPTION_URL + "/webwxlogout?redirect=1&type=1&skey=%s";
+    private String WECHAT_URL_BATCH_GET_CONTACT = WECHAT_OPTION_URL + "/webwxbatchgetcontact?type=ex&r=%s";
+    private String WECHAT_URL_OP_LOG = WECHAT_OPTION_URL + "/webwxoplog";
+    private String WECHAT_URL_VERIFY_USER = WECHAT_OPTION_URL + "/webwxverifyuser";
+    private String WECHAT_URL_CREATE_CHATROOM = WECHAT_OPTION_URL + "/webwxcreatechatroom?r=%s";
+    private String WECHAT_URL_DELETE_CHATROOM_MEMBER = WECHAT_OPTION_URL + "/webwxupdatechatroom?fun=delmember";
+    private String WECHAT_URL_ADD_CHATROOM_MEMBER = WECHAT_OPTION_URL + "/webwxupdatechatroom?fun=addmember";
 
 
     private final RestTemplate restTemplate;
