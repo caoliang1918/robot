@@ -1,5 +1,6 @@
 package com.zhongweixian.controller;
 
+import com.zhongweixian.domain.BaseUserCache;
 import com.zhongweixian.domain.HttpMessage;
 import com.zhongweixian.domain.request.RevokeRequst;
 import com.zhongweixian.service.WeiBoService;
@@ -61,8 +62,8 @@ public class MessageController {
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
-
-        if (cacheService.getUserCache(uid) == null || !cacheService.getUserCache(uid).getAlive()) {
+        BaseUserCache userCache = cacheService.getUserCache(uid);
+        if (userCache == null || !userCache.getAlive()) {
             toUsers.clear();
             optionUser.clear();
             cacheService.deleteCacheUser(uid);
@@ -86,7 +87,7 @@ public class MessageController {
                 revokeRequsts = messageMap.get(httpMessage.getId());
                 if (!CollectionUtils.isEmpty(revokeRequsts)) {
                     for (RevokeRequst revokeRequst : revokeRequsts) {
-                        wechatHttpService.revoke(revokeRequst.getClientMsgId(), revokeRequst.getToUserName());
+                        wechatHttpService.revoke(userCache, revokeRequst.getClientMsgId(), revokeRequst.getToUserName());
                     }
                     messageMap.remove(httpMessage.getId());
                 }
@@ -95,9 +96,9 @@ public class MessageController {
                 }
             }
             revokeRequsts = new ArrayList<>();
-            checkMessage(httpMessage.getContent());
+            checkMessage(userCache, httpMessage.getContent());
             for (String user : toUsers) {
-                response = wechatHttpService.sendText(user, httpMessage.getContent());
+                response = wechatHttpService.sendText(userCache, user, httpMessage.getContent());
                 if (response == null || response.getMsgID() == null) {
                     if (!cacheService.getUserCache(uid).getAlive()) {
                         toUsers.clear();
@@ -126,6 +127,10 @@ public class MessageController {
     @PostMapping("sendOption")
     public String sendOption(@RequestBody HttpMessage httpMessage) {
         System.out.println("\n");
+        BaseUserCache userCache = cacheService.getUserCache(uid);
+        if (userCache == null || !userCache.getAlive()) {
+            return "user  not login";
+        }
         try {
             if (CollectionUtils.isEmpty(optionUser)) {
                 cacheService.getUserCache(uid).getChatRooms().values().forEach(room -> {
@@ -140,7 +145,7 @@ public class MessageController {
             httpMessage.setSendTime(new Date());
 
             for (String user : optionUser) {
-                response = wechatHttpService.sendText(user, httpMessage.getContent());
+                response = wechatHttpService.sendText(userCache, user, httpMessage.getContent());
                 logger.info("send message : {} ,  {} , {} , {}", response.getMsgID(), httpMessage.getId(), httpMessage.getOption(), httpMessage.getContent());
             }
         } catch (IOException e) {
@@ -157,8 +162,13 @@ public class MessageController {
      */
     @PostMapping("positionChange")
     public String positionChange(@RequestBody HttpMessage httpMessage) {
+        BaseUserCache userCache = cacheService.getUserCache(uid);
+        if (userCache == null || !userCache.getAlive()) {
+            return "user  not login";
+        }
+
         if (CollectionUtils.isEmpty(positions)) {
-            cacheService.getUserCache(uid).getChatContants().values().forEach(contact -> {
+            userCache.getChatContants().values().forEach(contact -> {
                 for (String s : position) {
                     if (contact.getNickName().equals(s)) {
                         positions.add(contact.getUserName());
@@ -172,7 +182,7 @@ public class MessageController {
             httpMessage.setSendTime(new Date());
 
             for (String user : positions) {
-                response = wechatHttpService.sendText(user, httpMessage.getContent());
+                response = wechatHttpService.sendText(userCache, user, httpMessage.getContent());
                 logger.info("send message : {} ,  {} , {} , {}", response.getMsgID(), httpMessage.getId(), httpMessage.getOption(), httpMessage.getContent());
             }
         } catch (IOException e) {
@@ -182,7 +192,7 @@ public class MessageController {
     }
 
 
-    private void checkMessage(String content) throws IOException {
+    private void checkMessage(BaseUserCache userCache, String content) throws IOException {
         /**
          * 判断相似度
          */
@@ -210,7 +220,7 @@ public class MessageController {
             if (levenshtein.getSimilarityRatio(revokeRequst.getContent(), content) > 0.6F) {
                 check = true;
                 for (RevokeRequst revoke : revokeRequsts) {
-                    wechatHttpService.revoke(revoke.getClientMsgId(), revoke.getToUserName());
+                    wechatHttpService.revoke(userCache, revoke.getClientMsgId(), revoke.getToUserName());
                 }
             }
             if (check) {

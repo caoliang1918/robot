@@ -5,7 +5,9 @@ import com.zhongweixian.domain.shared.*;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by caoliang on 2019/1/24
@@ -27,10 +29,16 @@ public class BaseUserCache implements Serializable {
     private String sid;
     private Token token;
 
+    private String wxHost;
+    private String origin;
+    private String referer;
+
+
     /**
      * 聊天群组
      */
     private Map<String, ChatRoomDescription> chatRooms = new HashMap<>();
+    private Map<String , Contact> chatRoomMembers = new HashMap<>();
     /**
      * 联系人
      */
@@ -117,6 +125,38 @@ public class BaseUserCache implements Serializable {
         this.sid = sid;
     }
 
+    public Token getToken() {
+        return token;
+    }
+
+    public void setToken(Token token) {
+        this.token = token;
+    }
+
+    public String getWxHost() {
+        return wxHost;
+    }
+
+    public void setWxHost(String wxHost) {
+        this.wxHost = wxHost;
+    }
+
+    public String getOrigin() {
+        return origin;
+    }
+
+    public void setOrigin(String origin) {
+        this.origin = origin;
+    }
+
+    public String getReferer() {
+        return referer;
+    }
+
+    public void setReferer(String referer) {
+        this.referer = referer;
+    }
+
     public Map<String, ChatRoomDescription> getChatRooms() {
         return chatRooms;
     }
@@ -125,19 +165,19 @@ public class BaseUserCache implements Serializable {
         this.chatRooms = chatRooms;
     }
 
+    public Map<String, Contact> getChatRoomMembers() {
+        return chatRoomMembers;
+    }
+
+    public void setChatRoomMembers(Map<String, Contact> chatRoomMembers) {
+        this.chatRoomMembers = chatRoomMembers;
+    }
+
     public Map<String, Contact> getChatContants() {
         return chatContants;
     }
 
     public void setChatContants(Map<String, Contact> chatContants) {
         this.chatContants = chatContants;
-    }
-
-    public Token getToken() {
-        return token;
-    }
-
-    public void setToken(Token token) {
-        this.token = token;
     }
 }

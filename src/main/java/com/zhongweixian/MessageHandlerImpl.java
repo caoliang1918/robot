@@ -37,7 +37,7 @@ public class MessageHandlerImpl implements MessageHandler {
     public void onReceivingChatRoomTextMessage(Message message) {
         ChatRoomDescription chatRoom = baseUserCache.getChatRooms().get(message.getFromUserName());
         if (chatRoom != null) {
-            logger.info("roomId:{} , roomName:{}",message.getFromUserName(), chatRoom.getUserName());
+            logger.info("roomName:{}",chatRoom.getUserName());
         }
         logger.info("from person: {} ", MessageUtils.getSenderOfChatRoomTextMessage(message.getContent()));
         logger.info("content:{}", MessageUtils.getChatRoomTextMessageContent(message.getContent()));
@@ -59,12 +59,12 @@ public class MessageHandlerImpl implements MessageHandler {
     }
 
     @Override
-    public void onReceivingPrivateImageMessage(Message message, String thumbImageUrl, String fullImageUrl) throws IOException {
+    public void onReceivingPrivateImageMessage(BaseUserCache userCache , Message message, String thumbImageUrl, String fullImageUrl) throws IOException {
         logger.info("onReceivingPrivateImageMessage");
         logger.info("thumbImageUrl:{}", thumbImageUrl);
         logger.info("fullImageUrl:{}", fullImageUrl);
 //        将图片保存在本地
-        byte[] data = wechatHttpService.downloadImage(thumbImageUrl);
+        byte[] data = wechatHttpService.downloadImage(userCache,thumbImageUrl);
         FileOutputStream fos = new FileOutputStream(System.currentTimeMillis() + ".jpg");
         fos.write(data);
         fos.close();
@@ -79,13 +79,13 @@ public class MessageHandlerImpl implements MessageHandler {
     }
 
     @Override
-    public void postAcceptFriendInvitation(Message message) throws IOException {
+    public void postAcceptFriendInvitation(BaseUserCache userCache , Message message) throws IOException {
         logger.info("postAcceptFriendInvitation");
 //        将该用户的微信号设置成他的昵称
         String content = StringEscapeUtils.unescapeXml(message.getContent());
         ObjectMapper xmlMapper = new XmlMapper();
         FriendInvitationContent friendInvitationContent = xmlMapper.readValue(content, FriendInvitationContent.class);
-        wechatHttpService.setAlias(message.getRecommendInfo().getUserName(), friendInvitationContent.getFromusername());
+        wechatHttpService.setAlias(userCache,message.getRecommendInfo().getUserName(), friendInvitationContent.getFromusername());
     }
 
     @Override
@@ -148,7 +148,7 @@ public class MessageHandlerImpl implements MessageHandler {
         }
     }
 
-    private void replyMessage(Message message) throws IOException {
-        wechatHttpService.sendText(message.getFromUserName(), message.getContent());
+    private void replyMessage(BaseUserCache userCache , Message message) throws IOException {
+        wechatHttpService.sendText(userCache ,message.getFromUserName(), message.getContent());
     }
 }

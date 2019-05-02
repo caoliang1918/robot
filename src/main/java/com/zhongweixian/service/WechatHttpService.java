@@ -47,11 +47,14 @@ import java.util.regex.Pattern;
 public class WechatHttpService {
     private Logger logger = LoggerFactory.getLogger(WechatHttpService.class);
 
-    public static final String WECHAT_BASE_HOST = "https://wx.qq.com/";
+    public static final String WECHAT_HOST = "https://wx.qq.com/";
 
     public static final String WECHAT_LOGIN_HOST = "https://login.weixin.qq.com/";
+    public static final String WECHAT_FILE_HOST = "https://file.web.wechat.com";
+    public static final String WECHAT_PUSH_HOST = "https://webpush.web.wechat.com";
 
-    private static final String WECHAT_OPTION_URL = WECHAT_BASE_HOST + "/cgi-bin/mmwebwx-bin";
+
+    private static final String WECHAT_OPTION_URL = "%s" + "/cgi-bin/mmwebwx-bin";
 
 
     private String WECHAT_URL_UUID = WECHAT_LOGIN_HOST + "jslogin?appid=wx782c26e4c19acffb&fun=new&lang=zh_CN&_=%s";
@@ -60,8 +63,8 @@ public class WechatHttpService {
     private String WECHAT_URL_STATUS_NOTIFY = WECHAT_OPTION_URL + "/webwxstatusnotify";
     private String WECHAT_URL_STATREPORT = WECHAT_OPTION_URL + "/webwxstatreport?fun=new";
     private String WECHAT_URL_INIT = WECHAT_OPTION_URL + "/webwxinit?r=%s";
-    private String WECHAT_URL_SYNC_CHECK = "https://webpush.wx.qq.com/cgi-bin/mmwebwx-bin/synccheck";
-    private String WECHAT_URL_SYNC = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsync?sid=%s&skey=%s";
+    private String WECHAT_URL_SYNC_CHECK = "https://webpush.%s/cgi-bin/mmwebwx-bin/synccheck";
+    private String WECHAT_URL_SYNC = WECHAT_OPTION_URL+"/webwxsync?sid=%s&skey=%s";
     private String WECHAT_URL_GET_CONTACT = WECHAT_OPTION_URL + "/webwxgetcontact?r=%s&seq=%s&skey=%s";
     private String WECHAT_URL_SEND_MSG = WECHAT_OPTION_URL + "webwxsendmsg";
     private String WECHAT_URL_REVOKE_MSG = WECHAT_OPTION_URL + "webwxrevokemsg";
@@ -78,8 +81,6 @@ public class WechatHttpService {
     private final HttpHeaders postHeader;
     private final HttpHeaders getHeader;
     private final ObjectMapper jsonMapper = new ObjectMapper();
-    private String originValue = null;
-    private String refererValue = null;
     private String BROWSER_DEFAULT_ACCEPT_LANGUAGE = "en,zh-CN;q=0.8,zh;q=0.6,ja;q=0.4,zh-TW;q=0.2";
     private String BROWSER_DEFAULT_ACCEPT_ENCODING = "gzip, deflate, br";
 
@@ -98,8 +99,8 @@ public class WechatHttpService {
         getHeader.set(HttpHeaders.ACCEPT_ENCODING, BROWSER_DEFAULT_ACCEPT_ENCODING);
     }
 
-    void logout(String hostUrl, String skey) throws IOException {
-        final String url = String.format(WECHAT_URL_LOGOUT, hostUrl, escape(skey));
+    void logout(BaseUserCache userCache) throws IOException {
+        final String url = String.format(WECHAT_URL_LOGOUT, userCache.getWxHost(), escape(userCache.getsKey()));
         restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(postHeader), Object.class);
     }
 
@@ -107,7 +108,7 @@ public class WechatHttpService {
      * 先打开微信首页，需要缓存cookie
      */
     void start() {
-        final String url = WECHAT_BASE_HOST;
+        final String url = WECHAT_HOST;
         HttpHeaders customHeader = new HttpHeaders();
         customHeader.setPragma("no-cache");
         customHeader.setCacheControl("no-cache");
@@ -117,15 +118,12 @@ public class WechatHttpService {
         restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(customHeader), String.class);
         CookieStore store = (CookieStore) ((StatefullRestTemplate) restTemplate).getHttpContext().getAttribute(HttpClientContext.COOKIE_STORE);
         Date maxDate = new Date(Long.MAX_VALUE);
-        String domain = WECHAT_BASE_HOST.replaceAll("https://", "").replaceAll("/", "");
+        String domain = WECHAT_HOST.replaceAll("https://", "").replaceAll("/", "");
         Map<String, String> cookies = new HashMap<>(3);
         cookies.put("MM_WX_NOTIFY_STATE", "1");
         cookies.put("MM_WX_SOUND_STATE", "1");
         cookies.put("refreshTimes", "2");
         appendAdditionalCookies(store, cookies, domain, "/", maxDate);
-        this.originValue = WECHAT_BASE_HOST;
-        this.refererValue = WECHAT_BASE_HOST.replaceAll("/$", "");
-        logger.info("open() ,originValue:{} , refererValue:{} , domain:{} ", originValue, refererValue, domain);
     }
 
     /**
@@ -164,7 +162,7 @@ public class WechatHttpService {
         final String url = WECHAT_URL_QRCODE + "/" + uuid;
         HttpHeaders customHeader = new HttpHeaders();
         customHeader.set(HttpHeaders.ACCEPT, "image/webp,image/apng,image/*,*/*;q=0.8");
-        customHeader.set(HttpHeaders.REFERER, WECHAT_BASE_HOST);
+        customHeader.set(HttpHeaders.REFERER, WECHAT_HOST);
         HeaderUtils.assign(customHeader, getHeader);
         ResponseEntity<byte[]> responseEntity
                 = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(customHeader), new ParameterizedTypeReference<byte[]>() {
@@ -187,7 +185,7 @@ public class WechatHttpService {
         final String url = String.format(WECHAT_URL_LOGIN, uuid, RandomUtils.generateDateWithBitwiseNot(time), time);
         HttpHeaders customHeader = new HttpHeaders();
         customHeader.setAccept(Arrays.asList(MediaType.ALL));
-        customHeader.set(HttpHeaders.REFERER, WECHAT_BASE_HOST);
+        customHeader.set(HttpHeaders.REFERER, WECHAT_HOST);
         HeaderUtils.assign(customHeader, getHeader);
         ResponseEntity<String> responseEntity
                 = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(customHeader), String.class);
@@ -220,7 +218,7 @@ public class WechatHttpService {
     Token openNewloginpage(String redirectUrl) throws IOException {
         HttpHeaders customHeader = new HttpHeaders();
         customHeader.set(HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
-        customHeader.set(HttpHeaders.REFERER, WECHAT_BASE_HOST);
+        customHeader.set(HttpHeaders.REFERER, WECHAT_HOST);
         customHeader.set("Upgrade-Insecure-Requests", "1");
         HeaderUtils.assign(customHeader, getHeader);
         ResponseEntity<String> responseEntity
@@ -239,13 +237,12 @@ public class WechatHttpService {
         final String url = hostUrl + "/";
         HttpHeaders customHeader = new HttpHeaders();
         customHeader.set(HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
-        customHeader.set(HttpHeaders.REFERER, WECHAT_BASE_HOST);
+        customHeader.set(HttpHeaders.REFERER, WECHAT_HOST);
         customHeader.set("Upgrade-Insecure-Requests", "1");
         HeaderUtils.assign(customHeader, getHeader);
         restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(customHeader), String.class);
         //It's now at main page.
-        this.originValue = hostUrl;
-        this.refererValue = hostUrl + "/";
+
     }
 
     /**
@@ -308,8 +305,8 @@ public class WechatHttpService {
     /**
      * report stats to server
      */
-    void statReport() {
-        final String url = WECHAT_URL_STATREPORT;
+    void statReport(BaseUserCache userCache) {
+        final String url = String.format(WECHAT_URL_STATREPORT , userCache.getWxHost());
         StatReportRequest request = new StatReportRequest();
         BaseRequest baseRequest = new BaseRequest();
         baseRequest.setUin("");
@@ -318,8 +315,8 @@ public class WechatHttpService {
         request.setCount(0);
         request.setList(new StatReport[0]);
         HttpHeaders customHeader = new HttpHeaders();
-        customHeader.set(HttpHeaders.REFERER, WECHAT_BASE_HOST);
-        customHeader.setOrigin(WECHAT_BASE_HOST.replaceAll("/$", ""));
+        customHeader.set(HttpHeaders.REFERER, userCache.getReferer());
+        customHeader.setOrigin(userCache.getOrigin());
         HeaderUtils.assign(customHeader, postHeader);
         restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(request, customHeader), String.class);
     }
@@ -335,7 +332,7 @@ public class WechatHttpService {
      */
     ContactResponse getContact(String hostUrl, String skey, long seq) throws IOException {
         long rnd = System.currentTimeMillis();
-        final String url = String.format(WECHAT_URL_GET_CONTACT, rnd, seq, escape(skey));
+        final String url = String.format(WECHAT_URL_GET_CONTACT,hostUrl, rnd, seq, escape(skey));
         HttpHeaders customHeader = new HttpHeaders();
         customHeader.setAccept(Arrays.asList(MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN, MediaType.ALL));
         customHeader.set(HttpHeaders.REFERER, hostUrl + "/");
@@ -345,22 +342,20 @@ public class WechatHttpService {
     }
 
     /**
-     * Get all the members in the given chatrooms
      *
-     * @param hostUrl     hostUrl
-     * @param baseRequest baseRequest
-     * @param list        chatroom information
-     * @return chatroom members information
-     * @throws IOException if the http response body can't be convert to {@link BatchGetContactResponse}
+     * @param userCache
+     * @param list
+     * @return
+     * @throws IOException
      */
-    BatchGetContactResponse batchGetContact(String hostUrl, BaseRequest baseRequest, ChatRoomDescription[] list) throws IOException {
+    BatchGetContactResponse batchGetContact(BaseUserCache userCache,  ChatRoomDescription[] list) throws IOException {
         long rnd = System.currentTimeMillis();
-        String url = String.format(WECHAT_URL_BATCH_GET_CONTACT, hostUrl, rnd);
+        String url = String.format(WECHAT_URL_BATCH_GET_CONTACT, userCache.getWxHost(), rnd);
         BatchGetContactRequest request = new BatchGetContactRequest();
-        request.setBaseRequest(baseRequest);
+        request.setBaseRequest(userCache.getBaseRequest());
         request.setCount(list.length);
         request.setList(list);
-        HttpHeaders customHeader = createPostCustomHeader();
+        HttpHeaders customHeader = createPostCustomHeader(userCache);
         HeaderUtils.assign(customHeader, postHeader);
         ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(request, customHeader), String.class);
         return jsonMapper.readValue(WechatUtils.textDecode(responseEntity.getBody()), BatchGetContactResponse.class);
@@ -375,7 +370,8 @@ public class WechatHttpService {
      * @throws URISyntaxException
      */
     SyncCheckResponse syncCheck(BaseUserCache baseUserCache) throws IOException, URISyntaxException {
-        URIBuilder builder = new URIBuilder(WECHAT_URL_SYNC_CHECK);
+        String url = baseUserCache.getWxHost().replaceAll("https://" , "");
+        URIBuilder builder = new URIBuilder(String.format(WECHAT_URL_SYNC_CHECK , url));
         builder.addParameter("uin", baseUserCache.getUin());
         builder.addParameter("sid", baseUserCache.getSid());
         builder.addParameter("skey", baseUserCache.getsKey());
@@ -386,7 +382,7 @@ public class WechatHttpService {
         final URI uri = builder.build().toURL().toURI();
         HttpHeaders customHeader = new HttpHeaders();
         customHeader.setAccept(Arrays.asList(MediaType.ALL));
-        customHeader.set(HttpHeaders.REFERER, WECHAT_BASE_HOST + "/");
+        customHeader.set(HttpHeaders.REFERER, baseUserCache.getReferer());
         HeaderUtils.assign(customHeader, getHeader);
 
         ResponseEntity<String> responseEntity = null;
@@ -419,12 +415,12 @@ public class WechatHttpService {
      * @throws IOException
      */
     SyncResponse sync(BaseUserCache baseUserCache) throws IOException {
-        final String url = String.format(WECHAT_URL_SYNC, baseUserCache.getSid(), escape(baseUserCache.getsKey()));
+        final String url = String.format(WECHAT_URL_SYNC,baseUserCache.getWxHost(), baseUserCache.getSid(), escape(baseUserCache.getsKey()));
         SyncRequest request = new SyncRequest();
         request.setBaseRequest(baseUserCache.getBaseRequest());
         request.setRr(-System.currentTimeMillis() / 1000);
         request.setSyncKey(baseUserCache.getSyncKey());
-        HttpHeaders customHeader = createPostCustomHeader();
+        HttpHeaders customHeader = createPostCustomHeader(baseUserCache);
         HeaderUtils.assign(customHeader, postHeader);
         ResponseEntity<String> responseEntity
                 = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(request, customHeader), String.class);
@@ -462,62 +458,62 @@ public class WechatHttpService {
         return jsonMapper.readValue(WechatUtils.textDecode(responseEntity.getBody()), VerifyUserResponse.class);
     }
 
-    SendMsgResponse sendText(String hostUrl, BaseRequest baseRequest, String content, String fromUserName, String toUserName) throws IOException {
+    SendMsgResponse sendText(BaseUserCache userCache, String content, String toUserName) throws IOException {
         final int scene = 0;
         final String rnd = String.valueOf(System.currentTimeMillis() * 10);
-        final String url = String.format(WECHAT_URL_SEND_MSG, hostUrl);
+        final String url = String.format(WECHAT_URL_SEND_MSG, userCache.getWxHost());
         SendMsgRequest request = new SendMsgRequest();
-        request.setBaseRequest(baseRequest);
+        request.setBaseRequest(userCache.getBaseRequest());
         request.setScene(scene);
         BaseMsg msg = new BaseMsg();
         msg.setType(MessageType.TEXT.getCode());
         msg.setClientMsgId(rnd);
         msg.setContent(content);
-        msg.setFromUserName(fromUserName);
+        msg.setFromUserName(userCache.getOwner().getUserName());
         msg.setToUserName(toUserName);
         msg.setLocalID(rnd);
         request.setMsg(msg);
-        HttpHeaders customHeader = createPostCustomHeader();
+        HttpHeaders customHeader = createPostCustomHeader(userCache);
         HeaderUtils.assign(customHeader, postHeader);
         ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(request, customHeader), String.class);
         return jsonMapper.readValue(WechatUtils.textDecode(responseEntity.getBody()), SendMsgResponse.class);
     }
 
-    void revoke(String hostUrl, BaseRequest baseRequest, String toUserName, String messageId) throws IOException {
+    void revoke(BaseUserCache userCache, String toUserName, String messageId) throws IOException {
         final String rnd = String.valueOf(System.currentTimeMillis() * 10);
-        final String url = String.format(WECHAT_URL_REVOKE_MSG, hostUrl);
+        final String url = String.format(WECHAT_URL_REVOKE_MSG, userCache.getWxHost());
         RevokeRequst request = new RevokeRequst();
 
         request.setToUserName(toUserName);
         request.setClientMsgId(messageId);
         request.setSvrMsgId(messageId);
-        request.setBaseRequest(baseRequest);
-        HttpHeaders customHeader = createPostCustomHeader();
+        request.setBaseRequest(userCache.getBaseRequest());
+        HttpHeaders customHeader = createPostCustomHeader(userCache);
         HeaderUtils.assign(customHeader, postHeader);
         ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(request, customHeader), String.class);
         logger.info("撤销消息 {} , {}", messageId, responseEntity.getStatusCode());
     }
 
-    OpLogResponse setAlias(String hostUrl, BaseRequest baseRequest, String newAlias, String userName) throws IOException {
+    OpLogResponse setAlias(BaseUserCache userCache, String newAlias, String userName) throws IOException {
         final int cmdId = OpLogCmdId.MODREMARKNAME.getCode();
-        final String url = String.format(WECHAT_URL_OP_LOG, hostUrl);
+        final String url = String.format(WECHAT_URL_OP_LOG, userCache.getWxHost());
         OpLogRequest request = new OpLogRequest();
-        request.setBaseRequest(baseRequest);
+        request.setBaseRequest(userCache.getBaseRequest());
         request.setCmdId(cmdId);
         request.setRemarkName(newAlias);
         request.setUserName(userName);
-        HttpHeaders customHeader = createPostCustomHeader();
+        HttpHeaders customHeader = createPostCustomHeader(userCache);
         HeaderUtils.assign(customHeader, postHeader);
         ResponseEntity<String> responseEntity
                 = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(request, customHeader), String.class);
         return jsonMapper.readValue(WechatUtils.textDecode(responseEntity.getBody()), OpLogResponse.class);
     }
 
-    CreateChatRoomResponse createChatRoom(String hostUrl, BaseRequest baseRequest, String[] userNames, String topic) throws IOException {
+    CreateChatRoomResponse createChatRoom(BaseUserCache userCache, String[] userNames, String topic) throws IOException {
         String rnd = String.valueOf(System.currentTimeMillis());
-        final String url = String.format(WECHAT_URL_CREATE_CHATROOM, hostUrl, rnd);
+        final String url = String.format(WECHAT_URL_CREATE_CHATROOM, userCache.getWxHost(), rnd);
         CreateChatRoomRequest request = new CreateChatRoomRequest();
-        request.setBaseRequest(baseRequest);
+        request.setBaseRequest(userCache.getBaseRequest());
         request.setMemberCount(userNames.length);
         ChatRoomMember[] members = new ChatRoomMember[userNames.length];
         for (int i = 0; i < userNames.length; i++) {
@@ -526,43 +522,43 @@ public class WechatHttpService {
         }
         request.setMemberList(members);
         request.setTopic(topic);
-        HttpHeaders customHeader = createPostCustomHeader();
+        HttpHeaders customHeader = createPostCustomHeader(userCache);
         HeaderUtils.assign(customHeader, postHeader);
         ResponseEntity<String> responseEntity
                 = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(request, customHeader), String.class);
         return jsonMapper.readValue(WechatUtils.textDecode(responseEntity.getBody()), CreateChatRoomResponse.class);
     }
 
-    DeleteChatRoomMemberResponse deleteChatRoomMember(String hostUrl, BaseRequest baseRequest, String chatRoomUserName, String userName) throws IOException {
-        final String url = String.format(WECHAT_URL_DELETE_CHATROOM_MEMBER, hostUrl);
+    DeleteChatRoomMemberResponse deleteChatRoomMember(BaseUserCache userCache, String chatRoomUserName, String userName) throws IOException {
+        final String url = String.format(WECHAT_URL_DELETE_CHATROOM_MEMBER, userCache.getWxHost());
         DeleteChatRoomMemberRequest request = new DeleteChatRoomMemberRequest();
-        request.setBaseRequest(baseRequest);
+        request.setBaseRequest(userCache.getBaseRequest());
         request.setChatRoomName(chatRoomUserName);
         request.setDelMemberList(userName);
-        HttpHeaders customHeader = createPostCustomHeader();
+        HttpHeaders customHeader = createPostCustomHeader(userCache);
         HeaderUtils.assign(customHeader, postHeader);
         ResponseEntity<String> responseEntity
                 = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(request, customHeader), String.class);
         return jsonMapper.readValue(WechatUtils.textDecode(responseEntity.getBody()), DeleteChatRoomMemberResponse.class);
     }
 
-    AddChatRoomMemberResponse addChatRoomMember(String hostUrl, BaseRequest baseRequest, String chatRoomUserName, String userName) throws IOException {
-        final String url = String.format(WECHAT_URL_ADD_CHATROOM_MEMBER, hostUrl);
+    AddChatRoomMemberResponse addChatRoomMember(BaseUserCache userCache, String chatRoomUserName, String userName) throws IOException {
+        final String url = String.format(WECHAT_URL_ADD_CHATROOM_MEMBER, userCache.getWxHost());
         AddChatRoomMemberRequest request = new AddChatRoomMemberRequest();
-        request.setBaseRequest(baseRequest);
+        request.setBaseRequest(userCache.getBaseRequest());
         request.setChatRoomName(chatRoomUserName);
         request.setAddMemberList(userName);
-        HttpHeaders customHeader = createPostCustomHeader();
+        HttpHeaders customHeader = createPostCustomHeader(userCache);
         HeaderUtils.assign(customHeader, postHeader);
         ResponseEntity<String> responseEntity
                 = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(request, customHeader), String.class);
         return jsonMapper.readValue(WechatUtils.textDecode(responseEntity.getBody()), AddChatRoomMemberResponse.class);
     }
 
-    byte[] downloadImage(String url) {
+    byte[] downloadImage(BaseUserCache userCache, String url) {
         HttpHeaders customHeader = new HttpHeaders();
         customHeader.set("Accept", "image/webp,image/apng,image/*,*/*;q=0.8");
-        customHeader.set("Referer", this.refererValue);
+        customHeader.set("Referer", userCache.getReferer());
         HeaderUtils.assign(customHeader, getHeader);
         ResponseEntity<byte[]> responseEntity
                 = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(customHeader), new ParameterizedTypeReference<byte[]>() {
@@ -584,10 +580,10 @@ public class WechatHttpService {
         });
     }
 
-    private HttpHeaders createPostCustomHeader() {
+    private HttpHeaders createPostCustomHeader(BaseUserCache userCache) {
         HttpHeaders customHeader = new HttpHeaders();
-        customHeader.setOrigin(this.originValue);
-        customHeader.set(HttpHeaders.REFERER, this.refererValue);
+        customHeader.setOrigin(userCache.getOrigin());
+        customHeader.set(HttpHeaders.REFERER, userCache.getReferer());
         return customHeader;
     }
 }

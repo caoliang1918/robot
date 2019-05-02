@@ -70,6 +70,7 @@ public class SyncServie {
                 throw new WechatException("syncCheckResponse ret = " + retCode);
             }
         } else {
+            logger.error("syncCheckResponse:{}" , syncCheckResponse);
             return RetCode.LOGOUT2.getCode();
         }
         return RetCode.NORMAL.getCode();
@@ -130,11 +131,11 @@ public class SyncServie {
                 }
                 //图片
             } else if (message.getMsgType() == MessageType.IMAGE.getCode()) {
-                String fullImageUrl = String.format(WECHAT_GET_IMG_URL, WechatHttpService.WECHAT_BASE_HOST, message.getMsgId(), baseUserCache.getsKey());
+                String fullImageUrl = String.format(WECHAT_GET_IMG_URL, baseUserCache.getWxHost(), message.getMsgId(), baseUserCache.getsKey());
                 String thumbImageUrl = fullImageUrl + "&type=slave";
                 //个人
                 if (isMessageFromIndividual(message)) {
-                    messageHandler.onReceivingPrivateImageMessage(message, thumbImageUrl, fullImageUrl);
+                    messageHandler.onReceivingPrivateImageMessage(baseUserCache,message, thumbImageUrl, fullImageUrl);
                 }
                 //群
                 else if (isMessageFromChatRoom(message)) {
@@ -167,7 +168,7 @@ public class SyncServie {
                 if (messageHandler.onReceivingFriendInvitation(message.getRecommendInfo())) {
                     acceptFriendInvitation(message.getRecommendInfo());
                     logger.info("[*] you've accepted the invitation");
-                    messageHandler.postAcceptFriendInvitation(message);
+                    messageHandler.postAcceptFriendInvitation(baseUserCache , message);
                 } else {
                     logger.info("[*] you've declined the invitation");
                     //TODO decline invitation

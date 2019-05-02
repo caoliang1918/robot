@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -76,9 +77,7 @@ public class LoginThread implements Runnable {
         String qr = QRCodeUtils.generateQR(qrUrl, 40, 40);
         logger.info("\r\n" + qr);
         logger.info("[2] qrcode completed");
-        //3 statreport
-        wechatHttpService.statReport();
-        logger.info("[3] statReport completed");
+
         //4 login
         LoginResult loginResult;
 
@@ -94,13 +93,6 @@ public class LoginThread implements Runnable {
                     throw new WechatException("redirectUrl can't be found");
                 }
                 cacheService.setHostUrl(loginResult.getHostUrl());
-                if (loginResult.getHostUrl().equals("https://wechat.com")) {
-                    cacheService.setSyncUrl("https://webpush.web.wechat.com");
-                    cacheService.setFileUrl("https://file.web.wechat.com");
-                } else {
-                    cacheService.setSyncUrl(loginResult.getHostUrl().replaceFirst("^https://", "https://webpush."));
-                    cacheService.setFileUrl(loginResult.getHostUrl().replaceFirst("^https://", "https://file."));
-                }
                 break;
             } else if (LoginCode.AWAIT_CONFIRMATION.getCode().equals(loginResult.getCode())) {
                 logger.info("[*] login status = AWAIT_CONFIRMATION");
@@ -130,12 +122,19 @@ public class LoginThread implements Runnable {
             baseRequest.setSkey(token.getSkey());
             userCache.setToken(token);
             userCache.setBaseRequest(baseRequest);
+            userCache.setWxHost(loginResult.getHostUrl());
+            userCache.setReferer(loginResult.getHostUrl());
+            userCache.setOrigin(loginResult.getHostUrl());
         } else {
             throw new WechatException("token ret = " + token.getRet());
         }
+
+        wechatHttpService.statReport(userCache);
+
         logger.info("[5] redirect login completed , wxUin:{}", token.getWxuin());
         //6 redirect
         wechatHttpService.redirect(loginResult.getHostUrl());
+
         logger.info("[6] redirect completed");
         //7 init
         InitResponse initResponse = wechatHttpService.init(loginResult.getHostUrl(), userCache.getBaseRequest());
@@ -163,6 +162,7 @@ public class LoginThread implements Runnable {
             }
             logger.info("[*] getContactResponse seq = " + contactResponse.getSeq());
             logger.info("[*] getContactResponse memberCount = " + contactResponse.getMemberCount());
+            AtomicInteger count = new AtomicInteger(1);
             contactResponse.getMemberList().forEach(contact -> {
                 if (WechatUtils.isChatRoom(contact)) {
                     ChatRoomDescription chatRoomDescription = new ChatRoomDescription();
@@ -172,11 +172,14 @@ public class LoginThread implements Runnable {
                     logger.info("chatRoom name :{} , id :{} ", chatRoomDescription.getUserName(), chatRoomDescription.getChatRoomId());
                     chatRooms.add(chatRoomDescription);
                 } else {
-                    logger.debug("nickName:{} , remarkName:{} , userName:{}", contact.getNickName(), contact.getRemarkName(), contact.getUserName());
+
+                    logger.info("{} nickName:{} , remarkName:{} , userName:{}",count.get(), contact.getNickName(), contact.getRemarkName(), contact.getUserName());
+                    count.decrementAndGet();
                     userCache.getChatContants().put(contact.getUserName(), contact);
                 }
             });
             seq = contactResponse.getSeq();
+
             cacheService.getIndividuals().addAll(contactResponse.getMemberList().stream().filter(WechatUtils::isIndividual).collect(Collectors.toSet()));
             cacheService.getMediaPlatforms().addAll(contactResponse.getMemberList().stream().filter(WechatUtils::isMediaPlatform).collect(Collectors.toSet()));
         } while (seq > 0);

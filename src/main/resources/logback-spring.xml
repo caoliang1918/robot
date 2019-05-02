@@ -31,7 +31,7 @@
 
 
     <!--开发测试环境配置 start-->
-    <logger name="com.zhongweixian.wechat" level="INFO" />
+    <logger name="com.zhongweixian" level="INFO" />
     <logger name="org.apache" level="WARN"/>
 
     <root level="INFO">

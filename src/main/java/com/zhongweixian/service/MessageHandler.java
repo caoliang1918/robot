@@ -1,5 +1,6 @@
 package com.zhongweixian.service;
 
+import com.zhongweixian.domain.BaseUserCache;
 import com.zhongweixian.domain.shared.ChatRoomMember;
 import com.zhongweixian.domain.shared.Contact;
 import com.zhongweixian.domain.shared.Message;
@@ -40,7 +41,7 @@ public interface MessageHandler {
      * @param thumbImageUrl 图片缩略图链接
      * @param fullImageUrl  图片完整图链接
      */
-    void onReceivingPrivateImageMessage(Message message, String thumbImageUrl, String fullImageUrl) throws IOException;
+    void onReceivingPrivateImageMessage(BaseUserCache userCache, Message message, String thumbImageUrl, String fullImageUrl) throws IOException;
 
     /**
      * 事件：收到加好友邀请
@@ -55,7 +56,7 @@ public interface MessageHandler {
      *
      * @param message 消息体
      */
-    void postAcceptFriendInvitation(Message message) throws IOException;
+    void postAcceptFriendInvitation(BaseUserCache userCache, Message message) throws IOException;
 
     /**
      * 事件：群成员发生变化
