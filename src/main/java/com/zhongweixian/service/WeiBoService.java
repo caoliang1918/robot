@@ -5,6 +5,7 @@ import com.zhongweixian.domain.HttpMessage;
 import com.zhongweixian.domain.request.RevokeRequst;
 import com.zhongweixian.domain.request.WeiBoRequest;
 import com.zhongweixian.utils.Levenshtein;
+import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,12 +17,10 @@ import org.springframework.web.client.RestTemplate;
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by caoliang on 2019-04-28
@@ -56,6 +55,10 @@ public class WeiBoService {
 
     private HttpHeaders httpHeaders;
 
+    private RestTemplate restTemplate;
+
+    private Long time = 0L;
+
     @PostConstruct
     public void init() {
         httpHeaders = new HttpHeaders();
@@ -65,7 +68,13 @@ public class WeiBoService {
         httpHeaders.add("X-Requested-With", "XMLHttpRequest");
         httpHeaders.add("Content-Type", CONTENT_TYPE);
 
-        login();
+        try {
+            login();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
 
         new Thread(new Runnable() {
             @Override
@@ -76,6 +85,7 @@ public class WeiBoService {
 
                     try {
                         Thread.sleep(1000 * 600);
+                        time = time <= 0 ? 0L : (time - 600L);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -88,8 +98,11 @@ public class WeiBoService {
     /**
      * 先用邮箱、密码登录，根据返回的URL再去拿cookie，这个URL是一次性的
      */
-    public void login() {
-        /*String formData = String.format(
+    public void login() throws UnsupportedEncodingException, URISyntaxException {
+        if (time > 600L) {
+            return;
+        }
+        String formData = String.format(
                 "entry=sso&gateway=1&from=null&savestate=30&useticket=0&pagerefer=&vsnf=1&su=%s&service=sso&sp=%s&sr=1280*800&encoding=UTF-8&cdult=3&domain=sina.com.cn&prelt=0&returntype=TEXT",
                 URLEncoder.encode(Base64.encodeBase64String(username.replace("@", "%40").getBytes()), "UTF-8"), password);
 
@@ -97,6 +110,7 @@ public class WeiBoService {
         headers.add("Referer", "http://login.sina.com.cn/signup/signin.php?entry=sso");
         headers.add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:34.0) Gecko/20100101 Firefox/34.0");
         headers.add("Content-Type", CONTENT_TYPE);
+        restTemplate = new RestTemplate();
         ResponseEntity<String> responseEntity = restTemplate.exchange(LOFIN_URL, HttpMethod.POST, new HttpEntity<>(formData, httpHeaders), String.class);
         logger.info("login responseEntity :{}", responseEntity);
         String text = responseEntity.getBody();
@@ -118,22 +132,18 @@ public class WeiBoService {
             return;
         }
         StringBuilder cookies = new StringBuilder();
-        List list = responseHeaders.get("Set-Cookie");
-        responseHeaders.get("Set-Cookie").forEach(cookie -> {
+        List<String> list = responseHeaders.get("Set-Cookie");
+        list.forEach(cookie -> {
             logger.info("{}", cookie);
             cookies.append(cookie);
             cookies.append(cookie.split(";")[0]).append(";");
         });
-        System.out.println(cookies.toString());*/
-
-
-
-        httpHeaders.add("Cookie", "Ugrow-G0=8751d9166f7676afdce9885c6d31cd61; login_sid_t=2da360175a6081f39a0d0c7fb1a3b2f3; cross_origin_proto=SSL; TC-V5-G0=28bf4f11899208be3dc10225cf7ad3c6; WBStorage=201905021112|undefined; wb_view_log=1366*7681; _s_tentry=passport.weibo.com; Apache=5013257162154.1875.1556766743058; SINAGLOBAL=5013257162154.1875.1556766743058; ULV=1556766743067:1:1:1:5013257162154.1875.1556766743058:; SSOLoginState=1556766751; SCF=Al9EEOavAhTWMw9n2hiE4KM_wvzt7X5tFmMVglhMHNP8sysHDbNbEW9fnCszzE0GAaafTEKC_TMT_EcWekgQCOY.; SUB=_2A25xzhBwDeRhGeFP61EU8i3JyDyIHXVSuga4rDV8PUNbmtAKLRbdkW9NQS42409xe69Nx9KKQF2BNAHtgeS3YcMB; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9WF8puQJrYeKg6Y-pvo8b5.r5JpX5K2hUgL.FoMpehefeoefe052dJLoI0qLxKMLB.-L12-LxKnL1hzLBK2LxKnLBK2L12eLxKqL1heL1h-LxKqL12-LBKnLxK.L1h5L1h2t; SUHB=08JLrvZzE1QGZQ; ALF=1588302751; un=tioframework@gmail.com; wvr=6; TC-Page-G0=1e758cd0025b6b0d876f76c087f85f2c|1556766757|1556766757; wb_view_log_7103523530=1366*7681; WBtopGlobal_register_version=84a7c082648185f6; wb_timefeed_7103523530=1; webim_unReadCount=%7B%22time%22%3A1556766772563%2C%22dm_pub_total%22%3A0%2C%22chat_group_pc%22%3A0%2C%22allcountNum%22%3A0%2C%22msgbox%22%3A0%7D");
-
+        httpHeaders.add("Cookie", cookies.toString().substring(0, cookies.length() - 1));
+        time = time + 600L;
     }
 
 
-    public void sendWeiBoMessage(HttpMessage httpMessage){
+    public void sendWeiBoMessage(HttpMessage httpMessage) {
         WeiBoRequest request = new WeiBoRequest(httpMessage.getContent());
         if ("delete".equals(httpMessage.getOption()) || "update".equals(httpMessage.getOption())) {
             deleteWeiBo(messageMap.get(httpMessage.getId()));
