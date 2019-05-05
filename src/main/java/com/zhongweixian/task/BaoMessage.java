@@ -4,7 +4,6 @@ import com.zhongweixian.domain.BaseUserCache;
 import com.zhongweixian.domain.shared.Contact;
 import com.zhongweixian.service.CacheService;
 import com.zhongweixian.service.WechatMessageService;
-import org.apache.http.client.utils.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +12,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.Date;
 
 /**
  * Created by caoliang on 2019-05-05
@@ -39,7 +37,7 @@ public class BaoMessage {
     private BaseUserCache baseUserCache = null;
 
 
-    @Scheduled(cron = "0 5 7 * * ?")
+    @Scheduled(cron = "0 0 7 * * ?")
     public void baobaoWakeUp() {
         String[] array = new String[]{"宝宝，起床时间到了哦",
                 "宝宝，快点起床了好不好啊！不然我就要把你抱起来了喔~",
@@ -56,11 +54,11 @@ public class BaoMessage {
         }
     }
 
-    @Scheduled(cron = "0 30 22 * * ?")
-    public void _2230() {
-        String[] array = new String[]{"宝宝，现在是北京时间" + DateUtils.formatDate(new Date(), "HH:mm"),
+    @Scheduled(cron = "0 40 22 * * ?")
+    public void _2240() {
+        String[] array = new String[]{"宝宝，现在是睡觉时间",
                 "宝宝，你该休息啦！",
-                "晚安，宝宝，好梦！"};
+                "晚安，宝宝，好梦！[月亮][月亮][月亮]"};
         try {
             sendMessage(array);
         } catch (IOException e) {
@@ -72,9 +70,8 @@ public class BaoMessage {
 
     @Scheduled(cron = "0 0 23 * * ?")
     public void _2300() {
-        String[] array = new String[]{"宝宝，现在是北京时间" + DateUtils.formatDate(new Date(), "HH:mm:ss"),
-                "宝宝，我猜你还没睡，肯定是在玩手机，对不对？",
-                "我不怪你，你要早点睡觉哦！这会真的晚安了，好梦！[抱抱][抱抱][抱抱]"};
+        String[] array = new String[]{"宝宝，我猜你还没睡，肯定是在玩手机，对不对？",
+                "我不怪你，你要早点睡觉哦！这会真的晚安了，好梦！[拥抱][拥抱][拥抱]"};
         try {
             sendMessage(array);
         } catch (IOException e) {
