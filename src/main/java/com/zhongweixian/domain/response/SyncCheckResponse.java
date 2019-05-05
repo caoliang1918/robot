@@ -25,4 +25,12 @@ public class SyncCheckResponse {
     public void setSelector(int selector) {
         this.selector = selector;
     }
+
+    @Override
+    public String toString() {
+        return "SyncCheckResponse{" +
+                "retcode=" + retcode +
+                ", selector=" + selector +
+                '}';
+    }
 }

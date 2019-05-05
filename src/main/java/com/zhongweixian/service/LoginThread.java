@@ -108,7 +108,7 @@ public class LoginThread implements Runnable {
 
         logger.info("[4] login completed");
         //5 redirect login
-        Token token = wechatHttpService.openNewloginpage(loginResult.getRedirectUrl());
+        Token token = wechatHttpService.openNewloginpage(loginResult.getRedirectUrl() , userCache);
         if (token.getRet() == 0) {
             userCache.setUuid(uuid);
             userCache.setUin(token.getWxuin());
@@ -133,11 +133,11 @@ public class LoginThread implements Runnable {
 
         logger.info("[5] redirect login completed , wxUin:{}", token.getWxuin());
         //6 redirect
-        wechatHttpService.redirect(loginResult.getHostUrl());
+        wechatHttpService.redirect(loginResult.getHostUrl() , userCache);
 
         logger.info("[6] redirect completed");
         //7 init
-        InitResponse initResponse = wechatHttpService.init(loginResult.getHostUrl(), userCache.getBaseRequest());
+        InitResponse initResponse = wechatHttpService.init(loginResult.getHostUrl(), userCache);
         WechatUtils.checkBaseResponse(initResponse);
         userCache.setSyncKey(initResponse.getSyncKey());
         userCache.setOwner(initResponse.getUser());
@@ -154,7 +154,7 @@ public class LoginThread implements Runnable {
         List<ChatRoomDescription> chatRooms = new ArrayList<>();
         //群组(这里包含已经保存的技能组和最近聊天的技能组)
         do {
-            ContactResponse contactResponse = wechatHttpService.getContact(loginResult.getHostUrl(), userCache.getBaseRequest().getSkey(), seq);
+            ContactResponse contactResponse = wechatHttpService.getContact(userCache);
             WechatUtils.checkBaseResponse(contactResponse);
             for (Contact contact : contactResponse.getMemberList()) {
 
@@ -172,8 +172,7 @@ public class LoginThread implements Runnable {
                     logger.info("chatRoom name :{} , id :{} ", chatRoomDescription.getUserName(), chatRoomDescription.getChatRoomId());
                     chatRooms.add(chatRoomDescription);
                 } else {
-
-                    logger.info("{} nickName:{} , remarkName:{} , userName:{}",count.get(), contact.getNickName(), contact.getRemarkName(), contact.getUserName());
+                    logger.debug("{} nickName:{} , remarkName:{} , userName:{}",count.get(), contact.getNickName(), contact.getRemarkName(), contact.getUserName());
                     count.decrementAndGet();
                     userCache.getChatContants().put(contact.getUserName(), contact);
                 }

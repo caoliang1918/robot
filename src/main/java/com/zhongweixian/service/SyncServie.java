@@ -70,7 +70,7 @@ public class SyncServie {
                 throw new WechatException("syncCheckResponse ret = " + retCode);
             }
         } else {
-            logger.error("syncCheckResponse:{}" , syncCheckResponse);
+            logger.error("sync error:{}" , syncCheckResponse.toString());
             return RetCode.LOGOUT2.getCode();
         }
         return RetCode.NORMAL.getCode();

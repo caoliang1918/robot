@@ -34,14 +34,15 @@ public class WechatMessageService {
     /**
      * Get all the contacts
      *
-     * @return contacts
-     * @throws IOException if getContact fails
+     * @param userCache
+     * @return
+     * @throws IOException
      */
     public Set<Contact> getContact(BaseUserCache userCache) throws IOException {
         Set<Contact> contacts = new HashSet<>();
         long seq = 0;
         do {
-            ContactResponse response = wechatHttpService.getContact(userCache.getWxHost(),userCache.getsKey(), seq);
+            ContactResponse response = wechatHttpService.getContact(userCache);
             WechatUtils.checkBaseResponse(response);
             seq = response.getSeq();
             contacts.addAll(response.getMemberList());

@@ -2,6 +2,7 @@ package com.zhongweixian.domain;
 
 import com.zhongweixian.domain.request.component.BaseRequest;
 import com.zhongweixian.domain.shared.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -38,11 +39,13 @@ public class BaseUserCache implements Serializable {
      * 聊天群组
      */
     private Map<String, ChatRoomDescription> chatRooms = new HashMap<>();
-    private Map<String , Contact> chatRoomMembers = new HashMap<>();
+    private Map<String, Contact> chatRoomMembers = new HashMap<>();
     /**
      * 联系人
      */
     private Map<String, Contact> chatContants = new HashMap<>();
+
+    private RestTemplate restTemplate;
 
 
     public String getUuid() {
@@ -179,5 +182,14 @@ public class BaseUserCache implements Serializable {
 
     public void setChatContants(Map<String, Contact> chatContants) {
         this.chatContants = chatContants;
+    }
+
+
+    public RestTemplate getRestTemplate() {
+        return restTemplate;
+    }
+
+    public void setRestTemplate(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
     }
 }

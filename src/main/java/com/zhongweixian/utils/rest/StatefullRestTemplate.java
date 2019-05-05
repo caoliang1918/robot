@@ -21,7 +21,7 @@ import java.util.List;
 public class StatefullRestTemplate extends RestTemplate {
     private final HttpContext httpContext;
 
-    StatefullRestTemplate(HttpContext httpContext) {
+    public StatefullRestTemplate(HttpContext httpContext) {
         super();
         HttpClient httpClient = HttpClientBuilder.create().build();
         this.httpContext = httpContext == null ? new BasicHttpContext() : httpContext;
