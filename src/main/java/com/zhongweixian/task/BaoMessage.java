@@ -58,7 +58,7 @@ public class BaoMessage {
 
     @Scheduled(cron = "0 30 22 * * ?")
     public void _2230() {
-        String[] array = new String[]{"宝宝，现在是北京时间" + DateUtils.formatDate(new Date(), "HH:mm:ss"),
+        String[] array = new String[]{"宝宝，现在是北京时间" + DateUtils.formatDate(new Date(), "HH:mm"),
                 "宝宝，你该休息啦！",
                 "晚安，宝宝，好梦！"};
         try {
@@ -71,7 +71,7 @@ public class BaoMessage {
     }
 
     @Scheduled(cron = "0 0 23 * * ?")
-    public void _1100() {
+    public void _2300() {
         String[] array = new String[]{"宝宝，现在是北京时间" + DateUtils.formatDate(new Date(), "HH:mm:ss"),
                 "宝宝，我猜你还没睡，肯定是在玩手机，对不对？",
                 "我不怪你，你要早点睡觉哦！这会真的晚安了，好梦！[抱抱][抱抱][抱抱]"};
@@ -90,7 +90,7 @@ public class BaoMessage {
             return;
         }
         baseUserCache.getChatContants().values().forEach(contact -> {
-            if (contact.getNickName().equals(baobao)) {
+            if (contact.getRemarkName().equals(baobao)) {
                 this.contact = contact;
             }
         });
@@ -99,7 +99,7 @@ public class BaoMessage {
             return;
         }
         for (String str : array) {
-            logger.info("send to {} , {}", contact.getNickName(), str);
+            logger.info("send to {} , {}", contact.getRemarkName(), str);
             wechatMessageService.sendText(baseUserCache, contact.getUserName(), str);
             Thread.sleep(3500L);
         }
