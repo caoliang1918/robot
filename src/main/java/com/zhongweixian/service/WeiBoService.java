@@ -68,13 +68,7 @@ public class WeiBoService {
         httpHeaders.add("X-Requested-With", "XMLHttpRequest");
         httpHeaders.add("Content-Type", CONTENT_TYPE);
 
-        try {
-            login();
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-        }
+
 
         new Thread(new Runnable() {
             @Override
@@ -102,6 +96,7 @@ public class WeiBoService {
         if (time > 600L) {
             return;
         }
+        time = time + 600L;
         String formData = String.format(
                 "entry=sso&gateway=1&from=null&savestate=30&useticket=0&pagerefer=&vsnf=1&su=%s&service=sso&sp=%s&sr=1280*800&encoding=UTF-8&cdult=3&domain=sina.com.cn&prelt=0&returntype=TEXT",
                 URLEncoder.encode(Base64.encodeBase64String(username.replace("@", "%40").getBytes()), "UTF-8"), password);
@@ -139,12 +134,10 @@ public class WeiBoService {
             cookies.append(cookie.split(";")[0]).append(";");
         });
         httpHeaders.add("Cookie", cookies.toString().substring(0, cookies.length() - 1));
-        time = time + 600L;
     }
 
 
     public void sendWeiBoMessage(HttpMessage httpMessage) {
-        WeiBoRequest request = new WeiBoRequest(httpMessage.getContent());
         if ("delete".equals(httpMessage.getOption()) || "update".equals(httpMessage.getOption())) {
             deleteWeiBo(messageMap.get(httpMessage.getId()));
             if ("delete".equals(httpMessage.getOption())) {
@@ -155,6 +148,7 @@ public class WeiBoService {
         checkMessage(httpMessage);
 
         HttpHeaders headers = httpHeaders;
+        headers.add(HttpHeaders.USER_AGENT, getUserAgent());
         String formData = null;
         try {
             formData = "location=v6_content_home&text=" + URLEncoder.encode(httpMessage.getContent(), "UTF-8") + "&appkey=&style_type=1&pic_id=&tid=&pdetail=&mid=&isReEdit=false&rank=0&rankid=&module=stissue&pub_source=main_&pub_type=dialog&isPri=0&_t=0";
@@ -166,6 +160,13 @@ public class WeiBoService {
 
         if (responseEntity.getStatusCode() == HttpStatus.FOUND) {
             logger.error("client not login : {}", responseEntity);
+            try {
+                login();
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+            }
             return;
         }
         if (responseEntity.getStatusCode() != HttpStatus.OK) {
@@ -207,7 +208,14 @@ public class WeiBoService {
 
     private Map<Long, RevokeRequst> messageMap = new HashMap<>();
 
+    private final String checkContent = "微信";
+
     private void checkMessage(HttpMessage httpMessage) {
+        if (httpMessage.getContent().contains(checkContent)) {
+            String content = httpMessage.getContent();
+            httpMessage.setContent(content.substring(0, content.indexOf(checkContent)));
+        }
+
         /**
          * 判断相似度
          */
@@ -233,6 +241,20 @@ public class WeiBoService {
                 deleteWeiBo(revokeRequst);
             }
         }
+    }
+
+    private String[] USER_AGENT = new String[]{
+            "Mozilla/4.0(compatible;MSIE7.0;WindowsNT5.1;Trident/4.0;SE2.XMetaSr1.0;SE2.XMetaSr1.0;.NETCLR2.0.50727;SE2.XMetaSr1.0)",
+            "Mozilla/4.0(compatible;MSIE7.0;WindowsNT5.1;360SE)",
+            "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36 SE 2.X MetaSr 1.0",
+    };
+
+    int i = 0;
+
+    private String getUserAgent() {
+        int index = i % USER_AGENT.length;
+        i++;
+        return USER_AGENT[index];
     }
 
 

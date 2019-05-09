@@ -37,7 +37,7 @@ public class BaoMessage {
     private BaseUserCache baseUserCache = null;
 
 
-    @Scheduled(cron = "0 0 7 * * ?")
+    @Scheduled(cron = "0 59 6 * * ?")
     public void baobaoWakeUp() {
         String[] array = new String[]{"宝宝，起床时间到了哦",
                 "宝宝，快点起床了好不好啊！不然我就要把你抱起来了喔~",
@@ -54,24 +54,13 @@ public class BaoMessage {
         }
     }
 
-    @Scheduled(cron = "0 40 22 * * ?")
-    public void _2240() {
+
+
+    @Scheduled(cron = "0 59 22 * * ?")
+    public void _2300() {
         String[] array = new String[]{"宝宝，现在是睡觉时间",
                 "宝宝，你该休息啦！",
-                "晚安，宝宝，好梦！[月亮][月亮][月亮]"};
-        try {
-            sendMessage(array);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Scheduled(cron = "0 0 23 * * ?")
-    public void _2300() {
-        String[] array = new String[]{"宝宝，我猜你还没睡，肯定是在玩手机，对不对？",
-                "我不怪你，你要早点睡觉哦！这会真的晚安了，好梦！[拥抱][拥抱][拥抱]"};
+                "晚安，宝宝，好梦！永远爱你的曹亮。[月亮][月亮][月亮]"};
         try {
             sendMessage(array);
         } catch (IOException e) {
