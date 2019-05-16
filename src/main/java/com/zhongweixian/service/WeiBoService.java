@@ -6,6 +6,7 @@ import com.zhongweixian.domain.request.RevokeRequst;
 import com.zhongweixian.domain.request.WeiBoRequest;
 import com.zhongweixian.utils.Levenshtein;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by caoliang on 2019-04-28
@@ -42,6 +47,8 @@ public class WeiBoService {
 
     @Value("${weibo.password}")
     private String password;
+
+    private ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new BasicThreadFactory.Builder().namingPattern("schedule-pool--%d").daemon(true).build());
 
     private static final String HOME = "https://weibo.com/u/7103523530/home?topnav=1&wvr=6";
     private static final String SEND_URL = "https://www.weibo.com/aj/mblog/add?ajwvr=6&__rnd=";
@@ -68,24 +75,16 @@ public class WeiBoService {
         httpHeaders.add("X-Requested-With", "XMLHttpRequest");
         httpHeaders.add("Content-Type", CONTENT_TYPE);
 
-
-
-        new Thread(new Runnable() {
+        executorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-                while (true) {
-                    ResponseEntity<String> responseEntity = new RestTemplate().exchange(HOME, HttpMethod.GET, new HttpEntity<>(httpHeaders), String.class);
-                    logger.debug("home page :{}", responseEntity.getBody());
-
-                    try {
-                        Thread.sleep(1000 * 600);
-                        time = time <= 0 ? 0L : (time - 600L);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
+                ResponseEntity<String> responseEntity = new RestTemplate().exchange(HOME, HttpMethod.GET, new HttpEntity<>(httpHeaders), String.class);
+                logger.debug("home page :{}", responseEntity.getBody());
+                time = time <= 0 ? 0L : (time - 600L);
             }
-        }).start();
+        }, 5, 10, TimeUnit.MINUTES);
+
+
     }
 
 
