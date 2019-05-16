@@ -39,9 +39,6 @@ public class WeiBoService {
     @Value("${weibo.Referer}")
     private String referer;
 
-    @Value("${User-Agent}")
-    private String userAgent;
-
     @Value("${weibo.username}")
     private String username;
 
@@ -71,9 +68,11 @@ public class WeiBoService {
         httpHeaders = new HttpHeaders();
         httpHeaders.add("origin", origin);
         httpHeaders.add("Referer", referer);
-        httpHeaders.add("User-Agent", userAgent);
+        httpHeaders.add("User-Agent", getUserAgent());
         httpHeaders.add("X-Requested-With", "XMLHttpRequest");
         httpHeaders.add("Content-Type", CONTENT_TYPE);
+
+        login();
 
         executorService.scheduleAtFixedRate(new Runnable() {
             @Override
@@ -91,18 +90,23 @@ public class WeiBoService {
     /**
      * 先用邮箱、密码登录，根据返回的URL再去拿cookie，这个URL是一次性的
      */
-    public void login() throws UnsupportedEncodingException, URISyntaxException {
+    public void login() {
         if (time > 600L) {
             return;
         }
         time = time + 600L;
-        String formData = String.format(
-                "entry=sso&gateway=1&from=null&savestate=30&useticket=0&pagerefer=&vsnf=1&su=%s&service=sso&sp=%s&sr=1280*800&encoding=UTF-8&cdult=3&domain=sina.com.cn&prelt=0&returntype=TEXT",
-                URLEncoder.encode(Base64.encodeBase64String(username.replace("@", "%40").getBytes()), "UTF-8"), password);
+        String formData = null;
+        try {
+            formData = String.format(
+                    "entry=sso&gateway=1&from=null&savestate=30&useticket=0&pagerefer=&vsnf=1&su=%s&service=sso&sp=%s&sr=1280*800&encoding=UTF-8&cdult=3&domain=sina.com.cn&prelt=0&returntype=TEXT",
+                    URLEncoder.encode(Base64.encodeBase64String(username.replace("@", "%40").getBytes()), "UTF-8"), password);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
 
         HttpHeaders headers = new HttpHeaders();
         headers.add("Referer", "http://login.sina.com.cn/signup/signin.php?entry=sso");
-        headers.add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:34.0) Gecko/20100101 Firefox/34.0");
+        headers.add("User-Agent", getUserAgent());
         headers.add("Content-Type", CONTENT_TYPE);
         restTemplate = new RestTemplate();
         ResponseEntity<String> responseEntity = restTemplate.exchange(LOFIN_URL, HttpMethod.POST, new HttpEntity<>(formData, httpHeaders), String.class);
@@ -119,7 +123,7 @@ public class WeiBoService {
         }
         //https://passport.weibo.com/wbsso/login?ticket=ST-NzEwMzUyMzUzMA%3D%3D-1556522528-gz-C427A34DD45B0991800DA3F6DC59EB1F-1&ssosavestate=1588058528
         logger.info("token:{}", token);
-        ResponseEntity<String> cookieResponse = restTemplate.getForEntity(new URI(token), String.class);
+        ResponseEntity<String> cookieResponse = restTemplate.getForEntity(token, String.class);
         HttpHeaders responseHeaders = cookieResponse.getHeaders();
         if (!responseHeaders.containsKey("Set-Cookie")) {
             logger.error("can not find Cookies");
@@ -159,13 +163,7 @@ public class WeiBoService {
 
         if (responseEntity.getStatusCode() == HttpStatus.FOUND) {
             logger.error("client not login : {}", responseEntity);
-            try {
-                login();
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            } catch (URISyntaxException e) {
-                e.printStackTrace();
-            }
+            login();
             return;
         }
         if (responseEntity.getStatusCode() != HttpStatus.OK) {
