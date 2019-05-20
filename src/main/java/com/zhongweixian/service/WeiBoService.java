@@ -3,6 +3,7 @@ package com.zhongweixian.service;
 import com.alibaba.fastjson.JSONObject;
 import com.zhongweixian.domain.HttpMessage;
 import com.zhongweixian.domain.request.RevokeRequst;
+import com.zhongweixian.domain.weibo.WeiBoUser;
 import com.zhongweixian.utils.Levenshtein;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
@@ -328,24 +329,43 @@ public class WeiBoService {
             logger.info("{}", node);
             String nodeString = node.toString();
             nodeString = nodeString.substring(nodeString.indexOf("<div"), nodeString.lastIndexOf("/div>") + 5);
-            logger.info("div:{}", nodeString);
 
             nodeString = nodeString.replaceAll("\\\\r\\\\n", "");
 
             nodeString = nodeString.replaceAll("\\\\t", "");
 
             nodeString = nodeString.replaceAll("\\\\", "");
-            logger.debug(" :{}", nodeString);
+            logger.debug(" blac user :{}", nodeString);
 
 
             Document div = Jsoup.parse(nodeString);
             Elements elements = div.getElementsByClass("follow_item S_line2");
-            for (Element e: elements){
-                logger.info("e:{}" , e);
+            for (Element e : elements) {
+                paser(e);
             }
 
         }
         return null;
+    }
+
+    private WeiBoUser paser(Element element) {
+        WeiBoUser user = new WeiBoUser();
+        user.setNikename(element.getElementsByClass("mod_pic").get(0).children().get(0).attr("title"));
+        Elements elements = element.getElementsByClass("info_connect").get(0).children();
+
+        String userId = elements.get(0).getElementsByTag("a").attr("href");
+        user.setId(Long.parseLong(userId.substring(1, userId.indexOf("/follow"))));
+        String usercard = elements.get(2).getElementsByTag("a").attr("href");
+        if (usercard.contains("u")){
+            user.setUsercard(usercard.substring(3, usercard.length()));
+        }else {
+            user.setUsercard(usercard.substring(1, usercard.length()));
+        }
+        user.setFollow(Long.parseLong(elements.get(0).getElementsByTag("a").html()));
+        user.setFans(Long.parseLong(elements.get(1).getElementsByTag("a").html()));
+        user.setWeibo(Long.parseLong(elements.get(2).getElementsByTag("a").html()));
+        logger.info("{}", user.toString());
+        return user;
     }
 
 }
