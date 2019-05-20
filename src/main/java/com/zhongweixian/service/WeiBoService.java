@@ -3,26 +3,27 @@ package com.zhongweixian.service;
 import com.alibaba.fastjson.JSONObject;
 import com.zhongweixian.domain.HttpMessage;
 import com.zhongweixian.domain.request.RevokeRequst;
-import com.zhongweixian.domain.request.WeiBoRequest;
 import com.zhongweixian.utils.Levenshtein;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.util.*;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -39,9 +40,6 @@ public class WeiBoService {
     @Value("${weibo.Referer}")
     private String referer;
 
-    @Value("${User-Agent}")
-    private String userAgent;
-
     @Value("${weibo.username}")
     private String username;
 
@@ -55,9 +53,28 @@ public class WeiBoService {
     private static final String DELETE_URL = "https://www.weibo.com/aj/mblog/del?ajwvr=6";
     private static final String LOFIN_URL = "https://login.sina.com.cn/sso/login.php?client=ssologin.js(v1.4.15)";
 
-    private static final String CONTENT_TYPE = "application/x-www-form-urlencoded";
+    /**
+     * 添加黑名单
+     */
+    private static final String FEED_USER_URL = "https://weibo.com/aj/f/addblack?ajwvr=6";
+    /**
+     * 关注
+     */
+    private static final String FOLLOW_URL = "https://weibo.com/p/100505%s/follow?page=1";
 
-    private String origin = "https://www.weibo.com";
+    /**
+     * 粉丝
+     */
+    private static final String FANS_URL = "https://weibo.com/p/100505%s/follow?relate=fans&page=1";
+
+
+    private String[] USER_AGENT = new String[]{
+            "Mozilla/4.0(compatible;MSIE7.0;WindowsNT5.1;Trident/4.0;SE2.XMetaSr1.0;SE2.XMetaSr1.0;.NETCLR2.0.50727;SE2.XMetaSr1.0)",
+            "Mozilla/4.0(compatible;MSIE7.0;WindowsNT5.1;360SE)",
+            "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36 SE 2.X MetaSr 1.0",
+    };
+
+    private int i = 0;
 
 
     private HttpHeaders httpHeaders;
@@ -69,11 +86,11 @@ public class WeiBoService {
     @PostConstruct
     public void init() {
         httpHeaders = new HttpHeaders();
-        httpHeaders.add("origin", origin);
+        httpHeaders.add("origin", "https://www.weibo.com");
         httpHeaders.add("Referer", referer);
         httpHeaders.add("User-Agent", getUserAgent());
         httpHeaders.add("X-Requested-With", "XMLHttpRequest");
-        httpHeaders.add("Content-Type", CONTENT_TYPE);
+        httpHeaders.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE);
 
 
         try {
@@ -101,7 +118,7 @@ public class WeiBoService {
     /**
      * 先用邮箱、密码登录，根据返回的URL再去拿cookie，这个URL是一次性的
      */
-    public void login() throws UnsupportedEncodingException, URISyntaxException {
+    private void login() throws UnsupportedEncodingException, URISyntaxException {
         if (time > 600L) {
             return;
         }
@@ -112,8 +129,7 @@ public class WeiBoService {
 
         HttpHeaders headers = new HttpHeaders();
         headers.add("Referer", "http://login.sina.com.cn/signup/signin.php?entry=sso");
-        headers.add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:34.0) Gecko/20100101 Firefox/34.0");
-        headers.add("Content-Type", CONTENT_TYPE);
+        headers.add("User-Agent", getUserAgent());
         restTemplate = new RestTemplate();
         ResponseEntity<String> responseEntity = restTemplate.exchange(LOFIN_URL, HttpMethod.POST, new HttpEntity<>(formData, httpHeaders), String.class);
         logger.info("login responseEntity :{}", responseEntity);
@@ -252,13 +268,6 @@ public class WeiBoService {
         }
     }
 
-    private String[] USER_AGENT = new String[]{
-            "Mozilla/4.0(compatible;MSIE7.0;WindowsNT5.1;Trident/4.0;SE2.XMetaSr1.0;SE2.XMetaSr1.0;.NETCLR2.0.50727;SE2.XMetaSr1.0)",
-            "Mozilla/4.0(compatible;MSIE7.0;WindowsNT5.1;360SE)",
-            "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36 SE 2.X MetaSr 1.0",
-    };
-
-    int i = 0;
 
     private String getUserAgent() {
         int index = i % USER_AGENT.length;
@@ -266,5 +275,77 @@ public class WeiBoService {
         return USER_AGENT[index];
     }
 
+    /**
+     * 添加屏蔽用户
+     *
+     * @param userId
+     */
+    public void addBlackUser(String userId) {
+        HttpHeaders headers = httpHeaders;
+        headers.add(HttpHeaders.USER_AGENT, getUserAgent());
+        String formData = "uid=%s&f=1";
+        formData = String.format(formData, userId);
+
+        ResponseEntity<String> responseEntity = new RestTemplate().exchange(FEED_USER_URL, HttpMethod.POST,
+                new HttpEntity<>(formData, headers), String.class);
+        logger.info("add blackUser:{} response:{}", userId, responseEntity.getBody());
+    }
+
+    /**
+     * 关注
+     *
+     * @param userId
+     * @return
+     */
+    public List<String> follow(String userId) {
+        HttpHeaders headers = httpHeaders;
+        headers.add(HttpHeaders.USER_AGENT, getUserAgent());
+        ResponseEntity<String> responseEntity = new RestTemplate().exchange(String.format(FOLLOW_URL, userId), HttpMethod.GET, new HttpEntity<>(headers), String.class);
+        logger.info("follow {}", responseEntity.getBody());
+        return null;
+    }
+
+    /**
+     * 粉丝
+     *
+     * @param userId
+     * @return
+     */
+    public List<String> fans(String userId) {
+        HttpHeaders headers = httpHeaders;
+        headers.add(HttpHeaders.USER_AGENT, getUserAgent());
+        ResponseEntity<String> responseEntity = new RestTemplate().exchange(String.format(FANS_URL, userId), HttpMethod.GET, new HttpEntity<>(headers), String.class);
+
+        if (responseEntity.getStatusCode() != HttpStatus.OK) {
+            return null;
+        }
+
+        Document document = Jsoup.parse(responseEntity.getBody());
+        logger.debug("document:{}", document);
+        List<Node> nodeList = document.childNode(1).childNode(2).childNodes();
+        if (nodeList.size() == 42 && nodeList.get(40).outerHtml().contains("followTab")) {
+            Node node = nodeList.get(40);
+            logger.info("{}", node);
+            String nodeString = node.toString();
+            nodeString = nodeString.substring(nodeString.indexOf("<div"), nodeString.lastIndexOf("/div>") + 5);
+            logger.info("div:{}", nodeString);
+
+            nodeString = nodeString.replaceAll("\\\\r\\\\n", "");
+
+            nodeString = nodeString.replaceAll("\\\\t", "");
+
+            nodeString = nodeString.replaceAll("\\\\", "");
+            logger.debug(" :{}", nodeString);
+
+
+            Document div = Jsoup.parse(nodeString);
+            Elements elements = div.getElementsByClass("follow_item S_line2");
+            for (Element e: elements){
+                logger.info("e:{}" , e);
+            }
+
+        }
+        return null;
+    }
 
 }

@@ -5,11 +5,10 @@ import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
-import com.zhongweixian.service.CacheService;
-import com.zhongweixian.service.LoginThread;
-import com.zhongweixian.service.WechatHttpService;
-import com.zhongweixian.service.WechatMessageService;
+import com.zhongweixian.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -36,6 +35,9 @@ public class LoginController {
     @Autowired
     private WechatMessageService wechatMessageService;
 
+    @Autowired
+    private WeiBoService weiBoService;
+
 
     @GetMapping("login")
     public void qrcode(HttpServletResponse response) throws IOException, WriterException {
@@ -55,5 +57,14 @@ public class LoginController {
         os.flush();
         os.close();
     }
+
+
+    @GetMapping
+    public HttpEntity addBlackUser(String userId) {
+        weiBoService.fans(userId);
+
+        return new HttpEntity<>(HttpStatus.OK);
+    }
+
 
 }
