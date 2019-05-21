@@ -8,7 +8,7 @@ import com.zhongweixian.domain.shared.*;
 import com.zhongweixian.enums.MessageType;
 import com.zhongweixian.enums.RetCode;
 import com.zhongweixian.enums.Selector;
-import com.zhongweixian.exception.WechatException;
+import com.zhongweixian.exception.RobotException;
 import com.zhongweixian.utils.WechatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,7 +67,7 @@ public class SyncServie {
             } else if (selector == Selector.UNKNOWN3.getCode()) {
                 sync();
             } else if (selector != Selector.NORMAL.getCode()) {
-                throw new WechatException("syncCheckResponse ret = " + retCode);
+                throw new RobotException("syncCheckResponse ret = " + retCode);
             }
         } else {
             logger.error("sync error:{}" , syncCheckResponse.toString());

@@ -11,7 +11,7 @@ import com.zhongweixian.enums.AddScene;
 import com.zhongweixian.enums.MessageType;
 import com.zhongweixian.enums.OpLogCmdId;
 import com.zhongweixian.enums.VerifyUserOPCode;
-import com.zhongweixian.exception.WechatException;
+import com.zhongweixian.exception.RobotException;
 import com.zhongweixian.utils.DeviceIdGenerator;
 import com.zhongweixian.utils.HeaderUtils;
 import com.zhongweixian.utils.RandomUtils;
@@ -28,7 +28,6 @@ import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -162,7 +161,7 @@ public class WechatHttpService {
                 return matcher.group(2);
             }
         }
-        throw new WechatException("uuid can't be found");
+        throw new RobotException("uuid can't be found");
     }
 
     /**
@@ -188,9 +187,9 @@ public class WechatHttpService {
      *
      * @param uuid
      * @return hostUrl and redirectUrl
-     * @throws WechatException if the response doesn't contain code
+     * @throws RobotException if the response doesn't contain code
      */
-    LoginResult login(String uuid) throws WechatException {
+    LoginResult login(String uuid) throws RobotException {
         final Pattern pattern = Pattern.compile("window.code=(\\d+)");
         Pattern hostUrlPattern = Pattern.compile("window.redirect_uri=\\\"(.*)\\/cgi-bin");
         Pattern redirectUrlPattern = Pattern.compile("window.redirect_uri=\\\"(.*)\\\";");
@@ -208,7 +207,7 @@ public class WechatHttpService {
         if (matcher.find()) {
             response.setCode(matcher.group(1));
         } else {
-            throw new WechatException("code can't be found");
+            throw new RobotException("code can't be found");
         }
         Matcher hostUrlMatcher = hostUrlPattern.matcher(body);
         if (hostUrlMatcher.find()) {

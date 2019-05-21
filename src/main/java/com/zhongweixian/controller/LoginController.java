@@ -5,17 +5,22 @@ import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
+import com.zhongweixian.domain.weibo.WeiBoUser;
 import com.zhongweixian.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -60,9 +65,30 @@ public class LoginController {
 
 
     @GetMapping
-    public HttpEntity addBlackUser(String userId) {
-        weiBoService.fans(userId);
-
+    public HttpEntity addBlackUser(@RequestParam String userId, @RequestParam(defaultValue = "1") Integer pageNum) {
+        int defaultPage = pageNum;
+        List<WeiBoUser> weiBoUserList = new ArrayList<>();
+        List<WeiBoUser> pageList = null;
+        while (true) {
+            pageList = weiBoService.fans(userId, pageNum);
+            if (CollectionUtils.isEmpty(pageList)) {
+                break;
+            }
+            weiBoUserList.addAll(pageList);
+            pageNum++;
+        }
+        pageNum = defaultPage;
+        while (true) {
+            pageList = weiBoService.follow(userId, pageNum);
+            if (CollectionUtils.isEmpty(pageList)) {
+                break;
+            }
+            weiBoUserList.addAll(pageList);
+            pageNum++;
+        }
+        for (WeiBoUser weiBoUser : weiBoUserList) {
+            weiBoService.addBlackUser(weiBoUser.getId());
+        }
         return new HttpEntity<>(HttpStatus.OK);
     }
 

@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.zhongweixian.domain.HttpMessage;
 import com.zhongweixian.domain.request.RevokeRequst;
 import com.zhongweixian.domain.weibo.WeiBoUser;
+import com.zhongweixian.exception.RobotException;
 import com.zhongweixian.utils.Levenshtein;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
@@ -25,6 +26,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.util.*;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -47,7 +49,9 @@ public class WeiBoService {
     @Value("${weibo.password}")
     private String password;
 
-    private ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new BasicThreadFactory.Builder().namingPattern("schedule-pool--%d").daemon(true).build());
+    private ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(500, new BasicThreadFactory.Builder().namingPattern("weibo-schedule-pool--%d").daemon(true).build());
+
+    private Queue<Long> queue = new LinkedBlockingDeque();
 
     private static final String HOME = "https://weibo.com/u/7103523530/home?topnav=1&wvr=6";
     private static final String SEND_URL = "https://www.weibo.com/aj/mblog/add?ajwvr=6&__rnd=";
@@ -61,12 +65,14 @@ public class WeiBoService {
     /**
      * 关注
      */
-    private static final String FOLLOW_URL = "https://weibo.com/p/100505%s/follow?page=1";
+    private static final String FOLLOW_URL = "https://weibo.com/p/100505%s/follow?page=%s";
 
     /**
      * 粉丝
      */
-    private static final String FANS_URL = "https://weibo.com/p/100505%s/follow?relate=fans&page=1";
+    private static final String FANS_URL = "https://weibo.com/p/100505%s/follow?relate=fans&page=%s";
+
+    private Set<Long> ruleIds = new HashSet<>();
 
 
     private String[] USER_AGENT = new String[]{
@@ -93,6 +99,7 @@ public class WeiBoService {
         httpHeaders.add("X-Requested-With", "XMLHttpRequest");
         httpHeaders.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE);
 
+        ruleIds.add(2671109275L);
 
         try {
             login();
@@ -107,12 +114,36 @@ public class WeiBoService {
             @Override
             public void run() {
                 ResponseEntity<String> responseEntity = new RestTemplate().exchange(HOME, HttpMethod.GET, new HttpEntity<>(httpHeaders), String.class);
-                logger.debug("home page :{}", responseEntity.getBody());
+                logger.info("get weibo base home ,status:{}", responseEntity.getStatusCode());
                 time = time <= 0 ? 0L : (time - 600L);
             }
         }, 5, 1, TimeUnit.MINUTES);
 
 
+        /**
+         *
+         */
+        executorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                Long userId = queue.poll();
+                if (userId == null) {
+                    return;
+                }
+                HttpHeaders headers = httpHeaders;
+                headers.add(HttpHeaders.USER_AGENT, getUserAgent());
+                String formData = "uid=%s&f=1";
+                formData = String.format(formData, userId);
+
+                try {
+                    ResponseEntity<String> responseEntity = new RestTemplate().exchange(FEED_USER_URL, HttpMethod.POST,
+                            new HttpEntity<>(formData, headers), String.class);
+                    logger.info("add blackUser:{} response:{} , queue size:{}", userId, responseEntity.getBody(), queue.size());
+                } catch (Exception e) {
+                    logger.error("{}", e);
+                }
+            }
+        }, 5, 15, TimeUnit.SECONDS);
     }
 
 
@@ -163,7 +194,7 @@ public class WeiBoService {
     }
 
 
-    public void sendWeiBoMessage(HttpMessage httpMessage) {
+    public void sendWeiBoMessage(HttpMessage httpMessage) throws RobotException {
         if ("delete".equals(httpMessage.getOption()) || "update".equals(httpMessage.getOption())) {
             deleteWeiBo(messageMap.get(httpMessage.getId()));
             if ("delete".equals(httpMessage.getOption())) {
@@ -205,10 +236,10 @@ public class WeiBoService {
             logger.error("add mblog statusCode:{} , responseEntity:{}", responseEntity.getStatusCode(), responseEntity.getBody());
             return;
         }
-        logger.info("add mblog statusCode:{} , content:{}", responseEntity.getStatusCode(), httpMessage.getContent());
 
         String data = jsonObject.getString("data");
         String weiBoId = data.substring(data.indexOf("mid") + 4, data.indexOf("action-type")).replaceAll("\\\\", "").replaceAll("\"", "");
+        logger.info("add mblog statusCode:{} , content:{} , weiboId:{}", responseEntity.getStatusCode(), httpMessage.getContent(), weiBoId);
 
         RevokeRequst revokeRequst = new RevokeRequst();
         revokeRequst.setContent(httpMessage.getContent());
@@ -281,15 +312,8 @@ public class WeiBoService {
      *
      * @param userId
      */
-    public void addBlackUser(String userId) {
-        HttpHeaders headers = httpHeaders;
-        headers.add(HttpHeaders.USER_AGENT, getUserAgent());
-        String formData = "uid=%s&f=1";
-        formData = String.format(formData, userId);
-
-        ResponseEntity<String> responseEntity = new RestTemplate().exchange(FEED_USER_URL, HttpMethod.POST,
-                new HttpEntity<>(formData, headers), String.class);
-        logger.info("add blackUser:{} response:{}", userId, responseEntity.getBody());
+    public void addBlackUser(Long userId) {
+        queue.add(userId);
     }
 
     /**
@@ -298,12 +322,17 @@ public class WeiBoService {
      * @param userId
      * @return
      */
-    public List<String> follow(String userId) {
+    public List<WeiBoUser> follow(String userId, Integer page) {
         HttpHeaders headers = httpHeaders;
         headers.add(HttpHeaders.USER_AGENT, getUserAgent());
-        ResponseEntity<String> responseEntity = new RestTemplate().exchange(String.format(FOLLOW_URL, userId), HttpMethod.GET, new HttpEntity<>(headers), String.class);
-        logger.info("follow {}", responseEntity.getBody());
-        return null;
+        ResponseEntity<String> responseEntity = new RestTemplate().exchange(String.format(FOLLOW_URL, userId, page), HttpMethod.GET, new HttpEntity<>(headers), String.class);
+        logger.info("follow {}", responseEntity.getStatusCode());
+        if (responseEntity.getStatusCode() != HttpStatus.OK) {
+            return null;
+        }
+        List<WeiBoUser> pageList = getUserList(responseEntity.getBody());
+        logger.info("get {} follow of page:{} , follow size:{}", userId, page, pageList.size());
+        return pageList;
     }
 
     /**
@@ -312,21 +341,27 @@ public class WeiBoService {
      * @param userId
      * @return
      */
-    public List<String> fans(String userId) {
+    public List<WeiBoUser> fans(String userId, Integer page) {
         HttpHeaders headers = httpHeaders;
         headers.add(HttpHeaders.USER_AGENT, getUserAgent());
-        ResponseEntity<String> responseEntity = new RestTemplate().exchange(String.format(FANS_URL, userId), HttpMethod.GET, new HttpEntity<>(headers), String.class);
-
+        ResponseEntity<String> responseEntity = new RestTemplate().exchange(String.format(FANS_URL, userId, page), HttpMethod.GET, new HttpEntity<>(headers), String.class);
         if (responseEntity.getStatusCode() != HttpStatus.OK) {
             return null;
         }
+        List<WeiBoUser> pageList = getUserList(responseEntity.getBody());
+        logger.info("get {} fans of page:{} , fans size:{}", userId, page, pageList.size());
+        return pageList;
+    }
 
-        Document document = Jsoup.parse(responseEntity.getBody());
+    private List<WeiBoUser> getUserList(String body) {
+        List<WeiBoUser> userList = new ArrayList<>();
+
+        Document document = Jsoup.parse(body);
         logger.debug("document:{}", document);
         List<Node> nodeList = document.childNode(1).childNode(2).childNodes();
         if (nodeList.size() == 42 && nodeList.get(40).outerHtml().contains("followTab")) {
             Node node = nodeList.get(40);
-            logger.info("{}", node);
+            logger.debug("{}", node);
             String nodeString = node.toString();
             nodeString = nodeString.substring(nodeString.indexOf("<div"), nodeString.lastIndexOf("/div>") + 5);
 
@@ -335,20 +370,26 @@ public class WeiBoService {
             nodeString = nodeString.replaceAll("\\\\t", "");
 
             nodeString = nodeString.replaceAll("\\\\", "");
-            logger.debug(" blac user :{}", nodeString);
+            logger.debug(" black user :{}", nodeString);
 
 
             Document div = Jsoup.parse(nodeString);
             Elements elements = div.getElementsByClass("follow_item S_line2");
-            for (Element e : elements) {
-                paser(e);
+            if (elements == null || elements.size() == 0) {
+                return userList;
             }
-
+            WeiBoUser weiBoUser = null;
+            for (Element e : elements) {
+                weiBoUser = parse(e);
+                if (weiBoUser != null) {
+                    userList.add(weiBoUser);
+                }
+            }
         }
-        return null;
+        return userList;
     }
 
-    private WeiBoUser paser(Element element) {
+    private WeiBoUser parse(Element element) {
         WeiBoUser user = new WeiBoUser();
         user.setNikename(element.getElementsByClass("mod_pic").get(0).children().get(0).attr("title"));
         Elements elements = element.getElementsByClass("info_connect").get(0).children();
@@ -356,14 +397,18 @@ public class WeiBoService {
         String userId = elements.get(0).getElementsByTag("a").attr("href");
         user.setId(Long.parseLong(userId.substring(1, userId.indexOf("/follow"))));
         String usercard = elements.get(2).getElementsByTag("a").attr("href");
-        if (usercard.contains("u")){
+        if (usercard.contains("u")) {
             user.setUsercard(usercard.substring(3, usercard.length()));
-        }else {
+        } else {
             user.setUsercard(usercard.substring(1, usercard.length()));
         }
         user.setFollow(Long.parseLong(elements.get(0).getElementsByTag("a").html()));
         user.setFans(Long.parseLong(elements.get(1).getElementsByTag("a").html()));
         user.setWeibo(Long.parseLong(elements.get(2).getElementsByTag("a").html()));
+
+        if (user.getFans() > 500L || user.getFollow() > 500L || user.getWeibo() > 100L) {
+            return null;
+        }
         logger.info("{}", user.toString());
         return user;
     }

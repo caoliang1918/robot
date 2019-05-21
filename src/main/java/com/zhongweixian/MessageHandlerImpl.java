@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.zhongweixian.domain.BaseUserCache;
 import com.zhongweixian.domain.shared.*;
+import com.zhongweixian.exception.RobotException;
 import com.zhongweixian.utils.MessageUtils;
-import com.zhongweixian.exception.WechatException;
 import com.zhongweixian.service.MessageHandler;
 import com.zhongweixian.service.WechatMessageService;
 import org.apache.commons.text.StringEscapeUtils;
@@ -51,7 +51,7 @@ public class MessageHandlerImpl implements MessageHandler {
     }
 
     @Override
-    public void onReceivingPrivateTextMessage(Message message) throws WechatException {
+    public void onReceivingPrivateTextMessage(Message message) throws RobotException {
         //logger.info("from my message to userName:{}" , cacheService.getUserCache(uid).getChatContants().get(message.getToUserName()).getRemarkName());
         logger.info("from:{} ", message.getFromUserName());
         logger.info("to:{}", message.getToUserName());

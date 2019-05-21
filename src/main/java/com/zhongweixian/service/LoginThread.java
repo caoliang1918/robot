@@ -13,7 +13,7 @@ import com.zhongweixian.domain.shared.Token;
 import com.zhongweixian.enums.LoginCode;
 import com.zhongweixian.enums.RetCode;
 import com.zhongweixian.enums.StatusNotifyCode;
-import com.zhongweixian.exception.WechatException;
+import com.zhongweixian.exception.RobotException;
 import com.zhongweixian.exception.WechatQRExpiredException;
 import com.zhongweixian.utils.QRCodeUtils;
 import com.zhongweixian.utils.WechatUtils;
@@ -87,10 +87,10 @@ public class LoginThread implements Runnable {
             logger.info("loginResult:{}", loginResult.toString());
             if (LoginCode.SUCCESS.getCode().equals(loginResult.getCode())) {
                 if (loginResult.getHostUrl() == null) {
-                    throw new WechatException("hostUrl can't be found");
+                    throw new RobotException("hostUrl can't be found");
                 }
                 if (loginResult.getRedirectUrl() == null) {
-                    throw new WechatException("redirectUrl can't be found");
+                    throw new RobotException("redirectUrl can't be found");
                 }
                 cacheService.setHostUrl(loginResult.getHostUrl());
                 break;
@@ -100,7 +100,7 @@ public class LoginThread implements Runnable {
                 logger.info("[*] login status = AWAIT_SCANNING");
             } else if (LoginCode.EXPIRED.getCode().equals(loginResult.getCode())) {
                 logger.info("[*] login status = EXPIRED");
-                throw new WechatQRExpiredException();
+                    throw new WechatQRExpiredException();
             } else {
                 logger.info("[*] login status = " + loginResult.getCode());
             }
@@ -126,7 +126,7 @@ public class LoginThread implements Runnable {
             userCache.setReferer(loginResult.getHostUrl());
             userCache.setOrigin(loginResult.getHostUrl());
         } else {
-            throw new WechatException("token ret = " + token.getRet());
+            throw new RobotException("token ret = " + token.getRet());
         }
 
         wechatHttpService.statReport(userCache);
