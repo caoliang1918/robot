@@ -78,14 +78,14 @@ public class LoginController {
             pageNum++;
         }
         pageNum = defaultPage;
-        while (true) {
+        /*while (true) {
             pageList = weiBoService.follow(userId, pageNum);
             if (CollectionUtils.isEmpty(pageList)) {
                 break;
             }
             weiBoUserList.addAll(pageList);
             pageNum++;
-        }
+        }*/
         for (WeiBoUser weiBoUser : weiBoUserList) {
             weiBoService.addBlackUser(weiBoUser.getId());
         }

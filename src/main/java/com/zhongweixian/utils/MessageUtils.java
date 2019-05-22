@@ -23,4 +23,23 @@ public class MessageUtils {
         }
         return null;
     }
+
+    public static boolean checkLan(String content) {
+        boolean chinese = false;
+        boolean english = false;
+        for (char c : content.toCharArray()) {
+            if (chinese == false && (c >= 0x4E00 && c <= 0x9FA5)) {
+                chinese = true;
+            }
+            if (english == false && (c + "").matches("[a-zA-Z]+")) {
+                english = true;
+            }
+        }
+        return english && chinese;
+    }
+
+    public static void main(String[] args) {
+        String content = "你好啊";
+        System.out.println(checkLan(content));
+    }
 }
