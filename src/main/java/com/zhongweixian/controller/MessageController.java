@@ -60,7 +60,7 @@ public class MessageController {
         try {
             weiBoService.sendWeiBoMessage(httpMessage);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("{}", e);
         }
         BaseUserCache userCache = cacheService.getUserCache(uid);
         if (userCache == null || !userCache.getAlive()) {

@@ -25,6 +25,9 @@ public class MessageUtils {
     }
 
     public static boolean checkLan(String content) {
+        if (content.startsWith("用户")) {
+            return true;
+        }
         boolean chinese = false;
         boolean english = false;
         for (char c : content.toCharArray()) {

@@ -143,7 +143,7 @@ public class WeiBoService {
 
 
     /**
-     * 先用邮箱、密码登录，根据返回的URL再去拿cookie，这个URL是一次性的q123!@#QWE
+     * 先用邮箱、密码登录，根据返回的URL再去拿cookie，这个URL是一次性的
      */
     private void login() {
         if (time > 600L) {
@@ -177,7 +177,7 @@ public class WeiBoService {
         } catch (Exception e) {
             logger.error("{}", e);
         }
-        logger.info("login responseEntity :{}", responseEntity);
+        logger.info("login responseEntity :{}", responseEntity.getBody());
         String text = responseEntity.getBody();
         String token = null;
         try {
@@ -225,14 +225,16 @@ public class WeiBoService {
         HttpHeaders headers = httpHeaders;
         headers.add(HttpHeaders.USER_AGENT, getUserAgent());
         String formData = null;
+        ResponseEntity<String> responseEntity = null;
         try {
             formData = "location=v6_content_home&text=" + URLEncoder.encode(httpMessage.getContent(), "UTF-8") + "&appkey=&style_type=1&pic_id=&tid=&pdetail=&mid=&isReEdit=false&rank=0&rankid=&module=stissue&pub_source=main_&pub_type=dialog&isPri=0&_t=0";
-        } catch (UnsupportedEncodingException e) {
+            responseEntity = new RestTemplate().exchange(SEND_URL + System.currentTimeMillis(), HttpMethod.POST,
+                    new HttpEntity<>(formData, headers), String.class);
+        } catch (Exception e) {
             logger.error("{}", e);
+            login();
+            return;
         }
-        ResponseEntity<String> responseEntity = new RestTemplate().exchange(SEND_URL + System.currentTimeMillis(), HttpMethod.POST,
-                new HttpEntity<>(formData, headers), String.class);
-
         if (responseEntity.getStatusCode() == HttpStatus.FOUND) {
             logger.error("client not login : {}", responseEntity);
             login();
@@ -359,15 +361,15 @@ public class WeiBoService {
         try {
             ResponseEntity<String> responseEntity = new RestTemplate().exchange(String.format(FANS_URL, userId, page), HttpMethod.GET, new HttpEntity<>(headers), String.class);
             if (responseEntity.getStatusCode() != HttpStatus.OK) {
+                logger.warn("get fans error , statusCode:{}", responseEntity.getStatusCode());
                 return null;
             }
             List<WeiBoUser> pageList = getUserList(responseEntity.getBody());
             logger.info("get {} fans of page:{} , fans size:{}", userId, page, pageList.size());
             return pageList;
         } catch (Exception e) {
-
+            logger.error("{}", e);
         }
-
         return null;
     }
 
@@ -425,7 +427,7 @@ public class WeiBoService {
         user.setFans(Long.parseLong(elements.get(1).getElementsByTag("a").html()));
         user.setWeibo(Long.parseLong(elements.get(2).getElementsByTag("a").html()));
 
-        if ((user.getAddress().contains("贵州") || user.getWeibo() < 10L) && MessageUtils.checkLan(user.getNikename())) {
+        if ((user.getAddress().contains("贵州") || user.getWeibo() < 15L) && MessageUtils.checkLan(user.getNikename())) {
             logger.info("{}", user.toString());
             findFans(user);
             return user;
