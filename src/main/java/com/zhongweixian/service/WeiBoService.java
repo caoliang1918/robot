@@ -92,10 +92,7 @@ public class WeiBoService {
 
     @PostConstruct
     public void init() {
-
-
         login();
-
 
         /**
          * 定时任务1:打开我的主页
@@ -107,7 +104,7 @@ public class WeiBoService {
                 logger.info("get weibo base home ,status:{}", responseEntity.getStatusCode());
                 time = time <= 0 ? 0L : (time - 600L);
             }
-        }, 5, 10, TimeUnit.MINUTES);
+        }, 5, 30, TimeUnit.MINUTES);
 
 
         /**
@@ -116,6 +113,9 @@ public class WeiBoService {
         taskExecutor.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
+                if (blackUserIds.size() > 200) {
+                    return;
+                }
                 List<WeiBoUser> weiBoUserList = fans(fans.poll().getId().toString(), 1);
                 if (CollectionUtils.isEmpty(weiBoUserList)) {
                     return;
@@ -138,7 +138,7 @@ public class WeiBoService {
                 }
                 black(userId);
             }
-        }, 5, 10, TimeUnit.SECONDS);
+        }, 5, 15, TimeUnit.SECONDS);
     }
 
 
@@ -212,6 +212,12 @@ public class WeiBoService {
     }
 
 
+    /**
+     * 发送微博
+     *
+     * @param httpMessage
+     * @throws RobotException
+     */
     public void sendWeiBoMessage(HttpMessage httpMessage) throws RobotException {
         if ("delete".equals(httpMessage.getOption()) || "update".equals(httpMessage.getOption())) {
             deleteWeiBo(messageMap.get(httpMessage.getId()));
@@ -219,7 +225,9 @@ public class WeiBoService {
                 return;
             }
         }
-        //发微博去重
+        /**
+         * 发微博去重
+         */
         checkMessage(httpMessage);
 
         HttpHeaders headers = httpHeaders;
@@ -255,6 +263,9 @@ public class WeiBoService {
         String weiBoId = data.substring(data.indexOf("mid") + 4, data.indexOf("action-type")).replaceAll("\\\\", "").replaceAll("\"", "");
         logger.info("add mblog statusCode:{} , content:{} , weiboId:{}", responseEntity.getStatusCode(), httpMessage.getContent(), weiBoId);
 
+        /**
+         * 用于记录重复微博，如果在2000秒内有重复，则删除之前的微博
+         */
         RevokeRequst revokeRequst = new RevokeRequst();
         revokeRequst.setContent(httpMessage.getContent());
         revokeRequst.setClientMsgId(weiBoId.trim());
@@ -263,6 +274,11 @@ public class WeiBoService {
         messageMap.put(httpMessage.getId(), revokeRequst);
     }
 
+    /**
+     * 删除微博
+     *
+     * @param revokeRequst
+     */
     private void deleteWeiBo(RevokeRequst revokeRequst) {
         if (revokeRequst == null) {
             return;
@@ -276,11 +292,18 @@ public class WeiBoService {
         logger.info("delete mblog responseEntity:{}", responseEntity.getBody());
     }
 
-
+    /**
+     * 把已经发送的微博存在hashMap中
+     */
     private Map<Long, RevokeRequst> messageMap = new HashMap<>();
 
     private final String checkContent = "微信";
 
+    /**
+     * 检查重复微博
+     *
+     * @param httpMessage
+     */
     private void checkMessage(HttpMessage httpMessage) {
         if (httpMessage.getContent().contains(checkContent)) {
             String content = httpMessage.getContent();
@@ -314,7 +337,11 @@ public class WeiBoService {
         }
     }
 
-
+    /**
+     * 轮训获取userAgent
+     *
+     * @return
+     */
     private String getUserAgent() {
         int index = i % USER_AGENT.length;
         i++;
@@ -331,12 +358,15 @@ public class WeiBoService {
     }
 
     /**
-     * 关注
+     * 关注的用户
      *
      * @param userId
      * @return
      */
     public List<WeiBoUser> follow(String userId, Integer page) {
+        if (page > 5) {
+            return null;
+        }
         HttpHeaders headers = httpHeaders;
         headers.add(HttpHeaders.USER_AGENT, getUserAgent());
         ResponseEntity<String> responseEntity = new RestTemplate().exchange(String.format(FOLLOW_URL, userId, page), HttpMethod.GET, new HttpEntity<>(headers), String.class);
@@ -350,12 +380,15 @@ public class WeiBoService {
     }
 
     /**
-     * 粉丝
+     * 粉丝用户
      *
      * @param userId
      * @return
      */
     public List<WeiBoUser> fans(String userId, Integer page) {
+        if (page > 5) {
+            return null;
+        }
         HttpHeaders headers = httpHeaders;
         headers.add(HttpHeaders.USER_AGENT, getUserAgent());
         try {
@@ -373,6 +406,12 @@ public class WeiBoService {
         return null;
     }
 
+    /**
+     * 用户列表(fans 和 follow公用这块代码)
+     *
+     * @param body
+     * @return
+     */
     private List<WeiBoUser> getUserList(String body) {
         List<WeiBoUser> userList = new ArrayList<>();
 
@@ -399,21 +438,35 @@ public class WeiBoService {
                 return userList;
             }
             WeiBoUser weiBoUser = null;
-            for (Element e : elements) {
-                weiBoUser = parse(e);
-                if (weiBoUser != null) {
-                    userList.add(weiBoUser);
+            try {
+                for (Element e : elements) {
+                    weiBoUser = parse(e);
+                    if (weiBoUser != null) {
+                        userList.add(weiBoUser);
+                    }
                 }
+            } catch (Exception e) {
+                logger.error("{}", e);
             }
         }
         return userList;
     }
 
-    private WeiBoUser parse(Element element) {
+    /**
+     * HTML解析
+     *
+     * @param element
+     * @return
+     * @throws Exception
+     */
+    private WeiBoUser parse(Element element) throws Exception {
         WeiBoUser user = new WeiBoUser();
         user.setNikename(element.getElementsByClass("mod_pic").get(0).children().get(0).attr("title"));
         Elements elements = element.getElementsByClass("info_connect").get(0).children();
-
+        //话题或者其他
+        if (elements.size() == 0) {
+            return null;
+        }
         String userId = elements.get(0).getElementsByTag("a").attr("href");
         user.setId(Long.parseLong(userId.substring(1, userId.indexOf("/follow"))));
         String usercard = elements.get(2).getElementsByTag("a").attr("href");
@@ -427,6 +480,16 @@ public class WeiBoService {
         user.setFans(Long.parseLong(elements.get(1).getElementsByTag("a").html()));
         user.setWeibo(Long.parseLong(elements.get(2).getElementsByTag("a").html()));
 
+        /**
+         * 粉丝大于1000或者发微博数大于300的用户，应该不是僵尸用户吧
+         */
+        if (user.getFans() > 1000 || user.getWeibo() > 300) {
+            return null;
+        }
+
+        /**
+         * 贵州人民爱玩僵尸，僵尸用户的昵称一般包含中文和字母
+         */
         if ((user.getAddress().contains("贵州") || user.getWeibo() < 15L) && MessageUtils.checkLan(user.getNikename())) {
             logger.info("{}", user.toString());
             findFans(user);
@@ -435,6 +498,11 @@ public class WeiBoService {
         return null;
     }
 
+    /**
+     * 执行拉黑动作
+     *
+     * @param userId
+     */
     private void black(Long userId) {
         HttpHeaders headers = httpHeaders;
         headers.add(HttpHeaders.USER_AGENT, getUserAgent());
@@ -453,7 +521,15 @@ public class WeiBoService {
         }
     }
 
+    /**
+     * 递归拉黑，拉黑僵尸的粉丝，但是微博又不能频繁操作，先扔到定时任务里面执行吧
+     *
+     * @param weiBoUser
+     */
     private void findFans(WeiBoUser weiBoUser) {
+        if (fans.size() > 100) {
+            return;
+        }
         fans.add(weiBoUser);
     }
 
