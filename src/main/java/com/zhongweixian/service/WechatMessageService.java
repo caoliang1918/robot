@@ -60,7 +60,7 @@ public class WechatMessageService {
      * @return
      * @throws IOException
      */
-    public SendMsgResponse sendText(BaseUserCache userCache, String toUserName, String content) throws IOException {
+    public SendMsgResponse sendText(BaseUserCache userCache, String toUserName, String content)  {
         //notifyNecessary(userName);
         SendMsgResponse response = wechatHttpService.sendText(userCache, content, toUserName);
         logger.info("sendMsgResponse:{}", response.toString());
@@ -68,7 +68,7 @@ public class WechatMessageService {
         return response;
     }
 
-    public void revoke(BaseUserCache userCache, String wxMessageId, String toUserName) throws IOException {
+    public void revoke(BaseUserCache userCache, String wxMessageId, String toUserName)  {
         wechatHttpService.revoke(userCache, toUserName, wxMessageId);
     }
 

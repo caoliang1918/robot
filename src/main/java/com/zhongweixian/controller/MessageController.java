@@ -143,12 +143,11 @@ public class MessageController {
             }
             SendMsgResponse response = null;
             httpMessage.setSendTime(new Date());
-
             for (String user : optionUser) {
                 response = wechatMessageService.sendText(userCache, user, httpMessage.getContent());
-                logger.info("send message : {} ,  {} , {} , {}", response.getMsgID(), httpMessage.getId(), httpMessage.getOption(), httpMessage.getContent());
+                logger.info("sendOption message : {} ,  {} , {} , {}", response.getMsgID(), httpMessage.getId(), httpMessage.getOption(), httpMessage.getContent());
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return "send success";
@@ -177,17 +176,13 @@ public class MessageController {
             });
         }
 
-        try {
-            SendMsgResponse response = null;
-            httpMessage.setSendTime(new Date());
-
-            for (String user : positions) {
-                response = wechatMessageService.sendText(userCache, user, httpMessage.getContent());
-                logger.info("send message : {} ,  {} , {} , {}", response.getMsgID(), httpMessage.getId(), httpMessage.getOption(), httpMessage.getContent());
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+        SendMsgResponse response = null;
+        httpMessage.setSendTime(new Date());
+        for (String user : positions) {
+            response = wechatMessageService.sendText(userCache, user, httpMessage.getContent());
+            logger.info("send message : {} ,  {} , {} , {}", response.getMsgID(), httpMessage.getId(), httpMessage.getOption(), httpMessage.getContent());
         }
+
         return "send success";
     }
 

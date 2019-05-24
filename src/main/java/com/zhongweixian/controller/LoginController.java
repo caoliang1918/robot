@@ -65,7 +65,7 @@ public class LoginController {
 
 
     @GetMapping
-    public HttpEntity addBlackUser(@RequestParam String userId, @RequestParam(defaultValue = "1") Integer pageNum) {
+    public HttpEntity addBlackUser(@RequestParam Long userId, @RequestParam(defaultValue = "1") Integer pageNum) {
         int defaultPage = pageNum;
         List<WeiBoUser> weiBoUserList = new ArrayList<>();
         List<WeiBoUser> pageList = null;

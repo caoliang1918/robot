@@ -34,7 +34,7 @@ public class MessageUtils {
             if (chinese == false && (c >= 0x4E00 && c <= 0x9FA5)) {
                 chinese = true;
             }
-            if (english == false && (c + "").matches("[a-zA-Z]+")) {
+            if (english == false && (c + "").matches("[a-zA-Z0-9]+")) {
                 english = true;
             }
         }
@@ -42,7 +42,7 @@ public class MessageUtils {
     }
 
     public static void main(String[] args) {
-        String content = "你好啊";
+        String content = "你好啊1";
         System.out.println(checkLan(content));
     }
 }

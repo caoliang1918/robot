@@ -395,9 +395,9 @@ public class WechatHttpService {
         try {
             responseEntity = baseUserCache.getRestTemplate().exchange(uri, HttpMethod.GET, new HttpEntity<>(customHeader), String.class);
         } catch (Exception e) {
-            logger.error("{}", e);
+            logger.error("linsten error:{}", e);
+            return null;
         }
-        logger.debug("resttemplate : {}", ((StatefullRestTemplate) baseUserCache.getRestTemplate()).getHttpContext().getAttribute(HttpClientContext.COOKIE_STORE));
         if (responseEntity == null || !HttpStatus.OK.equals(responseEntity.getStatusCode())) {
             return null;
         }
@@ -429,9 +429,13 @@ public class WechatHttpService {
         request.setSyncKey(baseUserCache.getSyncKey());
         HttpHeaders customHeader = createPostCustomHeader(baseUserCache);
         HeaderUtils.assign(customHeader, postHeader);
-        ResponseEntity<String> responseEntity
-                = baseUserCache.getRestTemplate().exchange(url, HttpMethod.POST, new HttpEntity<>(request, customHeader), String.class);
-        return jsonMapper.readValue(WechatUtils.textDecode(responseEntity.getBody()), SyncResponse.class);
+        try {
+            ResponseEntity<String> responseEntity = baseUserCache.getRestTemplate().exchange(url, HttpMethod.POST, new HttpEntity<>(request, customHeader), String.class);
+            return jsonMapper.readValue(WechatUtils.textDecode(responseEntity.getBody()), SyncResponse.class);
+        } catch (Exception e) {
+            logger.error("sync message error:{}", e);
+        }
+        return null;
     }
 
     /**
@@ -465,7 +469,7 @@ public class WechatHttpService {
         return jsonMapper.readValue(WechatUtils.textDecode(responseEntity.getBody()), VerifyUserResponse.class);
     }
 
-    SendMsgResponse sendText(BaseUserCache userCache, String content, String toUserName) throws IOException {
+    SendMsgResponse sendText(BaseUserCache userCache, String content, String toUserName) {
         final int scene = 0;
         final String rnd = String.valueOf(System.currentTimeMillis() * 10);
         final String url = String.format(WECHAT_URL_SEND_MSG, userCache.getWxHost());
@@ -482,12 +486,16 @@ public class WechatHttpService {
         request.setMsg(msg);
         HttpHeaders customHeader = createPostCustomHeader(userCache);
         HeaderUtils.assign(customHeader, postHeader);
-        ResponseEntity<String> responseEntity = userCache.getRestTemplate().exchange(url, HttpMethod.POST, new HttpEntity<>(request, customHeader), String.class);
-        return jsonMapper.readValue(WechatUtils.textDecode(responseEntity.getBody()), SendMsgResponse.class);
+        try {
+            ResponseEntity<String> responseEntity = userCache.getRestTemplate().exchange(url, HttpMethod.POST, new HttpEntity<>(request, customHeader), String.class);
+            return jsonMapper.readValue(WechatUtils.textDecode(responseEntity.getBody()), SendMsgResponse.class);
+        } catch (Exception e) {
+            logger.error("{}", e);
+        }
+        return null;
     }
 
-    void revoke(BaseUserCache userCache, String toUserName, String messageId) throws IOException {
-        final String rnd = String.valueOf(System.currentTimeMillis() * 10);
+    void revoke(BaseUserCache userCache, String toUserName, String messageId) {
         final String url = String.format(WECHAT_URL_REVOKE_MSG, userCache.getWxHost());
         RevokeRequst request = new RevokeRequst();
 
@@ -497,8 +505,12 @@ public class WechatHttpService {
         request.setBaseRequest(userCache.getBaseRequest());
         HttpHeaders customHeader = createPostCustomHeader(userCache);
         HeaderUtils.assign(customHeader, postHeader);
-        ResponseEntity<String> responseEntity = userCache.getRestTemplate().exchange(url, HttpMethod.POST, new HttpEntity<>(request, customHeader), String.class);
-        logger.info("撤销消息 {} , {}", messageId, responseEntity.getStatusCode());
+        try {
+            ResponseEntity<String> responseEntity = userCache.getRestTemplate().exchange(url, HttpMethod.POST, new HttpEntity<>(request, customHeader), String.class);
+            logger.info("撤销消息 {} , {}", messageId, responseEntity.getStatusCode());
+        } catch (Exception e) {
+            logger.error("撤回消息:{} 失败:{}", messageId, e);
+        }
     }
 
     OpLogResponse setAlias(BaseUserCache userCache, String newAlias, String userName) throws IOException {

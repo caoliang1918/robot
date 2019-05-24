@@ -53,7 +53,25 @@ public class WeiBoService {
     private ScheduledExecutorService taskExecutor = new ScheduledThreadPoolExecutor(500, new BasicThreadFactory.Builder().namingPattern("weibo-schedule-pool--%d").daemon(true).build());
 
     private Queue<Long> blackUserIds = new LinkedBlockingDeque();
-    private Queue<WeiBoUser> fans = new LinkedBlockingDeque();
+    private Queue<Long> fans = new LinkedBlockingDeque();
+
+    /**
+     * 获取首页,同时限制登录频次 {} 分钟
+     */
+    private static final Integer HONE_RATE = 10;
+    /**
+     * 粉丝队列长度限制
+     */
+    private static final Integer FANS_LIMIT = 200;
+    /**
+     * 获取僵尸用户的粉丝频率 {} 分钟
+     */
+    private static final Integer FANS_RATE = 3;
+    /**
+     * 拉黑僵尸用户频率 {} 秒
+     */
+    private static final Integer BLACK_USER_RATE = 5;
+
 
     private static final String HOME = "https://weibo.com/u/7103523530/home?topnav=1&wvr=6";
     private static final String SEND_URL = "https://www.weibo.com/aj/mblog/add?ajwvr=6&__rnd=";
@@ -88,7 +106,8 @@ public class WeiBoService {
 
     private RestTemplate restTemplate;
 
-    private Long time = 0L;
+    private boolean isLogin = true;
+    private Integer loginTime = 0;
 
     @PostConstruct
     public void init() {
@@ -100,11 +119,15 @@ public class WeiBoService {
         taskExecutor.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-                ResponseEntity<String> responseEntity = new RestTemplate().exchange(HOME, HttpMethod.GET, new HttpEntity<>(httpHeaders), String.class);
-                logger.info("get weibo base home ,status:{}", responseEntity.getStatusCode());
-                time = time <= 0 ? 0L : (time - 600L);
+                try {
+                    ResponseEntity<String> responseEntity = new RestTemplate().exchange(HOME, HttpMethod.GET, new HttpEntity<>(httpHeaders), String.class);
+                    logger.info("get weibo base home ,status:{}", responseEntity.getStatusCode());
+                } catch (Exception e) {
+                    logger.error("{}", e);
+                }
+                isLogin = true;
             }
-        }, 5, 30, TimeUnit.MINUTES);
+        }, 5, HONE_RATE, TimeUnit.MINUTES);
 
 
         /**
@@ -113,18 +136,18 @@ public class WeiBoService {
         taskExecutor.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-                if (blackUserIds.size() > 200) {
+                if (fans.size() > FANS_LIMIT) {
                     return;
                 }
-                List<WeiBoUser> weiBoUserList = fans(fans.poll().getId().toString(), 1);
+                List<WeiBoUser> weiBoUserList = fans(fans.poll(), 1);
                 if (CollectionUtils.isEmpty(weiBoUserList)) {
                     return;
                 }
                 for (WeiBoUser weiBoUser : weiBoUserList) {
-                    addBlackUser(weiBoUser.getId());
+                    blackUserIds.add(weiBoUser.getId());
                 }
             }
-        }, 5, 3, TimeUnit.MINUTES);
+        }, 5, FANS_RATE, TimeUnit.MINUTES);
 
         /**
          * 定时任务3:拉黑队列中的僵尸用户
@@ -138,19 +161,20 @@ public class WeiBoService {
                 }
                 black(userId);
             }
-        }, 5, 15, TimeUnit.SECONDS);
+        }, 5, BLACK_USER_RATE, TimeUnit.SECONDS);
     }
 
 
     /**
      * 先用邮箱、密码登录，根据返回的URL再去拿cookie，这个URL是一次性的
      */
-    private void login() {
-        if (time > 600L) {
-            logger.warn("登录次数过多,times:{}", time);
-            return;
+    private boolean login() {
+        if (!isLogin) {
+            logger.warn("登录次数过多 , loginTime:{}", loginTime);
+            return false;
         }
-        time = time + 600L;
+        isLogin = false;
+        loginTime++;
         String formData = null;
         try {
             formData = String.format(
@@ -186,7 +210,7 @@ public class WeiBoService {
             logger.error("{}", e);
         }
         if (token == null) {
-            return;
+            return false;
         }
         //https://passport.weibo.com/wbsso/login?ticket=ST-NzEwMzUyMzUzMA%3D%3D-1556522528-gz-C427A34DD45B0991800DA3F6DC59EB1F-1&ssosavestate=1588058528
         logger.info("token:{}", token);
@@ -199,7 +223,7 @@ public class WeiBoService {
         HttpHeaders responseHeaders = cookieResponse.getHeaders();
         if (!responseHeaders.containsKey("Set-Cookie")) {
             logger.error("can not find Cookies");
-            return;
+            return false;
         }
         StringBuilder cookies = new StringBuilder();
         List<String> list = responseHeaders.get("Set-Cookie");
@@ -209,6 +233,7 @@ public class WeiBoService {
             cookies.append(cookie.split(";")[0]).append(";");
         });
         httpHeaders.add("Cookie", cookies.toString().substring(0, cookies.length() - 1));
+        return true;
     }
 
 
@@ -348,14 +373,6 @@ public class WeiBoService {
         return USER_AGENT[index];
     }
 
-    /**
-     * 添加屏蔽用户
-     *
-     * @param userId
-     */
-    public void addBlackUser(Long userId) {
-        blackUserIds.add(userId);
-    }
 
     /**
      * 关注的用户
@@ -363,7 +380,7 @@ public class WeiBoService {
      * @param userId
      * @return
      */
-    public List<WeiBoUser> follow(String userId, Integer page) {
+    public List<WeiBoUser> follow(Long userId, Integer page) {
         if (page > 5) {
             return null;
         }
@@ -385,7 +402,7 @@ public class WeiBoService {
      * @param userId
      * @return
      */
-    public List<WeiBoUser> fans(String userId, Integer page) {
+    public List<WeiBoUser> fans(Long userId, Integer page) {
         if (page > 5) {
             return null;
         }
@@ -395,6 +412,7 @@ public class WeiBoService {
             ResponseEntity<String> responseEntity = new RestTemplate().exchange(String.format(FANS_URL, userId, page), HttpMethod.GET, new HttpEntity<>(headers), String.class);
             if (responseEntity.getStatusCode() != HttpStatus.OK) {
                 logger.warn("get fans error , statusCode:{}", responseEntity.getStatusCode());
+                fans.add(userId);
                 return null;
             }
             List<WeiBoUser> pageList = getUserList(responseEntity.getBody());
@@ -418,8 +436,8 @@ public class WeiBoService {
         Document document = Jsoup.parse(body);
         logger.debug("document:{}", document);
         List<Node> nodeList = document.childNode(1).childNode(2).childNodes();
-        if (nodeList.size() == 42 && nodeList.get(40).outerHtml().contains("followTab")) {
-            Node node = nodeList.get(40);
+        if (nodeList.size() >=40 && nodeList.get(nodeList.size()-2).outerHtml().contains("followTab")) {
+            Node node = nodeList.get(nodeList.size()-2);
             logger.debug("{}", node);
             String nodeString = node.toString();
             nodeString = nodeString.substring(nodeString.indexOf("<div"), nodeString.lastIndexOf("/div>") + 5);
@@ -492,7 +510,7 @@ public class WeiBoService {
          */
         if ((user.getAddress().contains("贵州") || user.getWeibo() < 15L) && MessageUtils.checkLan(user.getNikename())) {
             logger.info("{}", user.toString());
-            findFans(user);
+            fans.add(user.getId());
             return user;
         }
         return null;
@@ -513,24 +531,23 @@ public class WeiBoService {
             ResponseEntity<String> responseEntity = new RestTemplate().exchange(FEED_USER_URL, HttpMethod.POST,
                     new HttpEntity<>(formData, headers), String.class);
             logger.info("add blackUser:{} response:{} , queue size:{}", userId, responseEntity.getBody(), blackUserIds.size());
+            logger.debug("reponse cookie:{}" , responseEntity.getHeaders().get("Set-Cookie"));
         } catch (Exception e) {
             logger.error("black user error:{}", e.getMessage());
             if (e.getMessage().equals("400 Bad Request")) {
-                login();
+                if (!login()) {
+                    blackUserIds.add(userId);
+                }
             }
         }
     }
 
     /**
-     * 递归拉黑，拉黑僵尸的粉丝，但是微博又不能频繁操作，先扔到定时任务里面执行吧
+     * 添加黑户
      *
-     * @param weiBoUser
+     * @param id
      */
-    private void findFans(WeiBoUser weiBoUser) {
-        if (fans.size() > 100) {
-            return;
-        }
-        fans.add(weiBoUser);
+    public void addBlackUser(Long id) {
+        blackUserIds.add(id);
     }
-
 }
