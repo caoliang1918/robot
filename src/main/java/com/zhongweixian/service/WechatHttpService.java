@@ -36,6 +36,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
@@ -421,7 +422,7 @@ public class WechatHttpService {
      * @return
      * @throws IOException
      */
-    SyncResponse sync(BaseUserCache baseUserCache) throws IOException {
+    SyncResponse sync(BaseUserCache baseUserCache) {
         final String url = String.format(WECHAT_URL_SYNC, baseUserCache.getWxHost(), baseUserCache.getSid(), escape(baseUserCache.getsKey()));
         SyncRequest request = new SyncRequest();
         request.setBaseRequest(baseUserCache.getBaseRequest());
@@ -448,7 +449,7 @@ public class WechatHttpService {
     VerifyUserResponse acceptFriend(BaseUserCache baseUserCache, VerifyUser[] verifyUsers) throws IOException, URISyntaxException {
         final int opCode = VerifyUserOPCode.VERIFYOK.getCode();
         final int[] sceneList = new int[]{AddScene.WEB.getCode()};
-        final String path = String.format(WECHAT_URL_VERIFY_USER);
+        final String path = String.format(WECHAT_URL_VERIFY_USER, baseUserCache.getWxHost());
         VerifyUserRequest request = new VerifyUserRequest();
         request.setBaseRequest(baseUserCache.getBaseRequest());
         request.setOpcode(opCode);
@@ -464,9 +465,13 @@ public class WechatHttpService {
         builder.addParameter("pass_ticket", baseUserCache.getPassTicket());
         final URI uri = builder.build().toURL().toURI();
 
-        ResponseEntity<String> responseEntity
-                = baseUserCache.getRestTemplate().exchange(uri, HttpMethod.POST, new HttpEntity<>(request, this.postHeader), String.class);
-        return jsonMapper.readValue(WechatUtils.textDecode(responseEntity.getBody()), VerifyUserResponse.class);
+        try {
+            ResponseEntity<String> responseEntity = baseUserCache.getRestTemplate().exchange(uri, HttpMethod.POST, new HttpEntity<>(request, this.postHeader), String.class);
+            return jsonMapper.readValue(WechatUtils.textDecode(responseEntity.getBody()), VerifyUserResponse.class);
+        } catch (Exception e) {
+            logger.error("{}", e);
+        }
+        return null;
     }
 
     SendMsgResponse sendText(BaseUserCache userCache, String content, String toUserName) {
@@ -585,8 +590,13 @@ public class WechatHttpService {
         return responseEntity.getBody();
     }
 
-    private String escape(String str) throws IOException {
-        return URLEncoder.encode(str, StandardCharsets.UTF_8.toString());
+    private String escape(String str) {
+        try {
+            return URLEncoder.encode(str, StandardCharsets.UTF_8.toString());
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private void appendAdditionalCookies(CookieStore store, Map<String, String> cookies, String domain, String path, Date expiryDate) {

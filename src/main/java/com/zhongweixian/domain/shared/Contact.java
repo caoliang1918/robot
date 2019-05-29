@@ -160,4 +160,24 @@ public class Contact extends Member {
     public int hashCode() {
         return this.getUserName().hashCode();
     }
+
+    @Override
+    public String toString() {
+        return "Contact{" +
+                "MemberCount=" + MemberCount +
+                ", MemberList=" + MemberList +
+                ", OwnerUin=" + OwnerUin +
+                ", Statues=" + Statues +
+                ", AttrStatus=" + AttrStatus +
+                ", Province='" + Province + '\'' +
+                ", City='" + City + '\'' +
+                ", Alias='" + Alias + '\'' +
+                ", UniFriend=" + UniFriend +
+                ", DisplayName='" + DisplayName + '\'' +
+                ", ChatRoomId=" + ChatRoomId +
+                ", KeyWord='" + KeyWord + '\'' +
+                ", EncryChatRoomId='" + EncryChatRoomId + '\'' +
+                ", IsOwner=" + IsOwner +
+                '}';
+    }
 }

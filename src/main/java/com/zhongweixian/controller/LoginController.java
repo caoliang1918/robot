@@ -69,6 +69,7 @@ public class LoginController {
         int defaultPage = pageNum;
         List<WeiBoUser> weiBoUserList = new ArrayList<>();
         List<WeiBoUser> pageList = null;
+        weiBoService.addBlackUser(userId);
         while (true) {
             pageList = weiBoService.fans(userId, pageNum);
             if (CollectionUtils.isEmpty(pageList)) {

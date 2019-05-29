@@ -31,13 +31,13 @@ public class MessageHandlerImpl implements MessageHandler {
     public MessageHandlerImpl(WechatMessageService wechatHttpService, BaseUserCache baseUserCache) {
         this.wechatHttpService = wechatHttpService;
         this.baseUserCache = baseUserCache;
-     }
+    }
 
     @Override
     public void onReceivingChatRoomTextMessage(Message message) {
         ChatRoomDescription chatRoom = baseUserCache.getChatRooms().get(message.getFromUserName());
         if (chatRoom != null) {
-            logger.info("roomName:{}",chatRoom.getUserName());
+            logger.info("roomName:{}", chatRoom.getUserName());
         }
         logger.info("from person: {} ", MessageUtils.getSenderOfChatRoomTextMessage(message.getContent()));
         logger.info("content:{}", MessageUtils.getChatRoomTextMessageContent(message.getContent()));
@@ -45,88 +45,108 @@ public class MessageHandlerImpl implements MessageHandler {
 
     @Override
     public void onReceivingChatRoomImageMessage(Message message, String thumbImageUrl, String fullImageUrl) {
-        logger.info("onReceivingChatRoomImageMessage");
         logger.info("thumbImageUrl:{}", thumbImageUrl);
         logger.info("fullImageUrl:{}", fullImageUrl);
     }
 
     @Override
-    public void onReceivingPrivateTextMessage(Message message) throws RobotException {
-        //logger.info("from my message to userName:{}" , cacheService.getUserCache(uid).getChatContants().get(message.getToUserName()).getRemarkName());
-        logger.info("from:{} ", message.getFromUserName());
-        logger.info("to:{}", message.getToUserName());
+    public void onReceivingPrivateTextMessage(BaseUserCache userCache, Message message) {
+        try {
+            logger.info("from:{} ", userCache.getChatContants().get(message.getFromUserName()).getNickName());
+        } catch (Exception e) {
+            logger.error("{}", e);
+        }
         logger.info("content:{}", message.getContent());
+        if ("进群".equals(message.getContent())) {
+            String roomName = null;
+            userCache.getChatRooms().values().forEach(x -> {
+                if ("免费分享".equals(x.getUserName())) {
+                    logger.info("拉用户:{} 进 {} 群", message.getFromUserName(), x.getUserName());
+                    try {
+                        wechatHttpService.addChatRoomMember(userCache, x.getChatRoomId(), message.getFromUserName());
+                    } catch (Exception e) {
+                        logger.error("chatRoom add member error:{} ", e);
+                    }
+                }
+            });
+        }
     }
 
     @Override
-    public void onReceivingPrivateImageMessage(BaseUserCache userCache , Message message, String thumbImageUrl, String fullImageUrl) throws IOException {
-        logger.info("onReceivingPrivateImageMessage");
+    public void onReceivingPrivateImageMessage(BaseUserCache userCache, Message message, String thumbImageUrl, String fullImageUrl) {
         logger.info("thumbImageUrl:{}", thumbImageUrl);
         logger.info("fullImageUrl:{}", fullImageUrl);
-//        将图片保存在本地
-        byte[] data = wechatHttpService.downloadImage(userCache,thumbImageUrl);
-        FileOutputStream fos = new FileOutputStream(System.currentTimeMillis() + ".jpg");
-        fos.write(data);
-        fos.close();
+
+        /**
+         * 将图片保存在本地
+         */
+        try {
+            byte[] data = wechatHttpService.downloadImage(userCache, thumbImageUrl);
+            FileOutputStream fos = new FileOutputStream(System.currentTimeMillis() + ".jpg");
+            fos.write(data);
+            fos.close();
+        } catch (Exception e) {
+            logger.error("{}", e);
+        }
     }
 
     @Override
     public boolean onReceivingFriendInvitation(RecommendInfo info) {
-        logger.info("onReceivingFriendInvitation");
-        logger.info("recommendinfo content:{}", info.getContent());
-//        默认接收所有的邀请
+        logger.info("接受新加好友信息:{}", info);
         return true;
     }
 
     @Override
-    public void postAcceptFriendInvitation(BaseUserCache userCache , Message message) throws IOException {
-        logger.info("postAcceptFriendInvitation");
-//        将该用户的微信号设置成他的昵称
+    public void postAcceptFriendInvitation(BaseUserCache userCache, Message message) {
         String content = StringEscapeUtils.unescapeXml(message.getContent());
         ObjectMapper xmlMapper = new XmlMapper();
-        FriendInvitationContent friendInvitationContent = xmlMapper.readValue(content, FriendInvitationContent.class);
-        wechatHttpService.setAlias(userCache,message.getRecommendInfo().getUserName(), friendInvitationContent.getFromusername());
+        try {
+            /**
+             * 备注新的好友信息
+             */
+            FriendInvitationContent friendInvitationContent = xmlMapper.readValue(content, FriendInvitationContent.class);
+            logger.info("备注好友信息 message:{} , content:{} , friendInvitationContent:{} ", message, content, friendInvitationContent);
+            wechatHttpService.setAlias(userCache, message.getRecommendInfo().getUserName(), friendInvitationContent.getFromusername());
+        } catch (Exception e) {
+            logger.error("{}", e);
+        }
     }
 
     @Override
     public void onChatRoomMembersChanged(Contact chatRoom, Set<ChatRoomMember> membersJoined, Set<ChatRoomMember> membersLeft) {
-        logger.info("onChatRoomMembersChanged");
-        logger.info("chatRoom:{}", chatRoom.getUserName());
         if (membersJoined != null && membersJoined.size() > 0) {
-            logger.info("membersJoined:{}", String.join(",", membersJoined.stream().map(ChatRoomMember::getNickName).collect(Collectors.toList())));
+            logger.info("chatRoom:{} ,  membersJoined:{}", chatRoom.getNickName(), String.join(",", membersJoined.stream().map(ChatRoomMember::getNickName).collect(Collectors.toList())));
         }
         if (membersLeft != null && membersLeft.size() > 0) {
-            logger.info("membersLeft:{}", String.join(",", membersLeft.stream().map(ChatRoomMember::getNickName).collect(Collectors.toList())));
+            logger.info("chatRoom:{} , membersLeft:{}", chatRoom.getNickName(), String.join(",", membersLeft.stream().map(ChatRoomMember::getNickName).collect(Collectors.toList())));
         }
     }
 
     @Override
     public void onNewChatRoomsFound(Set<Contact> chatRooms) {
-        logger.info("onNewChatRoomsFound");
-        chatRooms.forEach(x -> logger.info(x.getUserName()));
+        chatRooms.forEach(x -> {
+            logger.info("onNewChatRoomsFound username :{}  , roomName :{} ", x.getUserName(), x.getNickName());
+        });
     }
 
     @Override
     public void onChatRoomsDeleted(Set<Contact> chatRooms) {
-        logger.info("onChatRoomsDeleted");
-        chatRooms.forEach(x -> logger.info(x.getUserName()));
+        chatRooms.forEach(x -> {
+            logger.info("onChatRoomsDeleted username :{}  , roomName :{} ", x.getUserName(), x.getNickName());
+        });
     }
 
     @Override
     public void onNewFriendsFound(Set<Contact> contacts) {
-        logger.info("onNewFriendsFound");
         contacts.forEach(x -> {
-            logger.info(x.getUserName());
-            logger.info(x.getNickName());
+            logger.info("onNewFriendsFound username:{} , nikename:{}", x.getUserName(), x.getNickName());
         });
     }
 
     @Override
     public void onFriendsDeleted(Set<Contact> contacts) {
-        logger.info("onFriendsDeleted");
         contacts.forEach(x -> {
-            logger.info(x.getUserName());
-            logger.info(x.getNickName());
+            logger.info("onFriendsDeleted username:{} , nikename:{}", x.getUserName(), x.getNickName());
         });
     }
 
@@ -142,13 +162,12 @@ public class MessageHandlerImpl implements MessageHandler {
 
     @Override
     public void onRedPacketReceived(Contact contact) {
-        logger.info("onRedPacketReceived");
         if (contact != null) {
             logger.info("the red packet is from :{}", contact.getNickName());
         }
     }
 
-    private void replyMessage(BaseUserCache userCache , Message message) throws IOException {
-        wechatHttpService.sendText(userCache ,message.getFromUserName(), message.getContent());
+    private void replyMessage(BaseUserCache userCache, Message message) throws IOException {
+        wechatHttpService.sendText(userCache, message.getFromUserName(), message.getContent());
     }
 }

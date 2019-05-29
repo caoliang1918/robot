@@ -17,12 +17,15 @@ import com.zhongweixian.exception.RobotException;
 import com.zhongweixian.exception.WechatQRExpiredException;
 import com.zhongweixian.utils.QRCodeUtils;
 import com.zhongweixian.utils.WechatUtils;
+import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -35,6 +38,7 @@ public class LoginThread implements Runnable {
     private CacheService cacheService;
     private WechatHttpService wechatHttpService;
     private WechatMessageService wechatMessageService;
+
 
     public LoginThread(CacheService cacheService, WechatHttpService wechatHttpService, WechatMessageService wechatMessageService) {
         this.cacheService = cacheService;
@@ -100,7 +104,7 @@ public class LoginThread implements Runnable {
                 logger.info("[*] login status = AWAIT_SCANNING");
             } else if (LoginCode.EXPIRED.getCode().equals(loginResult.getCode())) {
                 logger.info("[*] login status = EXPIRED");
-                    throw new WechatQRExpiredException();
+                throw new WechatQRExpiredException();
             } else {
                 logger.info("[*] login status = " + loginResult.getCode());
             }
@@ -108,7 +112,7 @@ public class LoginThread implements Runnable {
 
         logger.info("[4] login completed");
         //5 redirect login
-        Token token = wechatHttpService.openNewloginpage(loginResult.getRedirectUrl() , userCache);
+        Token token = wechatHttpService.openNewloginpage(loginResult.getRedirectUrl(), userCache);
         if (token.getRet() == 0) {
             userCache.setUuid(uuid);
             userCache.setUin(token.getWxuin());
@@ -133,7 +137,7 @@ public class LoginThread implements Runnable {
 
         logger.info("[5] redirect login completed , wxUin:{}", token.getWxuin());
         //6 redirect
-        wechatHttpService.redirect(loginResult.getHostUrl() , userCache);
+        wechatHttpService.redirect(loginResult.getHostUrl(), userCache);
 
         logger.info("[6] redirect completed");
         //7 init
@@ -172,7 +176,7 @@ public class LoginThread implements Runnable {
                     logger.info("chatRoom name :{} , id :{} ", chatRoomDescription.getUserName(), chatRoomDescription.getChatRoomId());
                     chatRooms.add(chatRoomDescription);
                 } else {
-                    logger.debug("{} nickName:{} , remarkName:{} , userName:{}",count.get(), contact.getNickName(), contact.getRemarkName(), contact.getUserName());
+                    logger.debug("{} nickName:{} , remarkName:{} , userName:{}", count.get(), contact.getNickName(), contact.getRemarkName(), contact.getUserName());
                     count.decrementAndGet();
                     userCache.getChatContants().put(contact.getUserName(), contact);
                 }
@@ -203,10 +207,14 @@ public class LoginThread implements Runnable {
         MessageHandler messageHandler = new MessageHandlerImpl(wechatMessageService, userCache);
         SyncServie syncServie = new SyncServie(userCache, wechatHttpService, messageHandler);
         while (true) {
-            if (syncServie.listen() != RetCode.NORMAL.getCode()) {
-                logger.warn("logout user:{}", userCache.getUin());
-                userCache.setAlive(false);
-                break;
+            try {
+                if (syncServie.listen() != RetCode.NORMAL.getCode()) {
+                    logger.warn("logout user:{}", userCache.getUin());
+                    userCache.setAlive(false);
+                    break;
+                }
+            } catch (Exception e) {
+                logger.error("synccheck error:{}", e);
             }
         }
 
@@ -220,4 +228,6 @@ public class LoginThread implements Runnable {
             e.printStackTrace();
         }
     }
+
+
 }

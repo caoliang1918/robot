@@ -32,7 +32,7 @@ public interface MessageHandler {
      *
      * @param message 消息体
      */
-    void onReceivingPrivateTextMessage(Message message) throws RobotException;
+    void onReceivingPrivateTextMessage(BaseUserCache userCache, Message message);
 
     /**
      * 事件：收到个人聊天图片消息
@@ -41,7 +41,7 @@ public interface MessageHandler {
      * @param thumbImageUrl 图片缩略图链接
      * @param fullImageUrl  图片完整图链接
      */
-    void onReceivingPrivateImageMessage(BaseUserCache userCache, Message message, String thumbImageUrl, String fullImageUrl) throws IOException;
+    void onReceivingPrivateImageMessage(BaseUserCache userCache, Message message, String thumbImageUrl, String fullImageUrl);
 
     /**
      * 事件：收到加好友邀请
@@ -56,7 +56,7 @@ public interface MessageHandler {
      *
      * @param message 消息体
      */
-    void postAcceptFriendInvitation(BaseUserCache userCache, Message message) throws IOException;
+    void postAcceptFriendInvitation(BaseUserCache userCache, Message message);
 
     /**
      * 事件：群成员发生变化

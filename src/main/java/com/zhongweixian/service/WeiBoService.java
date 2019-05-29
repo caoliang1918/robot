@@ -62,11 +62,11 @@ public class WeiBoService {
     /**
      * 粉丝队列长度限制
      */
-    private static final Integer FANS_LIMIT = 200;
+    private static final Integer FANS_LIMIT = 500;
     /**
      * 获取僵尸用户的粉丝频率 {} 分钟
      */
-    private static final Integer FANS_RATE = 3;
+    private static final Integer FANS_RATE = 2;
     /**
      * 拉黑僵尸用户频率 {} 秒
      */
@@ -136,15 +136,20 @@ public class WeiBoService {
         taskExecutor.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-                if (fans.size() > FANS_LIMIT) {
-                    return;
-                }
-                List<WeiBoUser> weiBoUserList = fans(fans.poll(), 1);
-                if (CollectionUtils.isEmpty(weiBoUserList)) {
-                    return;
-                }
-                for (WeiBoUser weiBoUser : weiBoUserList) {
-                    blackUserIds.add(weiBoUser.getId());
+                try {
+                    Long userId = fans.poll();
+                    if (userId == null) {
+                        return;
+                    }
+                    List<WeiBoUser> weiBoUserList = fans(userId, 1);
+                    if (CollectionUtils.isEmpty(weiBoUserList)) {
+                        return;
+                    }
+                    for (WeiBoUser weiBoUser : weiBoUserList) {
+                        blackUserIds.add(weiBoUser.getId());
+                    }
+                } catch (Exception e) {
+                    logger.error("{}", e);
                 }
             }
         }, 5, FANS_RATE, TimeUnit.MINUTES);
@@ -381,7 +386,7 @@ public class WeiBoService {
      * @return
      */
     public List<WeiBoUser> follow(Long userId, Integer page) {
-        if (page > 5) {
+        if (userId == null || page > 5) {
             return null;
         }
         HttpHeaders headers = httpHeaders;
@@ -403,7 +408,7 @@ public class WeiBoService {
      * @return
      */
     public List<WeiBoUser> fans(Long userId, Integer page) {
-        if (page > 5) {
+        if (userId == null || page > 5) {
             return null;
         }
         HttpHeaders headers = httpHeaders;
@@ -436,8 +441,8 @@ public class WeiBoService {
         Document document = Jsoup.parse(body);
         logger.debug("document:{}", document);
         List<Node> nodeList = document.childNode(1).childNode(2).childNodes();
-        if (nodeList.size() >=40 && nodeList.get(nodeList.size()-2).outerHtml().contains("followTab")) {
-            Node node = nodeList.get(nodeList.size()-2);
+        if (nodeList.size() >= 40 && nodeList.get(nodeList.size() - 2).outerHtml().contains("followTab")) {
+            Node node = nodeList.get(nodeList.size() - 2);
             logger.debug("{}", node);
             String nodeString = node.toString();
             nodeString = nodeString.substring(nodeString.indexOf("<div"), nodeString.lastIndexOf("/div>") + 5);
@@ -501,7 +506,7 @@ public class WeiBoService {
         /**
          * 粉丝大于1000或者发微博数大于300的用户，应该不是僵尸用户吧
          */
-        if (user.getFans() > 1000 || user.getWeibo() > 300) {
+        if (user.getFans() > 1000 || user.getWeibo() > 300 || !user.getUsercard().equals(user.getId().toString())) {
             return null;
         }
 
@@ -509,8 +514,10 @@ public class WeiBoService {
          * 贵州人民爱玩僵尸，僵尸用户的昵称一般包含中文和字母
          */
         if ((user.getAddress().contains("贵州") || user.getWeibo() < 15L) && MessageUtils.checkLan(user.getNikename())) {
-            logger.info("{}", user.toString());
-            fans.add(user.getId());
+            logger.debug("{}", user.toString());
+            if (fans.size() < FANS_LIMIT) {
+                fans.add(user.getId());
+            }
             return user;
         }
         return null;
@@ -522,6 +529,9 @@ public class WeiBoService {
      * @param userId
      */
     private void black(Long userId) {
+        if (userId == null) {
+            return;
+        }
         HttpHeaders headers = httpHeaders;
         headers.add(HttpHeaders.USER_AGENT, getUserAgent());
         String formData = "uid=%s&f=1";
@@ -531,7 +541,7 @@ public class WeiBoService {
             ResponseEntity<String> responseEntity = new RestTemplate().exchange(FEED_USER_URL, HttpMethod.POST,
                     new HttpEntity<>(formData, headers), String.class);
             logger.info("add blackUser:{} response:{} , queue size:{}", userId, responseEntity.getBody(), blackUserIds.size());
-            logger.debug("reponse cookie:{}" , responseEntity.getHeaders().get("Set-Cookie"));
+            logger.debug("reponse cookie:{}", responseEntity.getHeaders().get("Set-Cookie"));
         } catch (Exception e) {
             logger.error("black user error:{}", e.getMessage());
             if (e.getMessage().equals("400 Bad Request")) {

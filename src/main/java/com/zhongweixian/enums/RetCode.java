@@ -2,6 +2,7 @@ package com.zhongweixian.enums;
 
 public enum RetCode {
     NORMAL(0),
+    NULL(1),
     LOGOUT1(1100),
     LOGOUT2(1101),
     LOGOUT3(1102);
