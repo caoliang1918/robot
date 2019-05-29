@@ -38,7 +38,6 @@ public class BaseUserCache implements Serializable {
     /**
      * 聊天群组
      */
-    private Map<String, ChatRoomDescription> chatRooms = new HashMap<>();
     private Map<String, Contact> chatRoomMembers = new HashMap<>();
     /**
      * 联系人
@@ -46,7 +45,6 @@ public class BaseUserCache implements Serializable {
     private Map<String, Contact> chatContants = new HashMap<>();
 
     private RestTemplate restTemplate;
-
 
     public String getUuid() {
         return uuid;
@@ -160,14 +158,6 @@ public class BaseUserCache implements Serializable {
         this.referer = referer;
     }
 
-    public Map<String, ChatRoomDescription> getChatRooms() {
-        return chatRooms;
-    }
-
-    public void setChatRooms(Map<String, ChatRoomDescription> chatRooms) {
-        this.chatRooms = chatRooms;
-    }
-
     public Map<String, Contact> getChatRoomMembers() {
         return chatRoomMembers;
     }
@@ -183,7 +173,6 @@ public class BaseUserCache implements Serializable {
     public void setChatContants(Map<String, Contact> chatContants) {
         this.chatContants = chatContants;
     }
-
 
     public RestTemplate getRestTemplate() {
         return restTemplate;

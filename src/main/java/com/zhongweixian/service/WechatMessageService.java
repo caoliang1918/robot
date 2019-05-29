@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -143,7 +144,7 @@ public class WechatMessageService {
      * @param userName
      * @throws IOException
      */
-    public void addChatRoomMember(BaseUserCache userCache, String chatRoomUserName, String userName) throws IOException {
+    public void addChatRoomMember(BaseUserCache userCache, String chatRoomUserName, String userName) throws IOException, URISyntaxException {
         AddChatRoomMemberResponse response = wechatHttpService.addChatRoomMember(userCache, chatRoomUserName, userName);
         WechatUtils.checkBaseResponse(response);
         userCache.getChatRoomMembers().get(chatRoomUserName).getMemberList().addAll(response.getMemberList());

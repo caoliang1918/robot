@@ -3,20 +3,22 @@ package com.zhongweixian.controller;
 import com.zhongweixian.domain.BaseUserCache;
 import com.zhongweixian.domain.HttpMessage;
 import com.zhongweixian.domain.request.RevokeRequst;
-import com.zhongweixian.service.WeiBoService;
-import com.zhongweixian.utils.Levenshtein;
 import com.zhongweixian.domain.response.SendMsgResponse;
 import com.zhongweixian.service.CacheService;
 import com.zhongweixian.service.WechatMessageService;
+import com.zhongweixian.service.WeiBoService;
+import com.zhongweixian.utils.Levenshtein;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.*;
 
 /**
@@ -70,10 +72,10 @@ public class MessageController {
             return "user not login";
         }
         if (CollectionUtils.isEmpty(toUsers)) {
-            userCache.getChatRooms().values().forEach(room -> {
+            userCache.getChatRoomMembers().values().forEach(room -> {
                 for (String s : array) {
-                    if (room.getUserName().equals(s)) {
-                        toUsers.add(room.getChatRoomId());
+                    if (room.getNickName().equals(s)) {
+                        toUsers.add(room.getUserName());
                     }
                 }
             });
@@ -133,10 +135,10 @@ public class MessageController {
         }
         try {
             if (CollectionUtils.isEmpty(optionUser)) {
-                cacheService.getUserCache(uid).getChatRooms().values().forEach(room -> {
+                cacheService.getUserCache(uid).getChatRoomMembers().values().forEach(room -> {
                     for (String s : option) {
-                        if (room.getUserName().equals(s)) {
-                            optionUser.add(room.getChatRoomId());
+                        if (room.getNickName().equals(s)) {
+                            optionUser.add(room.getUserName());
                         }
                     }
                 });

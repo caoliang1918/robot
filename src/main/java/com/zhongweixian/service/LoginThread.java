@@ -7,7 +7,6 @@ import com.zhongweixian.domain.response.ContactResponse;
 import com.zhongweixian.domain.response.InitResponse;
 import com.zhongweixian.domain.response.LoginResult;
 import com.zhongweixian.domain.response.StatusNotifyResponse;
-import com.zhongweixian.domain.shared.ChatRoomDescription;
 import com.zhongweixian.domain.shared.Contact;
 import com.zhongweixian.domain.shared.Token;
 import com.zhongweixian.enums.LoginCode;
@@ -155,7 +154,7 @@ public class LoginThread implements Runnable {
         //9 get contact
         long seq = 0;
         //好友
-        List<ChatRoomDescription> chatRooms = new ArrayList<>();
+        List<Contact> chatRooms = new ArrayList<>();
         //群组(这里包含已经保存的技能组和最近聊天的技能组)
         do {
             ContactResponse contactResponse = wechatHttpService.getContact(userCache);
@@ -169,12 +168,9 @@ public class LoginThread implements Runnable {
             AtomicInteger count = new AtomicInteger(1);
             contactResponse.getMemberList().forEach(contact -> {
                 if (WechatUtils.isChatRoom(contact)) {
-                    ChatRoomDescription chatRoomDescription = new ChatRoomDescription();
-                    chatRoomDescription.setChatRoomId(contact.getUserName());
-                    chatRoomDescription.setUserName(contact.getNickName());
-                    userCache.getChatRooms().put(chatRoomDescription.getChatRoomId(), chatRoomDescription);
-                    logger.info("chatRoom name :{} , id :{} ", chatRoomDescription.getUserName(), chatRoomDescription.getChatRoomId());
-                    chatRooms.add(chatRoomDescription);
+                    userCache.getChatRoomMembers().put(contact.getUserName(), contact);
+                    logger.info("chatRoom name :{} ,memberSize:{} ,  id :{} ", contact.getNickName(),contact.getMemberList().size(), contact.getUserName());
+                    chatRooms.add(contact);
                 } else {
                     logger.debug("{} nickName:{} , remarkName:{} , userName:{}", count.get(), contact.getNickName(), contact.getRemarkName(), contact.getUserName());
                     count.decrementAndGet();
@@ -190,12 +186,9 @@ public class LoginThread implements Runnable {
 
         initResponse.getContactList().stream()
                 .filter(x -> WechatUtils.isChatRoom(x)).forEach(x -> {
-            ChatRoomDescription chatRoomDescription = new ChatRoomDescription();
-            chatRoomDescription.setUserName(x.getNickName());
-            chatRoomDescription.setChatRoomId(x.getUserName());
-            userCache.getChatRooms().put(chatRoomDescription.getChatRoomId(), chatRoomDescription);
-            logger.info("chatRoom name :{} , id :{} ", chatRoomDescription.getUserName(), chatRoomDescription.getChatRoomId());
-            chatRooms.add(chatRoomDescription);
+            userCache.getChatRoomMembers().put(x.getUserName(), x);
+            logger.info("chatRoom name :{} ,memberSize:{} ,  id :{} ", x.getNickName(),x.getMemberList().size(), x.getUserName());
+            chatRooms.add(x);
         });
 
 

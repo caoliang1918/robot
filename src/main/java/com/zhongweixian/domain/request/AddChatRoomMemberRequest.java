@@ -12,7 +12,7 @@ public class AddChatRoomMemberRequest {
     @JsonProperty
     private String ChatRoomName;
     @JsonProperty
-    private String AddMemberList;
+    private String InviteMemberList;
 
     public BaseRequest getBaseRequest() {
         return BaseRequest;
@@ -30,11 +30,11 @@ public class AddChatRoomMemberRequest {
         ChatRoomName = chatRoomName;
     }
 
-    public String getAddMemberList() {
-        return AddMemberList;
+    public String getInviteMemberList() {
+        return InviteMemberList;
     }
 
-    public void setAddMemberList(String addMemberList) {
-        AddMemberList = addMemberList;
+    public void setInviteMemberList(String inviteMemberList) {
+        InviteMemberList = inviteMemberList;
     }
 }

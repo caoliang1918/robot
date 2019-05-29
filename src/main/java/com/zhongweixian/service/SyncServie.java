@@ -110,12 +110,12 @@ public class SyncServie {
 
     private boolean isMessageFromIndividual(Message message) {
         return message.getFromUserName() != null
-                && message.getFromUserName().startsWith("@")
-                && !message.getFromUserName().startsWith("@@");
+                && !message.getFromUserName().startsWith("@@")
+                && !message.getToUserName().startsWith("@@");
     }
 
     private boolean isMessageFromChatRoom(Message message) {
-        return message.getFromUserName() != null && message.getFromUserName().startsWith("@@");
+        return message.getFromUserName() != null && (message.getToUserName().startsWith("@@") ||message.getFromUserName().startsWith("@@")) ;
     }
 
     private void onNewMessage() {
@@ -136,15 +136,13 @@ public class SyncServie {
                 }
                 //图片
             } else if (message.getMsgType() == MessageType.IMAGE.getCode()) {
-                String fullImageUrl = String.format(WECHAT_GET_IMG_URL, message.getMsgId(), baseUserCache.getsKey());
-                String thumbImageUrl = fullImageUrl + "&type=slave";
                 //个人
                 if (isMessageFromIndividual(message)) {
-                    messageHandler.onReceivingPrivateImageMessage(baseUserCache, message, thumbImageUrl, fullImageUrl);
+                    messageHandler.onReceivingPrivateImageMessage(baseUserCache, message);
                 }
                 //群
                 else if (isMessageFromChatRoom(message)) {
-                    messageHandler.onReceivingChatRoomImageMessage(message, thumbImageUrl, fullImageUrl);
+                    messageHandler.onReceivingChatRoomImageMessage(baseUserCache, message);
                 }
             }
             //系统消息
@@ -188,7 +186,7 @@ public class SyncServie {
         Set<Contact> chatRooms = new HashSet<>();
 
         for (Contact contact : contacts) {
-            logger.info("contact:{}", contact.toString());
+            logger.info("contact:{}", contact.getNickName());
             if (WechatUtils.isIndividual(contact)) {
                 individuals.add(contact);
             } else if (WechatUtils.isMediaPlatform(contact)) {
@@ -200,7 +198,7 @@ public class SyncServie {
 
         //个人
         if (individuals.size() > 0) {
-            Set<String> existingIndividuals = baseUserCache.getChatContants().keySet();
+            Set<String> existingIndividuals = new HashSet<>(baseUserCache.getChatContants().keySet());
             Set<Contact> newIndividuals = new HashSet<>();
             individuals.forEach(x -> {
                 if (!existingIndividuals.contains(x)) {
@@ -214,35 +212,39 @@ public class SyncServie {
         }
         //群组
         if (chatRooms.size() > 0) {
-            Collection<Contact> existingChatRooms = baseUserCache.getChatContants().values();
+            Set<String> existingChatRooms = new HashSet<>(baseUserCache.getChatRoomMembers().keySet());
             Set<Contact> newChatRooms = new HashSet<>();
             Set<Contact> modifiedChatRooms = new HashSet<>();
             for (Contact chatRoom : chatRooms) {
-                if (existingChatRooms.contains(chatRoom)) {
+                if (existingChatRooms.contains(chatRoom.getUserName())) {
+                    /**
+                     * 有变更的群组
+                     */
                     modifiedChatRooms.add(chatRoom);
                 } else {
+                    /**
+                     * 新的群组
+                     */
                     newChatRooms.add(chatRoom);
                 }
+                baseUserCache.getChatRoomMembers().put(chatRoom.getUserName(), chatRoom);
             }
-            existingChatRooms.addAll(newChatRooms);
             if (messageHandler != null && newChatRooms.size() > 0) {
                 messageHandler.onNewChatRoomsFound(newChatRooms);
             }
             for (Contact chatRoom : modifiedChatRooms) {
-                Contact existingChatRoom = existingChatRooms.stream().filter(x -> x.getUserName().equals(chatRoom.getUserName())).findFirst().orElse(null);
+                Contact existingChatRoom = baseUserCache.getChatRoomMembers().get(chatRoom.getUserName());
                 if (existingChatRoom == null) {
                     continue;
                 }
-                existingChatRooms.remove(existingChatRoom);
-                existingChatRooms.add(chatRoom);
-                if (messageHandler != null) {
-                    Set<ChatRoomMember> oldMembers = existingChatRoom.getMemberList();
-                    Set<ChatRoomMember> newMembers = chatRoom.getMemberList();
-                    Set<ChatRoomMember> joined = newMembers.stream().filter(x -> !oldMembers.contains(x)).collect(Collectors.toSet());
-                    Set<ChatRoomMember> left = oldMembers.stream().filter(x -> !newMembers.contains(x)).collect(Collectors.toSet());
-                    if (joined.size() > 0 || left.size() > 0) {
-                        messageHandler.onChatRoomMembersChanged(chatRoom, joined, left);
-                    }
+                existingChatRooms.remove(existingChatRoom.getUserName());
+                existingChatRooms.add(chatRoom.getUserName());
+                Set<ChatRoomMember> oldMembers = existingChatRoom.getMemberList();
+                Set<ChatRoomMember> newMembers = chatRoom.getMemberList();
+                Set<ChatRoomMember> joined = newMembers.stream().filter(x -> !oldMembers.contains(x)).collect(Collectors.toSet());
+                Set<ChatRoomMember> left = oldMembers.stream().filter(x -> !newMembers.contains(x)).collect(Collectors.toSet());
+                if (joined.size() > 0 || left.size() > 0) {
+                    messageHandler.onChatRoomMembersChanged(chatRoom, joined, left);
                 }
             }
         }
@@ -258,7 +260,7 @@ public class SyncServie {
                 baseUserCache.getChatContants().remove(contact.getUserName());
             } else if (WechatUtils.isChatRoom(contact)) {
                 chatRooms.add(contact);
-                baseUserCache.getChatRooms().remove(contact.getUserName());
+                baseUserCache.getChatRoomMembers().remove(contact.getUserName());
             }
         }
         if (messageHandler != null) {

@@ -21,11 +21,10 @@ public interface MessageHandler {
     /**
      * 事件：收到群聊天图片消息
      *
-     * @param message       消息体
-     * @param thumbImageUrl 图片缩略图链接
-     * @param fullImageUrl  图片完整图链接
+     * @param userCache
+     * @param message
      */
-    void onReceivingChatRoomImageMessage(Message message, String thumbImageUrl, String fullImageUrl);
+    void onReceivingChatRoomImageMessage(BaseUserCache userCache, Message message);
 
     /**
      * 事件：收到个人聊天文本消息
@@ -37,11 +36,10 @@ public interface MessageHandler {
     /**
      * 事件：收到个人聊天图片消息
      *
-     * @param message       消息体
-     * @param thumbImageUrl 图片缩略图链接
-     * @param fullImageUrl  图片完整图链接
+     * @param userCache
+     * @param message
      */
-    void onReceivingPrivateImageMessage(BaseUserCache userCache, Message message, String thumbImageUrl, String fullImageUrl);
+    void onReceivingPrivateImageMessage(BaseUserCache userCache, Message message);
 
     /**
      * 事件：收到加好友邀请

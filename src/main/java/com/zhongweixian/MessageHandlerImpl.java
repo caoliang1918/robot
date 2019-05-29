@@ -27,6 +27,8 @@ public class MessageHandlerImpl implements MessageHandler {
 
     private BaseUserCache baseUserCache;
 
+    private String imageUrl = "%s/cgi-bin/mmwebwx-bin/webwxgetmsgimg?&MsgID=%s&skey=%s";
+
 
     public MessageHandlerImpl(WechatMessageService wechatHttpService, BaseUserCache baseUserCache) {
         this.wechatHttpService = wechatHttpService;
@@ -35,18 +37,17 @@ public class MessageHandlerImpl implements MessageHandler {
 
     @Override
     public void onReceivingChatRoomTextMessage(Message message) {
-        ChatRoomDescription chatRoom = baseUserCache.getChatRooms().get(message.getFromUserName());
+        Contact chatRoom = baseUserCache.getChatRoomMembers().get(message.getFromUserName());
         if (chatRoom != null) {
-            logger.info("roomName:{}", chatRoom.getUserName());
+            logger.info("roomName:{}", chatRoom.getNickName());
         }
         logger.info("from person: {} ", MessageUtils.getSenderOfChatRoomTextMessage(message.getContent()));
         logger.info("content:{}", MessageUtils.getChatRoomTextMessageContent(message.getContent()));
     }
 
     @Override
-    public void onReceivingChatRoomImageMessage(Message message, String thumbImageUrl, String fullImageUrl) {
-        logger.info("thumbImageUrl:{}", thumbImageUrl);
-        logger.info("fullImageUrl:{}", fullImageUrl);
+    public void onReceivingChatRoomImageMessage(BaseUserCache userCache , Message message) {
+        logger.info("fullImageUrl:{}", String.format(imageUrl , userCache.getWxHost() , message.getMsgId() , userCache.getsKey()));
     }
 
     @Override
@@ -59,11 +60,11 @@ public class MessageHandlerImpl implements MessageHandler {
         logger.info("content:{}", message.getContent());
         if ("进群".equals(message.getContent())) {
             String roomName = null;
-            userCache.getChatRooms().values().forEach(x -> {
-                if ("免费分享".equals(x.getUserName())) {
+            userCache.getChatRoomMembers().values().forEach(x -> {
+                if ("免费分享".equals(x.getNickName())) {
                     logger.info("拉用户:{} 进 {} 群", message.getFromUserName(), x.getUserName());
                     try {
-                        wechatHttpService.addChatRoomMember(userCache, x.getChatRoomId(), message.getFromUserName());
+                        wechatHttpService.addChatRoomMember(userCache, x.getUserName(), message.getFromUserName());
                     } catch (Exception e) {
                         logger.error("chatRoom add member error:{} ", e);
                     }
@@ -73,15 +74,14 @@ public class MessageHandlerImpl implements MessageHandler {
     }
 
     @Override
-    public void onReceivingPrivateImageMessage(BaseUserCache userCache, Message message, String thumbImageUrl, String fullImageUrl) {
-        logger.info("thumbImageUrl:{}", thumbImageUrl);
-        logger.info("fullImageUrl:{}", fullImageUrl);
+    public void onReceivingPrivateImageMessage(BaseUserCache userCache, Message message) {
+        logger.info("fullImageUrl:{}", String.format(imageUrl , userCache.getWxHost() , message.getMsgId() , userCache.getsKey()));
 
         /**
          * 将图片保存在本地
          */
         try {
-            byte[] data = wechatHttpService.downloadImage(userCache, thumbImageUrl);
+            byte[] data = wechatHttpService.downloadImage(userCache, message.getMsgId());
             FileOutputStream fos = new FileOutputStream(System.currentTimeMillis() + ".jpg");
             fos.write(data);
             fos.close();

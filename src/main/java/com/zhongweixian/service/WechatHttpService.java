@@ -37,6 +37,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
@@ -79,7 +80,9 @@ public class WechatHttpService {
     private String WECHAT_URL_VERIFY_USER = WECHAT_OPTION_URL + "/webwxverifyuser";
     private String WECHAT_URL_CREATE_CHATROOM = WECHAT_OPTION_URL + "/webwxcreatechatroom?r=%s";
     private String WECHAT_URL_DELETE_CHATROOM_MEMBER = WECHAT_OPTION_URL + "/webwxupdatechatroom?fun=delmember";
-    private String WECHAT_URL_ADD_CHATROOM_MEMBER = WECHAT_OPTION_URL + "/webwxupdatechatroom?fun=addmember";
+    private String WECHAT_URL_ADD_CHATROOM_MEMBER = WECHAT_OPTION_URL + "/webwxupdatechatroom?fun=invitemember";
+    private String WECHAT_GET_IMG_URL =WECHAT_OPTION_URL+"/webwxgetmsgimg?&MsgID=%s&skey=%s";
+
 
 
     private RestTemplate restTemplate;
@@ -566,27 +569,31 @@ public class WechatHttpService {
         return jsonMapper.readValue(WechatUtils.textDecode(responseEntity.getBody()), DeleteChatRoomMemberResponse.class);
     }
 
-    AddChatRoomMemberResponse addChatRoomMember(BaseUserCache userCache, String chatRoomUserName, String userName) throws IOException {
+    AddChatRoomMemberResponse addChatRoomMember(BaseUserCache userCache, String chatRoomUserName, String userName) throws URISyntaxException, IOException {
         final String url = String.format(WECHAT_URL_ADD_CHATROOM_MEMBER, userCache.getWxHost());
         AddChatRoomMemberRequest request = new AddChatRoomMemberRequest();
         request.setBaseRequest(userCache.getBaseRequest());
         request.setChatRoomName(chatRoomUserName);
-        request.setAddMemberList(userName);
+        request.setInviteMemberList(userName);
         HttpHeaders customHeader = createPostCustomHeader(userCache);
         HeaderUtils.assign(customHeader, postHeader);
-        ResponseEntity<String> responseEntity
-                = userCache.getRestTemplate().exchange(url, HttpMethod.POST, new HttpEntity<>(request, customHeader), String.class);
+        URIBuilder builder = new URIBuilder(url);
+        builder.addParameter("pass_ticket", userCache.getPassTicket());
+        final URI uri = builder.build().toURL().toURI();
+        ResponseEntity<String> responseEntity  = userCache.getRestTemplate().exchange(uri, HttpMethod.POST,
+                new HttpEntity<>(request, customHeader), String.class);
         return jsonMapper.readValue(WechatUtils.textDecode(responseEntity.getBody()), AddChatRoomMemberResponse.class);
     }
 
-    byte[] downloadImage(BaseUserCache userCache, String url) {
+    byte[] downloadImage(BaseUserCache userCache, String messageId) {
+        String imageUrl = String.format(WECHAT_GET_IMG_URL , userCache.getWxHost() , messageId  , userCache.getsKey());
         HttpHeaders customHeader = new HttpHeaders();
         customHeader.set("Accept", "image/webp,image/apng,image/*,*/*;q=0.8");
         customHeader.set("Referer", userCache.getReferer());
         HeaderUtils.assign(customHeader, getHeader);
-        ResponseEntity<byte[]> responseEntity
-                = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(customHeader), new ParameterizedTypeReference<byte[]>() {
-        });
+        ResponseEntity<byte[]> responseEntity = userCache.getRestTemplate().exchange(imageUrl, HttpMethod.GET,
+                new HttpEntity<>(customHeader), new ParameterizedTypeReference<byte[]>() {
+                });
         return responseEntity.getBody();
     }
 
