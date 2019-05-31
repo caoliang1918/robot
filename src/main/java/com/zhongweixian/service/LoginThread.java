@@ -1,6 +1,5 @@
 package com.zhongweixian.service;
 
-import com.zhongweixian.MessageHandlerImpl;
 import com.zhongweixian.domain.BaseUserCache;
 import com.zhongweixian.domain.request.component.BaseRequest;
 import com.zhongweixian.domain.response.ContactResponse;
@@ -14,17 +13,15 @@ import com.zhongweixian.enums.RetCode;
 import com.zhongweixian.enums.StatusNotifyCode;
 import com.zhongweixian.exception.RobotException;
 import com.zhongweixian.exception.WechatQRExpiredException;
+import com.zhongweixian.handler.MessageHandlerImpl;
 import com.zhongweixian.utils.QRCodeUtils;
 import com.zhongweixian.utils.WechatUtils;
-import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -159,20 +156,16 @@ public class LoginThread implements Runnable {
         do {
             ContactResponse contactResponse = wechatHttpService.getContact(userCache);
             WechatUtils.checkBaseResponse(contactResponse);
-            for (Contact contact : contactResponse.getMemberList()) {
-
-
-            }
             logger.info("[*] getContactResponse seq = " + contactResponse.getSeq());
             logger.info("[*] getContactResponse memberCount = " + contactResponse.getMemberCount());
             AtomicInteger count = new AtomicInteger(1);
             contactResponse.getMemberList().forEach(contact -> {
                 if (WechatUtils.isChatRoom(contact)) {
                     userCache.getChatRoomMembers().put(contact.getUserName(), contact);
-                    logger.info("chatRoom name :{} ,memberSize:{} ,  id :{} ", contact.getNickName(),contact.getMemberList().size(), contact.getUserName());
+                    logger.info("chatRoom name :{} ,memberSize:{} ,  id :{} ", contact.getNickName(), contact.getMemberList().size(), contact.getUserName());
                     chatRooms.add(contact);
                 } else {
-                    logger.debug("{} nickName:{} , remarkName:{} , userName:{}", count.get(), contact.getNickName(), contact.getRemarkName(), contact.getUserName());
+                    logger.info("{} nickName:{} , remarkName:{} , userName:{}", count.get(), contact.getNickName(), contact.getRemarkName(), contact.getUserName());
                     count.decrementAndGet();
                     userCache.getChatContants().put(contact.getUserName(), contact);
                 }
@@ -187,7 +180,7 @@ public class LoginThread implements Runnable {
         initResponse.getContactList().stream()
                 .filter(x -> WechatUtils.isChatRoom(x)).forEach(x -> {
             userCache.getChatRoomMembers().put(x.getUserName(), x);
-            logger.info("chatRoom name :{} ,memberSize:{} ,  id :{} ", x.getNickName(),x.getMemberList().size(), x.getUserName());
+            logger.info("chatRoom name :{} ,memberSize:{} ,  id :{} ", x.getNickName(), x.getMemberList().size(), x.getUserName());
             chatRooms.add(x);
         });
 

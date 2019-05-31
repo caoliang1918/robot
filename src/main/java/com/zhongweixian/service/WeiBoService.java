@@ -106,12 +106,13 @@ public class WeiBoService {
 
     private RestTemplate restTemplate;
 
-    private boolean isLogin = true;
+    private boolean isLogin = false;
+    private boolean nextLogin = true;
     private Integer loginTime = 0;
 
     @PostConstruct
     public void init() {
-        login();
+        isLogin = login();
 
         /**
          * 定时任务1:打开我的主页
@@ -120,6 +121,9 @@ public class WeiBoService {
             @Override
             public void run() {
                 try {
+                    if (!isLogin) {
+                        return;
+                    }
                     ResponseEntity<String> responseEntity = new RestTemplate().exchange(HOME, HttpMethod.GET, new HttpEntity<>(httpHeaders), String.class);
                     logger.info("get weibo base home ,status:{}", responseEntity.getStatusCode());
                 } catch (Exception e) {
@@ -174,11 +178,12 @@ public class WeiBoService {
      * 先用邮箱、密码登录，根据返回的URL再去拿cookie，这个URL是一次性的
      */
     private boolean login() {
-        if (!isLogin) {
+        isLogin = false;
+        if (!nextLogin) {
             logger.warn("登录次数过多 , loginTime:{}", loginTime);
             return false;
         }
-        isLogin = false;
+        nextLogin = false;
         loginTime++;
         String formData = null;
         try {
@@ -238,6 +243,7 @@ public class WeiBoService {
             cookies.append(cookie.split(";")[0]).append(";");
         });
         httpHeaders.add("Cookie", cookies.toString().substring(0, cookies.length() - 1));
+        isLogin = true;
         return true;
     }
 

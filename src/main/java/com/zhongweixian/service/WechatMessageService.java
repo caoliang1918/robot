@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashSet;
@@ -61,7 +62,7 @@ public class WechatMessageService {
      * @return
      * @throws IOException
      */
-    public SendMsgResponse sendText(BaseUserCache userCache, String toUserName, String content)  {
+    public SendMsgResponse sendText(BaseUserCache userCache, String toUserName, String content) {
         //notifyNecessary(userName);
         SendMsgResponse response = wechatHttpService.sendText(userCache, content, toUserName);
         logger.info("sendMsgResponse:{}", response.toString());
@@ -69,7 +70,7 @@ public class WechatMessageService {
         return response;
     }
 
-    public void revoke(BaseUserCache userCache, String wxMessageId, String toUserName)  {
+    public void revoke(BaseUserCache userCache, String wxMessageId, String toUserName) {
         wechatHttpService.revoke(userCache, toUserName, wxMessageId);
     }
 
@@ -121,7 +122,12 @@ public class WechatMessageService {
         ChatRoomDescription[] descriptions = new ChatRoomDescription[]{description};
         BatchGetContactResponse batchGetContactResponse = wechatHttpService.batchGetContact(userCache, descriptions);
         WechatUtils.checkBaseResponse(batchGetContactResponse);
-        //userCache.getChatRooms().addAll(batchGetContactResponse.getContactList());
+        Contact newRoom = new Contact();
+        newRoom.setRemarkName(response.getTopic());
+        newRoom.setUserName(response.getChatRoomName());
+        newRoom.setMemberList(response.getMemberList());
+        newRoom.setMemberCount(response.getMemberCount());
+        //userCache.getChatRoomMembers().put(newRoom.getUserName(), newRoom);
     }
 
     /**
@@ -156,8 +162,15 @@ public class WechatMessageService {
      * @param url image url
      * @return image data
      */
-    public byte[] downloadImage(BaseUserCache userCache, String url) {
-        return wechatHttpService.downloadImage(userCache, url);
+    public void downloadImage(BaseUserCache userCache, String url) {
+        try {
+            byte[] data = wechatHttpService.downloadImage(userCache, url);
+            FileOutputStream fos = new FileOutputStream("logs/images/" + System.currentTimeMillis() + ".jpg");
+            fos.write(data);
+            fos.close();
+        } catch (Exception e) {
+            logger.error("{}", e);
+        }
     }
 
 

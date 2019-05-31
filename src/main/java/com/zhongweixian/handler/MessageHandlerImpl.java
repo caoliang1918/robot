@@ -1,10 +1,9 @@
-package com.zhongweixian;
+package com.zhongweixian.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.zhongweixian.domain.BaseUserCache;
 import com.zhongweixian.domain.shared.*;
-import com.zhongweixian.exception.RobotException;
 import com.zhongweixian.utils.MessageUtils;
 import com.zhongweixian.service.MessageHandler;
 import com.zhongweixian.service.WechatMessageService;
@@ -12,7 +11,6 @@ import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -36,28 +34,32 @@ public class MessageHandlerImpl implements MessageHandler {
     }
 
     @Override
-    public void onReceivingChatRoomTextMessage(Message message) {
+    public void onReceivingChatRoomTextMessage(BaseUserCache userCache, Message message) {
         Contact chatRoom = baseUserCache.getChatRoomMembers().get(message.getFromUserName());
-        if (chatRoom != null) {
-            logger.info("roomName:{}", chatRoom.getNickName());
+        String content = MessageUtils.getChatRoomTextMessageContent(message.getContent());
+        if (chatRoom == null) {
+            chatRoom = baseUserCache.getChatRoomMembers().get(message.getToUserName());
+            logger.info("roomName : {} ,from person: me ", chatRoom.getNickName());
+        } else {
+            logger.info("roomName :{} ,from person: {} ", chatRoom.getNickName(), MessageUtils.getSenderOfChatRoomTextMessage(message.getContent()));
         }
-        logger.info("from person: {} ", MessageUtils.getSenderOfChatRoomTextMessage(message.getContent()));
-        logger.info("content:{}", MessageUtils.getChatRoomTextMessageContent(message.getContent()));
+        logger.info("content:{}", content);
     }
 
     @Override
-    public void onReceivingChatRoomImageMessage(BaseUserCache userCache , Message message) {
-        logger.info("fullImageUrl:{}", String.format(imageUrl , userCache.getWxHost() , message.getMsgId() , userCache.getsKey()));
+    public void onReceivingChatRoomImageMessage(BaseUserCache userCache, Message message) {
+        logger.info("from :{} fullImageUrl:{}", String.format(imageUrl, userCache.getWxHost(), message.getMsgId(), userCache.getsKey()));
+        wechatHttpService.downloadImage(userCache, message.getMsgId());
     }
 
     @Override
     public void onReceivingPrivateTextMessage(BaseUserCache userCache, Message message) {
+        logger.info("content:{}", message.getContent());
         try {
             logger.info("from:{} ", userCache.getChatContants().get(message.getFromUserName()).getNickName());
         } catch (Exception e) {
-            logger.error("{}", e);
+            logger.error("from:{} , to:{} , error:{}", message.getFromUserName(), message.getToUserName(), e);
         }
-        logger.info("content:{}", message.getContent());
         if ("进群".equals(message.getContent())) {
             String roomName = null;
             userCache.getChatRoomMembers().values().forEach(x -> {
@@ -75,25 +77,25 @@ public class MessageHandlerImpl implements MessageHandler {
 
     @Override
     public void onReceivingPrivateImageMessage(BaseUserCache userCache, Message message) {
-        logger.info("fullImageUrl:{}", String.format(imageUrl , userCache.getWxHost() , message.getMsgId() , userCache.getsKey()));
-
-        /**
-         * 将图片保存在本地
-         */
-        try {
-            byte[] data = wechatHttpService.downloadImage(userCache, message.getMsgId());
-            FileOutputStream fos = new FileOutputStream(System.currentTimeMillis() + ".jpg");
-            fos.write(data);
-            fos.close();
-        } catch (Exception e) {
-            logger.error("{}", e);
-        }
+        logger.info("from :{}  fullImageUrl:{}", String.format(imageUrl, userCache.getWxHost(), message.getMsgId(), userCache.getsKey()));
+        wechatHttpService.downloadImage(userCache, message.getMsgId());
     }
 
     @Override
     public boolean onReceivingFriendInvitation(RecommendInfo info) {
         logger.info("接受新加好友信息:{}", info);
         return true;
+    }
+
+    @Override
+    public void onAppMessage(BaseUserCache userCache, Message message) {
+        if (message.getFromUserName().startsWith("@@")) {
+            Contact chatRoom = baseUserCache.getChatRoomMembers().get(message.getFromUserName());
+            logger.info("roomName :{} ,from person: {} ", chatRoom.getNickName(), MessageUtils.getSenderOfChatRoomTextMessage(message.getContent()));
+            if (chatRoom.getNickName().startsWith("老九群")) {
+                String content = MessageUtils.getChatRoomTextMessageContent(message.getContent());
+            }
+        }
     }
 
     @Override
@@ -105,7 +107,7 @@ public class MessageHandlerImpl implements MessageHandler {
              * 备注新的好友信息
              */
             FriendInvitationContent friendInvitationContent = xmlMapper.readValue(content, FriendInvitationContent.class);
-            logger.info("备注好友信息 message:{} , content:{} , friendInvitationContent:{} ", message, content, friendInvitationContent);
+            logger.info("备注好友信息 username:{} , content:{} , Fromusername:{} ", message.getRecommendInfo().getUserName(), friendInvitationContent.getContent(), friendInvitationContent.getFromusername());
             wechatHttpService.setAlias(userCache, message.getRecommendInfo().getUserName(), friendInvitationContent.getFromusername());
         } catch (Exception e) {
             logger.error("{}", e);

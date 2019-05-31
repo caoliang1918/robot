@@ -16,7 +16,7 @@ public interface MessageHandler {
      *
      * @param message 消息体
      */
-    void onReceivingChatRoomTextMessage(Message message);
+    void onReceivingChatRoomTextMessage(BaseUserCache userCache, Message message);
 
     /**
      * 事件：收到群聊天图片消息
@@ -48,6 +48,15 @@ public interface MessageHandler {
      * @return {@code true} 如果接受请求, 否则 {@code false}
      */
     boolean onReceivingFriendInvitation(RecommendInfo info);
+
+
+    /**
+     * APP消息
+     *
+     * @param userCache
+     * @param message
+     */
+    void onAppMessage(BaseUserCache userCache, Message message);
 
     /**
      * 事件：接受好友邀请成功

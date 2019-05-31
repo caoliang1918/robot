@@ -57,7 +57,6 @@ public class WechatHttpService {
 
     public static final String WECHAT_LOGIN_HOST = "https://login.weixin.qq.com/";
     public static final String WECHAT_FILE_HOST = "https://file.web.wechat.com";
-    public static final String WECHAT_PUSH_HOST = "https://webpush.web.wechat.com";
 
 
     private static final String WECHAT_OPTION_URL = "%s" + "/cgi-bin/mmwebwx-bin";

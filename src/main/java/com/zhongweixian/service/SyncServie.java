@@ -54,7 +54,8 @@ public class SyncServie {
          * 可能存在为空
          */
         if (syncCheckResponse == null) {
-            return RetCode.NULL.getCode();
+            logger.error("syncCheckResponse is null");
+            return RetCode.NORMAL.getCode();
         }
         int retCode = syncCheckResponse.getRetcode();
         int selector = syncCheckResponse.getSelector();
@@ -115,7 +116,7 @@ public class SyncServie {
     }
 
     private boolean isMessageFromChatRoom(Message message) {
-        return message.getFromUserName() != null && (message.getToUserName().startsWith("@@") ||message.getFromUserName().startsWith("@@")) ;
+        return message.getFromUserName() != null && (message.getToUserName().startsWith("@@") || message.getFromUserName().startsWith("@@"));
     }
 
     private void onNewMessage() {
@@ -129,11 +130,14 @@ public class SyncServie {
                 //个人
                 if (isMessageFromIndividual(message)) {
                     messageHandler.onReceivingPrivateTextMessage(baseUserCache, message);
+                    continue;
                 }
                 //群
                 else if (isMessageFromChatRoom(message)) {
-                    messageHandler.onReceivingChatRoomTextMessage(message);
+                    messageHandler.onReceivingChatRoomTextMessage(baseUserCache, message);
+                    continue;
                 }
+                logger.warn("what is this message:{} , {} , {}", message.getContent(), message.getFromUserName(), message.getToUserName());
                 //图片
             } else if (message.getMsgType() == MessageType.IMAGE.getCode()) {
                 //个人
@@ -144,6 +148,8 @@ public class SyncServie {
                 else if (isMessageFromChatRoom(message)) {
                     messageHandler.onReceivingChatRoomImageMessage(baseUserCache, message);
                 }
+            } else if (message.getMsgType() == MessageType.APP.getCode()) {
+                messageHandler.onAppMessage(baseUserCache, message);
             }
             //系统消息
             else if (message.getMsgType() == MessageType.SYS.getCode()) {
@@ -186,7 +192,7 @@ public class SyncServie {
         Set<Contact> chatRooms = new HashSet<>();
 
         for (Contact contact : contacts) {
-            logger.info("contact:{}", contact.getNickName());
+            logger.info("onContactsModified:{}", contact.getNickName());
             if (WechatUtils.isIndividual(contact)) {
                 individuals.add(contact);
             } else if (WechatUtils.isMediaPlatform(contact)) {
@@ -202,9 +208,9 @@ public class SyncServie {
             Set<Contact> newIndividuals = new HashSet<>();
             individuals.forEach(x -> {
                 if (!existingIndividuals.contains(x)) {
-                    baseUserCache.getChatContants().put(x.getUserName(), x);
                     newIndividuals.add(x);
                 }
+                baseUserCache.getChatContants().put(x.getUserName(), x);
             });
             if (messageHandler != null && newIndividuals.size() > 0) {
                 messageHandler.onNewFriendsFound(newIndividuals);
