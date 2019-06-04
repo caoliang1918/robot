@@ -212,7 +212,7 @@ public class SyncServie {
                 }
                 baseUserCache.getChatContants().put(x.getUserName(), x);
             });
-            if (messageHandler != null && newIndividuals.size() > 0) {
+            if (newIndividuals.size() > 0) {
                 messageHandler.onNewFriendsFound(newIndividuals);
             }
         }

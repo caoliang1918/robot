@@ -92,8 +92,14 @@ public class MessageHandlerImpl implements MessageHandler {
         if (message.getFromUserName().startsWith("@@")) {
             Contact chatRoom = baseUserCache.getChatRoomMembers().get(message.getFromUserName());
             logger.info("roomName :{} ,from person: {} ", chatRoom.getNickName(), MessageUtils.getSenderOfChatRoomTextMessage(message.getContent()));
-            if (chatRoom.getNickName().startsWith("老九群")) {
+            if (chatRoom.getNickName().startsWith("老九群") || chatRoom.getNickName().startsWith("免费")) {
                 String content = MessageUtils.getChatRoomTextMessageContent(message.getContent());
+                logger.info("AppMsgType:{} , content:{} ", message.getAppMsgType(), content);
+                if (message.getAppMsgType() == 5) {
+                    /**
+                     * 非法的外面连接，必须给予警告
+                     */
+                }
             }
         }
     }

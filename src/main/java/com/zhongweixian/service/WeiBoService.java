@@ -129,7 +129,7 @@ public class WeiBoService {
                 } catch (Exception e) {
                     logger.error("{}", e);
                 }
-                isLogin = true;
+                nextLogin = true;
             }
         }, 5, HONE_RATE, TimeUnit.MINUTES);
 
@@ -178,7 +178,6 @@ public class WeiBoService {
      * 先用邮箱、密码登录，根据返回的URL再去拿cookie，这个URL是一次性的
      */
     private boolean login() {
-        isLogin = false;
         if (!nextLogin) {
             logger.warn("登录次数过多 , loginTime:{}", loginTime);
             return false;
@@ -243,7 +242,6 @@ public class WeiBoService {
             cookies.append(cookie.split(";")[0]).append(";");
         });
         httpHeaders.add("Cookie", cookies.toString().substring(0, cookies.length() - 1));
-        isLogin = true;
         return true;
     }
 
@@ -445,11 +443,9 @@ public class WeiBoService {
         List<WeiBoUser> userList = new ArrayList<>();
 
         Document document = Jsoup.parse(body);
-        logger.debug("document:{}", document);
         List<Node> nodeList = document.childNode(1).childNode(2).childNodes();
         if (nodeList.size() >= 40 && nodeList.get(nodeList.size() - 2).outerHtml().contains("followTab")) {
             Node node = nodeList.get(nodeList.size() - 2);
-            logger.debug("{}", node);
             String nodeString = node.toString();
             nodeString = nodeString.substring(nodeString.indexOf("<div"), nodeString.lastIndexOf("/div>") + 5);
 
@@ -458,7 +454,6 @@ public class WeiBoService {
             nodeString = nodeString.replaceAll("\\\\t", "");
 
             nodeString = nodeString.replaceAll("\\\\", "");
-            logger.debug(" black user :{}", nodeString);
 
 
             Document div = Jsoup.parse(nodeString);
@@ -520,7 +515,7 @@ public class WeiBoService {
          * 贵州人民爱玩僵尸，僵尸用户的昵称一般包含中文和字母
          */
         if ((user.getAddress().contains("贵州") || user.getWeibo() < 15L) && MessageUtils.checkLan(user.getNikename())) {
-            logger.debug("{}", user.toString());
+            logger.info("{}", user.toString());
             if (fans.size() < FANS_LIMIT) {
                 fans.add(user.getId());
             }
