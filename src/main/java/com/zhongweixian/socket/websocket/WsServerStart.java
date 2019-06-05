@@ -31,6 +31,7 @@ public class WsServerStart {
             ServerBootstrap serverBootstrap = new ServerBootstrap();
             //使用服务端初始化自定义类WebSocketChannelInitaializer
             serverBootstrap.group(boosGrop, workerGrop).channel(NioServerSocketChannel.class).
+                    localAddress(new InetSocketAddress(port)).
                     childHandler(new WebSocketChannelInitaializer(new WsMessgaeService() {
                         @Override
                         public void readMessage(String message) {
@@ -39,12 +40,12 @@ public class WsServerStart {
                     }));
 
             //使用了不同的端口绑定方式
-            ChannelFuture channelFuture = serverBootstrap.bind(new InetSocketAddress(port)).sync();
+            ChannelFuture channelFuture = serverBootstrap.bind().sync();
             if (channelFuture.isSuccess()) {
                 logger.info("websocket started on port :{} (websocket)", port);
             }
-            //关闭连接
-            channelFuture.channel().closeFuture().sync();
+            //阻塞关闭连接，需要使用子线程
+            //channelFuture.channel().closeFuture().sync();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

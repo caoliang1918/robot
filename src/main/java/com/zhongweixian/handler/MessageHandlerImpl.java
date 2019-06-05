@@ -56,7 +56,11 @@ public class MessageHandlerImpl implements MessageHandler {
     public void onReceivingPrivateTextMessage(BaseUserCache userCache, Message message) {
         logger.info("content:{}", message.getContent());
         try {
-            logger.info("from:{} ", userCache.getChatContants().get(message.getFromUserName()).getNickName());
+            if (userCache.getOwner().getUserName().equals(message.getFromUserName())) {
+                logger.info("from me ");
+            } else {
+                logger.info("from:{} ", userCache.getChatContants().get(message.getFromUserName()).getNickName());
+            }
         } catch (Exception e) {
             logger.error("from:{} , to:{} , error:{}", message.getFromUserName(), message.getToUserName(), e);
         }
