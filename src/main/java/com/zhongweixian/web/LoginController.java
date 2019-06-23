@@ -1,12 +1,16 @@
-package com.zhongweixian.controller;
+package com.zhongweixian.web;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
+import com.zhongweixian.cache.CacheService;
 import com.zhongweixian.domain.weibo.WeiBoUser;
-import com.zhongweixian.service.*;
+import com.zhongweixian.service.WeiBoService;
+import com.zhongweixian.service.WxHttpService;
+import com.zhongweixian.service.WxMessageHandler;
+import com.zhongweixian.login.WxIMThread;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
@@ -36,19 +40,18 @@ public class LoginController {
     @Autowired
     private CacheService cacheService;
     @Autowired
-    private WechatHttpService wechatHttpService;
+    private WxHttpService wxHttpService;
     @Autowired
-    private WechatMessageService wechatMessageService;
-
+    private WxMessageHandler wxMessageHandler;
     @Autowired
     private WeiBoService weiBoService;
 
 
     @GetMapping("login")
     public void qrcode(HttpServletResponse response) throws IOException, WriterException {
-        LoginThread loginThread = new LoginThread(cacheService, wechatHttpService, wechatMessageService);
-        executorService.execute(loginThread);
-        String qrUrl = loginThread.showQrcode();
+        WxIMThread wxIMThread = new WxIMThread(cacheService, wxHttpService, wxMessageHandler);
+        executorService.execute(wxIMThread);
+        String qrUrl = wxIMThread.showQrcode();
         if (qrUrl == null) {
             return;
         }

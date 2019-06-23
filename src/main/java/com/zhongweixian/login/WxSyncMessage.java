@@ -1,6 +1,6 @@
-package com.zhongweixian.service;
+package com.zhongweixian.login;
 
-import com.zhongweixian.domain.BaseUserCache;
+import com.zhongweixian.domain.WxUserCache;
 import com.zhongweixian.domain.response.SyncCheckResponse;
 import com.zhongweixian.domain.response.SyncResponse;
 import com.zhongweixian.domain.response.VerifyUserResponse;
@@ -8,15 +8,12 @@ import com.zhongweixian.domain.shared.*;
 import com.zhongweixian.enums.MessageType;
 import com.zhongweixian.enums.RetCode;
 import com.zhongweixian.enums.Selector;
-import com.zhongweixian.exception.RobotException;
+import com.zhongweixian.service.WxHttpService;
+import com.zhongweixian.service.WxMessageHandler;
 import com.zhongweixian.utils.WechatUtils;
-import org.apache.catalina.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -25,28 +22,26 @@ import java.util.stream.Collectors;
 /**
  * 每个登录用户一个线程来处理消息同步
  */
-public class SyncServie {
-    private static final Logger logger = LoggerFactory.getLogger(SyncServie.class);
+public class WxSyncMessage {
+    private static final Logger logger = LoggerFactory.getLogger(WxSyncMessage.class);
 
-    private BaseUserCache baseUserCache;
-    private WechatHttpService wechatHttpService;
-    private MessageHandler messageHandler;
-
-    private String WECHAT_GET_IMG_URL = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxgetmsgimg?&MsgID=%s&skey=%s";
+    private WxUserCache wxUserCache;
+    private WxHttpService wxHttpService;
+    private WxMessageHandler wxMessageHandler;
 
     private final static String RED_PACKET_CONTENT = "收到红包，请在手机上查看";
 
 
-    public SyncServie(BaseUserCache baseUserCache, WechatHttpService wechatHttpService, MessageHandler messageHandler) {
-        this.baseUserCache = baseUserCache;
-        this.wechatHttpService = wechatHttpService;
-        this.messageHandler = messageHandler;
+    public WxSyncMessage(WxUserCache wxUserCache, WxHttpService wxHttpService, WxMessageHandler wxMessageHandler) {
+        this.wxUserCache = wxUserCache;
+        this.wxHttpService = wxHttpService;
+        this.wxMessageHandler = wxMessageHandler;
     }
 
     public Integer listen() {
         SyncCheckResponse syncCheckResponse = null;
         try {
-            syncCheckResponse = wechatHttpService.syncCheck(baseUserCache);
+            syncCheckResponse = wxHttpService.syncCheck(wxUserCache);
         } catch (Exception e) {
             logger.error("syncCheckResponse error:{}", e);
         }
@@ -59,7 +54,7 @@ public class SyncServie {
         }
         int retCode = syncCheckResponse.getRetcode();
         int selector = syncCheckResponse.getSelector();
-        logger.info("user  [{}]  sync result retcode : {}, selector : {}", baseUserCache.getOwner().getNickName(), retCode, selector);
+        logger.info("user  [{}]  sync result retcode : {}, selector : {}", wxUserCache.getOwner().getNickName(), retCode, selector);
         if (retCode == RetCode.NORMAL.getCode()) {
             //有新消息
             if (selector == Selector.NEW_MESSAGE.getCode()) {
@@ -75,10 +70,10 @@ public class SyncServie {
     }
 
     private SyncResponse sync() {
-        SyncResponse syncResponse = wechatHttpService.sync(baseUserCache);
+        SyncResponse syncResponse = wxHttpService.sync(wxUserCache);
         WechatUtils.checkBaseResponse(syncResponse);
-        baseUserCache.setSyncKey(syncResponse.getSyncKey());
-        baseUserCache.setSyncCheckKey(syncResponse.getSyncCheckKey());
+        wxUserCache.setSyncKey(syncResponse.getSyncKey());
+        wxUserCache.setSyncCheckKey(syncResponse.getSyncCheckKey());
 
         //mod包含新增和修改
         if (syncResponse.getModContactCount() > 0) {
@@ -97,13 +92,13 @@ public class SyncServie {
         user.setVerifyUserTicket(info.getTicket());
         VerifyUserResponse verifyUserResponse = null;
         try {
-            verifyUserResponse = wechatHttpService.acceptFriend(baseUserCache, new VerifyUser[]{user});
+            verifyUserResponse = wxHttpService.acceptFriend(wxUserCache, new VerifyUser[]{user});
             WechatUtils.checkBaseResponse(verifyUserResponse);
             /**
              * 给新加的好友发送一段话
              */
             String welcome = "你好，我是搬运工，输入:进群，我将拉你进入指定微信群。\n";
-            wechatHttpService.sendText(baseUserCache, welcome, info.getUserName());
+            wxHttpService.sendText(wxUserCache, welcome, info.getUserName());
         } catch (Exception e) {
             logger.error("{}", e);
         }
@@ -121,7 +116,7 @@ public class SyncServie {
 
     private void onNewMessage() {
         SyncResponse syncResponse = sync();
-        if (messageHandler == null) {
+        if (wxMessageHandler == null) {
             return;
         }
         for (Message message : syncResponse.getAddMsgList()) {
@@ -129,12 +124,12 @@ public class SyncServie {
             if (message.getMsgType() == MessageType.TEXT.getCode()) {
                 //个人
                 if (isMessageFromIndividual(message)) {
-                    messageHandler.onReceivingPrivateTextMessage(baseUserCache, message);
+                    wxMessageHandler.onReceivingPrivateTextMessage(wxUserCache, message);
                     continue;
                 }
                 //群
                 else if (isMessageFromChatRoom(message)) {
-                    messageHandler.onReceivingChatRoomTextMessage(baseUserCache, message);
+                    wxMessageHandler.onReceivingChatRoomTextMessage(wxUserCache, message);
                     continue;
                 }
                 logger.warn("what is this message:{} , {} , {}", message.getContent(), message.getFromUserName(), message.getToUserName());
@@ -142,14 +137,14 @@ public class SyncServie {
             } else if (message.getMsgType() == MessageType.IMAGE.getCode()) {
                 //个人
                 if (isMessageFromIndividual(message)) {
-                    messageHandler.onReceivingPrivateImageMessage(baseUserCache, message);
+                    wxMessageHandler.onReceivingPrivateImageMessage(wxUserCache, message);
                 }
                 //群
                 else if (isMessageFromChatRoom(message)) {
-                    messageHandler.onReceivingChatRoomImageMessage(baseUserCache, message);
+                    wxMessageHandler.onReceivingChatRoomImageMessage(wxUserCache, message);
                 }
             } else if (message.getMsgType() == MessageType.APP.getCode()) {
-                messageHandler.onAppMessage(baseUserCache, message);
+                wxMessageHandler.onAppMessage(wxUserCache, message);
             }
             //系统消息
             else if (message.getMsgType() == MessageType.SYS.getCode()) {
@@ -168,16 +163,16 @@ public class SyncServie {
                     }
                     if (contacts != null) {
                         Contact contact = contacts.stream().filter(x -> Objects.equals(x.getUserName(), from)).findAny().orElse(null);
-                        messageHandler.onRedPacketReceived(contact);
+                        wxMessageHandler.onRedPacketReceived(contact);
                     }
                 }
             }
             //好友邀请
-            else if (message.getMsgType() == MessageType.VERIFYMSG.getCode() && baseUserCache.getOwner().getUserName().equals(message.getToUserName())) {
-                if (messageHandler.onReceivingFriendInvitation(message.getRecommendInfo())) {
+            else if (message.getMsgType() == MessageType.VERIFYMSG.getCode() && wxUserCache.getOwner().getUserName().equals(message.getToUserName())) {
+                if (wxMessageHandler.onReceivingFriendInvitation(message.getRecommendInfo())) {
                     logger.info("[*] you've accepted the invitation");
                     acceptFriendInvitation(message.getRecommendInfo());
-                    messageHandler.postAcceptFriendInvitation(baseUserCache, message);
+                    wxMessageHandler.postAcceptFriendInvitation(wxUserCache, message);
                 } else {
                     logger.info("[*] you've declined the invitation");
                     //TODO decline invitation
@@ -204,21 +199,21 @@ public class SyncServie {
 
         //个人
         if (individuals.size() > 0) {
-            Set<String> existingIndividuals = new HashSet<>(baseUserCache.getChatContants().keySet());
+            Set<String> existingIndividuals = new HashSet<>(wxUserCache.getChatContants().keySet());
             Set<Contact> newIndividuals = new HashSet<>();
             individuals.forEach(x -> {
                 if (!existingIndividuals.contains(x)) {
                     newIndividuals.add(x);
                 }
-                baseUserCache.getChatContants().put(x.getUserName(), x);
+                wxUserCache.getChatContants().put(x.getUserName(), x);
             });
             if (newIndividuals.size() > 0) {
-                messageHandler.onNewFriendsFound(newIndividuals);
+                wxMessageHandler.onNewFriendsFound(newIndividuals);
             }
         }
         //群组
         if (chatRooms.size() > 0) {
-            Set<String> existingChatRooms = new HashSet<>(baseUserCache.getChatRoomMembers().keySet());
+            Set<String> existingChatRooms = new HashSet<>(wxUserCache.getChatRoomMembers().keySet());
             Set<Contact> newChatRooms = new HashSet<>();
             Set<Contact> modifiedChatRooms = new HashSet<>();
             for (Contact chatRoom : chatRooms) {
@@ -233,13 +228,13 @@ public class SyncServie {
                      */
                     newChatRooms.add(chatRoom);
                 }
-                baseUserCache.getChatRoomMembers().put(chatRoom.getUserName(), chatRoom);
+                wxUserCache.getChatRoomMembers().put(chatRoom.getUserName(), chatRoom);
             }
-            if (messageHandler != null && newChatRooms.size() > 0) {
-                messageHandler.onNewChatRoomsFound(newChatRooms);
+            if (wxMessageHandler != null && newChatRooms.size() > 0) {
+                wxMessageHandler.onNewChatRoomsFound(newChatRooms);
             }
             for (Contact chatRoom : modifiedChatRooms) {
-                Contact existingChatRoom = baseUserCache.getChatRoomMembers().get(chatRoom.getUserName());
+                Contact existingChatRoom = wxUserCache.getChatRoomMembers().get(chatRoom.getUserName());
                 if (existingChatRoom == null) {
                     continue;
                 }
@@ -250,7 +245,7 @@ public class SyncServie {
                 Set<ChatRoomMember> joined = newMembers.stream().filter(x -> !oldMembers.contains(x)).collect(Collectors.toSet());
                 Set<ChatRoomMember> left = oldMembers.stream().filter(x -> !newMembers.contains(x)).collect(Collectors.toSet());
                 if (joined.size() > 0 || left.size() > 0) {
-                    messageHandler.onChatRoomMembersChanged(chatRoom, joined, left);
+                    wxMessageHandler.onChatRoomMembersChanged(chatRoom, joined, left);
                 }
             }
         }
@@ -263,18 +258,18 @@ public class SyncServie {
         for (Contact contact : contacts) {
             if (WechatUtils.isIndividual(contact)) {
                 individuals.add(contact);
-                baseUserCache.getChatContants().remove(contact.getUserName());
+                wxUserCache.getChatContants().remove(contact.getUserName());
             } else if (WechatUtils.isChatRoom(contact)) {
                 chatRooms.add(contact);
-                baseUserCache.getChatRoomMembers().remove(contact.getUserName());
+                wxUserCache.getChatRoomMembers().remove(contact.getUserName());
             }
         }
-        if (messageHandler != null) {
+        if (wxMessageHandler != null) {
             if (individuals.size() > 0) {
-                messageHandler.onFriendsDeleted(individuals);
+                wxMessageHandler.onFriendsDeleted(individuals);
             }
             if (chatRooms.size() > 0) {
-                messageHandler.onChatRoomsDeleted(chatRooms);
+                wxMessageHandler.onChatRoomsDeleted(chatRooms);
             }
         }
     }

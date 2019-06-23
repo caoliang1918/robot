@@ -27,7 +27,7 @@ public class HttpMessage implements Serializable {
     private String content;
 
     /**
-     * create/update
+     * create/update/delete
      */
     private String option;
 

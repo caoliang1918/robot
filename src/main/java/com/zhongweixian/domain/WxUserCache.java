@@ -13,7 +13,7 @@ import java.util.Set;
 /**
  * Created by caoliang on 2019/1/24
  */
-public class BaseUserCache implements Serializable {
+public class WxUserCache implements Serializable {
 
     /**
      * qrcode uuid

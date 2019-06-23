@@ -1,6 +1,6 @@
-package com.zhongweixian.service;
+package com.zhongweixian.cache;
 
-import com.zhongweixian.domain.BaseUserCache;
+import com.zhongweixian.domain.WxUserCache;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -9,14 +9,14 @@ import java.util.Map;
 @Component
 public class CacheService {
 
-    private Map<String, BaseUserCache> wxUserCache = new HashMap<>();
+    private Map<String, WxUserCache> wxUserCache = new HashMap<>();
 
-    public BaseUserCache getUserCache(String uid) {
+    public WxUserCache getUserCache(String uid) {
         return wxUserCache.get(uid);
     }
 
-    public void cacheUser(BaseUserCache baseUserCache) {
-        wxUserCache.put(baseUserCache.getUin(), baseUserCache);
+    public void cacheUser(WxUserCache wxUserCache) {
+        this.wxUserCache.put(wxUserCache.getUin(), wxUserCache);
     }
 
     public void deleteCacheUser(String uid) {

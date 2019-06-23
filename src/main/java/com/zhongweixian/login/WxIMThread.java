@@ -1,6 +1,7 @@
-package com.zhongweixian.service;
+package com.zhongweixian.login;
 
-import com.zhongweixian.domain.BaseUserCache;
+import com.zhongweixian.cache.CacheService;
+import com.zhongweixian.domain.WxUserCache;
 import com.zhongweixian.domain.request.component.BaseRequest;
 import com.zhongweixian.domain.response.ContactResponse;
 import com.zhongweixian.domain.response.InitResponse;
@@ -13,7 +14,8 @@ import com.zhongweixian.enums.RetCode;
 import com.zhongweixian.enums.StatusNotifyCode;
 import com.zhongweixian.exception.RobotException;
 import com.zhongweixian.exception.WechatQRExpiredException;
-import com.zhongweixian.handler.MessageHandlerImpl;
+import com.zhongweixian.service.WxHttpService;
+import com.zhongweixian.service.WxMessageHandler;
 import com.zhongweixian.utils.QRCodeUtils;
 import com.zhongweixian.utils.WechatUtils;
 import org.slf4j.Logger;
@@ -23,23 +25,22 @@ import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 /**
  * 每个登录用一个线程来维护
  */
-public class LoginThread implements Runnable {
-    private static final Logger logger = LoggerFactory.getLogger(LoginThread.class);
+public class WxIMThread implements Runnable {
+    private static final Logger logger = LoggerFactory.getLogger(WxIMThread.class);
 
     private CacheService cacheService;
-    private WechatHttpService wechatHttpService;
-    private WechatMessageService wechatMessageService;
+    private WxHttpService wxHttpService;
+    private WxMessageHandler wxMessageHandler;
 
 
-    public LoginThread(CacheService cacheService, WechatHttpService wechatHttpService, WechatMessageService wechatMessageService) {
+    public WxIMThread(CacheService cacheService, WxHttpService wxHttpService,WxMessageHandler wxMessageHandler) {
         this.cacheService = cacheService;
-        this.wechatHttpService = wechatHttpService;
-        this.wechatMessageService = wechatMessageService;
+        this.wxHttpService = wxHttpService;
+        this.wxMessageHandler = wxMessageHandler;
     }
 
 
@@ -62,15 +63,15 @@ public class LoginThread implements Runnable {
         /**
          *
          */
-        wechatHttpService.start();
+        wxHttpService.start();
         logger.info("[0] entry completed");
         /**
          * 获取uuid
          */
-        String uuid = wechatHttpService.getUUID();
+        String uuid = wxHttpService.getUUID();
         logger.info("uuid completed: uuid{}", uuid);
         //2 qr
-        byte[] qrData = wechatHttpService.getQR(uuid);
+        byte[] qrData = wxHttpService.getQR(uuid);
         ByteArrayInputStream stream = new ByteArrayInputStream(qrData);
         qrUrl = QRCodeUtils.decode(stream);
         stream.close();
@@ -81,9 +82,9 @@ public class LoginThread implements Runnable {
         //4 login
         LoginResult loginResult;
 
-        BaseUserCache userCache = new BaseUserCache();
+        WxUserCache userCache = new WxUserCache();
         while (true) {
-            loginResult = wechatHttpService.login(uuid);
+            loginResult = wxHttpService.login(uuid);
             logger.info("loginResult:{}", loginResult.toString());
             if (LoginCode.SUCCESS.getCode().equals(loginResult.getCode())) {
                 if (loginResult.getHostUrl() == null) {
@@ -108,7 +109,7 @@ public class LoginThread implements Runnable {
 
         logger.info("[4] login completed");
         //5 redirect login
-        Token token = wechatHttpService.openNewloginpage(loginResult.getRedirectUrl(), userCache);
+        Token token = wxHttpService.openNewloginpage(loginResult.getRedirectUrl(), userCache);
         if (token.getRet() == 0) {
             userCache.setUuid(uuid);
             userCache.setUin(token.getWxuin());
@@ -129,22 +130,22 @@ public class LoginThread implements Runnable {
             throw new RobotException("token ret = " + token.getRet());
         }
 
-        wechatHttpService.statReport(userCache);
+        wxHttpService.statReport(userCache);
 
         logger.info("[5] redirect login completed , wxUin:{}", token.getWxuin());
         //6 redirect
-        wechatHttpService.redirect(loginResult.getHostUrl(), userCache);
+        wxHttpService.redirect(loginResult.getHostUrl(), userCache);
 
         logger.info("[6] redirect completed");
         //7 init
-        InitResponse initResponse = wechatHttpService.init(loginResult.getHostUrl(), userCache);
+        InitResponse initResponse = wxHttpService.init(loginResult.getHostUrl(), userCache);
         WechatUtils.checkBaseResponse(initResponse);
         userCache.setSyncKey(initResponse.getSyncKey());
         userCache.setOwner(initResponse.getUser());
         logger.info("[7] init completed");
         //8 status notify
         StatusNotifyResponse statusNotifyResponse =
-                wechatHttpService.statusNotify(loginResult.getHostUrl(),
+                wxHttpService.statusNotify(loginResult.getHostUrl(),
                         userCache.getBaseRequest(),
                         initResponse.getUser().getUserName(), StatusNotifyCode.INITED.getCode());
         WechatUtils.checkBaseResponse(statusNotifyResponse);
@@ -154,7 +155,7 @@ public class LoginThread implements Runnable {
         List<Contact> chatRooms = new ArrayList<>();
         //群组(这里包含已经保存的技能组和最近聊天的技能组)
         do {
-            ContactResponse contactResponse = wechatHttpService.getContact(userCache);
+            ContactResponse contactResponse = wxHttpService.getContact(userCache);
             WechatUtils.checkBaseResponse(contactResponse);
             logger.info("[*] getContactResponse seq = " + contactResponse.getSeq());
             logger.info("[*] getContactResponse memberCount = " + contactResponse.getMemberCount());
@@ -190,11 +191,10 @@ public class LoginThread implements Runnable {
         userCache.setAlive(true);
         cacheService.cacheUser(userCache);
 
-        MessageHandler messageHandler = new MessageHandlerImpl(wechatMessageService, userCache);
-        SyncServie syncServie = new SyncServie(userCache, wechatHttpService, messageHandler);
+        WxSyncMessage wxSyncMessage = new WxSyncMessage(userCache, wxHttpService, wxMessageHandler);
         while (true) {
             try {
-                if (syncServie.listen() != RetCode.NORMAL.getCode()) {
+                if (wxSyncMessage.listen() != RetCode.NORMAL.getCode()) {
                     logger.warn("logout user:{}", userCache.getUin());
                     userCache.setAlive(false);
                     break;

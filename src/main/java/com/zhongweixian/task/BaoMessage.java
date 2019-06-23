@@ -1,9 +1,9 @@
 package com.zhongweixian.task;
 
-import com.zhongweixian.domain.BaseUserCache;
+import com.zhongweixian.domain.WxUserCache;
 import com.zhongweixian.domain.shared.Contact;
-import com.zhongweixian.service.CacheService;
-import com.zhongweixian.service.WechatMessageService;
+import com.zhongweixian.cache.CacheService;
+import com.zhongweixian.service.WxMessageHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,13 +28,13 @@ public class BaoMessage {
     private String baobao = "阿宝宝";
 
     @Autowired
-    private WechatMessageService wechatMessageService;
+    private WxMessageHandler wxMessageHandler;
 
     @Autowired
     private CacheService cacheService;
 
     private Contact contact = null;
-    private BaseUserCache baseUserCache = null;
+    private WxUserCache wxUserCache = null;
 
 
     @Scheduled(cron = "0 59 6 * * ?")
@@ -55,7 +55,6 @@ public class BaoMessage {
     }
 
 
-
     @Scheduled(cron = "0 59 22 * * ?")
     public void _2300() {
         String[] array = new String[]{"宝宝，现在是睡觉时间",
@@ -71,11 +70,11 @@ public class BaoMessage {
     }
 
     private void sendMessage(String[] array) throws IOException, InterruptedException {
-        this.baseUserCache = cacheService.getUserCache(uid);
-        if (baseUserCache == null || !baseUserCache.getAlive()) {
+        this.wxUserCache = cacheService.getUserCache(uid);
+        if (wxUserCache == null || !wxUserCache.getAlive()) {
             return;
         }
-        baseUserCache.getChatContants().values().forEach(contact -> {
+        wxUserCache.getChatContants().values().forEach(contact -> {
             if (contact.getRemarkName().equals(baobao)) {
                 this.contact = contact;
             }
@@ -86,7 +85,7 @@ public class BaoMessage {
         }
         for (String str : array) {
             logger.info("send to {} , {}", contact.getRemarkName(), str);
-            wechatMessageService.sendText(baseUserCache, contact.getUserName(), str);
+            wxMessageHandler.sendText(wxUserCache, contact.getUserName(), str);
             Thread.sleep(3500L);
         }
     }

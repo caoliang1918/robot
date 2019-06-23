@@ -1,22 +1,21 @@
 package com.zhongweixian.service;
 
-import com.zhongweixian.domain.BaseUserCache;
+import com.zhongweixian.domain.WxUserCache;
+import com.zhongweixian.domain.response.SendMsgResponse;
 import com.zhongweixian.domain.shared.ChatRoomMember;
 import com.zhongweixian.domain.shared.Contact;
 import com.zhongweixian.domain.shared.Message;
 import com.zhongweixian.domain.shared.RecommendInfo;
-import com.zhongweixian.exception.RobotException;
 
-import java.io.IOException;
 import java.util.Set;
 
-public interface MessageHandler {
+public interface WxMessageHandler {
     /**
      * 事件：收到群聊天文本消息
      *
      * @param message 消息体
      */
-    void onReceivingChatRoomTextMessage(BaseUserCache userCache, Message message);
+    void onReceivingChatRoomTextMessage(WxUserCache userCache, Message message);
 
     /**
      * 事件：收到群聊天图片消息
@@ -24,14 +23,14 @@ public interface MessageHandler {
      * @param userCache
      * @param message
      */
-    void onReceivingChatRoomImageMessage(BaseUserCache userCache, Message message);
+    void onReceivingChatRoomImageMessage(WxUserCache userCache, Message message);
 
     /**
      * 事件：收到个人聊天文本消息
      *
      * @param message 消息体
      */
-    void onReceivingPrivateTextMessage(BaseUserCache userCache, Message message);
+    void onReceivingPrivateTextMessage(WxUserCache userCache, Message message);
 
     /**
      * 事件：收到个人聊天图片消息
@@ -39,7 +38,7 @@ public interface MessageHandler {
      * @param userCache
      * @param message
      */
-    void onReceivingPrivateImageMessage(BaseUserCache userCache, Message message);
+    void onReceivingPrivateImageMessage(WxUserCache userCache, Message message);
 
     /**
      * 事件：收到加好友邀请
@@ -56,14 +55,14 @@ public interface MessageHandler {
      * @param userCache
      * @param message
      */
-    void onAppMessage(BaseUserCache userCache, Message message);
+    void onAppMessage(WxUserCache userCache, Message message);
 
     /**
      * 事件：接受好友邀请成功
      *
      * @param message 消息体
      */
-    void postAcceptFriendInvitation(BaseUserCache userCache, Message message);
+    void postAcceptFriendInvitation(WxUserCache userCache, Message message);
 
     /**
      * 事件：群成员发生变化
@@ -122,4 +121,24 @@ public interface MessageHandler {
      * @param contact 发红包的个人或者群
      */
     void onRedPacketReceived(Contact contact);
+
+
+    /**
+     * 发送消息
+     *
+     * @param userCache
+     * @param toUser
+     * @param message
+     * @return
+     */
+    SendMsgResponse sendText(WxUserCache userCache, String toUser, String message);
+
+    /**
+     * 撤回消息
+     *
+     * @param userCache
+     * @param clientMsgId
+     * @param toUserName
+     */
+    void revoke(WxUserCache userCache, String clientMsgId, String toUserName);
 }
