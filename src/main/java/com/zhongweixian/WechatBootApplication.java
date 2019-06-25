@@ -15,7 +15,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestTemplate;
@@ -46,6 +45,7 @@ public class WechatBootApplication {
 
     @Bean
     public RestTemplate restTemplate() {
+        System.setProperty("javax.net.ssl.trustStore", "src/main/resources/cert/jssecacerts");
         // 支持HTTP、HTTPS
         Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
                 .register("http", PlainConnectionSocketFactory.getSocketFactory())

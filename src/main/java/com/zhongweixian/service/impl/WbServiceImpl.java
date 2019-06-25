@@ -118,9 +118,6 @@ public class WbServiceImpl implements WbService {
         httpHeaders.add("X-Requested-With", "XMLHttpRequest");
         httpHeaders.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Referer", "http://login.sina.com.cn/signup/signin.php?entry=sso");
-        headers.add("User-Agent", userAgent);
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<String> responseEntity = null;
         try {
@@ -132,6 +129,7 @@ public class WbServiceImpl implements WbService {
         String text = responseEntity.getBody();
         JSONObject jsonObject = JSON.parseObject(text);
         if (!"0".equals(jsonObject.getString("retcode"))) {
+            logger.error("login error , username:{} , retcode:{}" , username ,jsonObject.getString("retcode") );
             return false;
         }
         uid = jsonObject.getString("uid");
