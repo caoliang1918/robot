@@ -5,7 +5,7 @@ import com.zhongweixian.domain.HttpMessage;
 import com.zhongweixian.domain.request.RevokeRequst;
 import com.zhongweixian.domain.response.SendMsgResponse;
 import com.zhongweixian.cache.CacheService;
-import com.zhongweixian.service.WeiBoService;
+import com.zhongweixian.service.WbService;
 import com.zhongweixian.service.WxMessageHandler;
 import com.zhongweixian.utils.Levenshtein;
 import org.slf4j.Logger;
@@ -36,7 +36,7 @@ public class MessageController {
     private WxMessageHandler wxMessageHandler;
 
     @Autowired
-    private WeiBoService weiBoService;
+    private WbService wbService;
 
     private Map<Long, List<RevokeRequst>> messageMap = new HashMap<>();
 
@@ -60,7 +60,7 @@ public class MessageController {
     @PostMapping("sendMessage")
     public String send(@RequestBody HttpMessage httpMessage) {
         try {
-            weiBoService.sendWeiBoMessage(httpMessage);
+            wbService.sendWbBlog(httpMessage);
         } catch (Exception e) {
             logger.error("{}", e);
         }

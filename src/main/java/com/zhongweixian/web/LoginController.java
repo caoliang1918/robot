@@ -7,10 +7,10 @@ import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.zhongweixian.cache.CacheService;
 import com.zhongweixian.domain.weibo.WeiBoUser;
-import com.zhongweixian.service.WeiBoService;
+import com.zhongweixian.login.WxIMThread;
+import com.zhongweixian.service.WbBlockUser;
 import com.zhongweixian.service.WxHttpService;
 import com.zhongweixian.service.WxMessageHandler;
-import com.zhongweixian.login.WxIMThread;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
@@ -44,7 +44,7 @@ public class LoginController {
     @Autowired
     private WxMessageHandler wxMessageHandler;
     @Autowired
-    private WeiBoService weiBoService;
+    private WbBlockUser wbBlockUser;
 
 
     @GetMapping("login")
@@ -72,9 +72,9 @@ public class LoginController {
         int defaultPage = pageNum;
         List<WeiBoUser> weiBoUserList = new ArrayList<>();
         List<WeiBoUser> pageList = null;
-        weiBoService.addBlackUser(userId);
+        wbBlockUser.addBlackUser(userId);
         while (true) {
-            pageList = weiBoService.fans(userId, pageNum);
+            pageList = wbBlockUser.fans(userId, pageNum);
             if (CollectionUtils.isEmpty(pageList)) {
                 break;
             }
@@ -83,7 +83,7 @@ public class LoginController {
         }
         pageNum = defaultPage;
         while (true) {
-            pageList = weiBoService.follow(userId, pageNum);
+            pageList = wbBlockUser.follow(userId, pageNum);
             if (CollectionUtils.isEmpty(pageList)) {
                 break;
             }
@@ -91,7 +91,7 @@ public class LoginController {
             pageNum++;
         }
         for (WeiBoUser weiBoUser : weiBoUserList) {
-            weiBoService.addBlackUser(weiBoUser.getId());
+            wbBlockUser.addBlackUser(weiBoUser.getId());
         }
         return new HttpEntity<>(HttpStatus.OK);
     }
