@@ -25,12 +25,12 @@ public class InstallCert {
             return;
         }
 
-        File file = new File("jssecacerts");
+        File file = new File("weibo.cer");
         if (file.isFile() == false) {
             char SEP = File.separatorChar;
             File dir = new File(System.getProperty("java.home") + SEP
                     + "lib" + SEP + "security");
-            file = new File(dir, "jssecacerts");
+            file = new File(dir, "weibo.cer");
             if (file.isFile() == false) {
                 file = new File(dir, "cacerts");
             }
@@ -104,7 +104,7 @@ public class InstallCert {
         String alias = host + "-" + (k + 1);
         ks.setCertificateEntry(alias, cert);
 
-        OutputStream out = new FileOutputStream("jssecacerts");
+        OutputStream out = new FileOutputStream("weibo.cer");
         ks.store(out, passphrase);
         out.close();
 
@@ -112,7 +112,7 @@ public class InstallCert {
         System.out.println(cert);
         System.out.println();
         System.out.println
-                ("Added certificate to keystore 'jssecacerts' using alias '"
+                ("Added certificate to keystore 'weibo.cer' using alias '"
                         + alias + "'");
     }
 
