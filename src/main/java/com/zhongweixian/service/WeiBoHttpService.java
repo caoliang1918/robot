@@ -4,16 +4,24 @@ package com.zhongweixian.service;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.zhongweixian.domain.weibo.WeiBoUser;
+import org.apache.commons.io.FileUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.stereotype.Component;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.*;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 
 @Component
 public class WeiBoHttpService {
@@ -217,5 +225,32 @@ public class WeiBoHttpService {
             logger.error("{}", e);
         }
         return null;
+    }
+
+    private static RestTemplate createRest() {
+
+        SimpleClientHttpRequestFactory simpleClientHttpRequestFactory = new SimpleClientHttpRequestFactory();
+        simpleClientHttpRequestFactory.setConnectTimeout(2000);
+        simpleClientHttpRequestFactory.setReadTimeout(50000);
+        RestTemplate restTemplate = new RestTemplate(simpleClientHttpRequestFactory);
+        restTemplate.getMessageConverters().set(1, new StringHttpMessageConverter(StandardCharsets.UTF_8));
+        return restTemplate;
+    }
+
+    public static void main(String[] args) throws URISyntaxException, IOException {
+        RestTemplate restTemplate = createRest();
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.add(HttpHeaders.REFERER , "https://api.weibo.com/chat/");
+        httpHeaders.add(HttpHeaders.COOKIE, "JSESSIONID=2389A3740D82E4F72190EF2E1C9F1AAC; _s_tentry=login.sina.com.cn; Apache=351887198397.7934.1561655226197; SINAGLOBAL=351887198397.7934.1561655226197; ULV=1561655226225:1:1:1:351887198397.7934.1561655226197:; login_sid_t=dacbff5a360e932f01cd451ea2971302; cross_origin_proto=SSL; UOR=,,login.sina.com.cn; SUB=_2A25wEkwKDeRhGeFP4lYZ9CjPyDWIHXVTZjrCrDV8PUNbmtBeLVTmkW9NQO_rylqUaPxKm--fXfnTtiqhvxqoXgSO; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9Whu6d1rS1RzpY.o0E_MyWMw5JpX5KzhUgL.FoMp1KBRShq0e0.2dJLoIEXLxK-L12qL12BLxKML1hnLB-eLxKqL1-eLB.2LxK-L1K.LBKnLxKBLB.2LB.2t; SUHB=03oVW_nyuoplSt; ALF=1593274329; SSOLoginState=1561738330; wvr=6; webim_unReadCount=%7B%22time%22%3A1561741653808%2C%22dm_pub_total%22%3A0%2C%22chat_group_pc%22%3A1002%2C%22allcountNum%22%3A1002%2C%22msgbox%22%3A0%7D");
+        httpHeaders.add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36");
+        String url = "https://upload.api.weibo.com/2/mss/msget?source=209678993&fid=4388327261988989";
+        ResponseEntity<byte[]> responseEntity = restTemplate.exchange(url ,HttpMethod.GET, new HttpEntity<byte[]>(httpHeaders),  byte[].class );
+        byte[] result = responseEntity.getBody();
+        System.out.println(result.length);
+        System.out.println(result.hashCode());
+        InputStream inputStream = new ByteArrayInputStream(result);
+        File file = new File("logs/"+System.currentTimeMillis()+".mp4");
+        FileUtils.copyInputStreamToFile(inputStream , file);
+        inputStream.close();
     }
 }

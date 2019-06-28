@@ -165,7 +165,7 @@ public class WbSyncMessage {
                             logger.info("fids:{}", fids);
                             Long videoId = Long.parseLong(fids.get(0).toString());
                             video.setVideoUrl(String.format(VIDEO_URL, videoId));
-                            botVideoService.add(video);
+                           // botVideoService.add(video);
                         }
                     } catch (Exception e) {
                         logger.error("{}", e.getMessage());
