@@ -32,9 +32,6 @@ public class WbBlockUser {
     private Logger logger = LoggerFactory.getLogger(WbBlockUser.class);
 
 
-    @Autowired
-    private WbService wbService;
-
     private HttpHeaders headers;
 
     /**

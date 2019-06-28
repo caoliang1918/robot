@@ -45,7 +45,7 @@ public class WechatBootApplication {
 
     @Bean
     public RestTemplate restTemplate() {
-        System.setProperty("javax.net.ssl.trustStore", "src/main/resources/cert/weibo.cer");
+        System.setProperty("javax.net.ssl.trustStore", "conf/weibo.cer");
         // 支持HTTP、HTTPS
         Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
                 .register("http", PlainConnectionSocketFactory.getSocketFactory())

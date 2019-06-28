@@ -8,6 +8,10 @@ public class WeiBoUser implements Serializable {
     private String usercard;
     private String nikename;
     private String address;
+    private String cookie;
+    private String clientId;
+
+
     /**
      * 粉丝
      */
@@ -75,6 +79,22 @@ public class WeiBoUser implements Serializable {
 
     public void setWeibo(Long weibo) {
         this.weibo = weibo;
+    }
+
+    public String getCookie() {
+        return cookie;
+    }
+
+    public void setCookie(String cookie) {
+        this.cookie = cookie;
+    }
+
+    public String getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
     }
 
     @Override
