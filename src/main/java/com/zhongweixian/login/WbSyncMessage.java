@@ -2,12 +2,17 @@ package com.zhongweixian.login;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.amazonaws.services.s3.model.PutObjectResult;
 import com.zhongweixian.domain.weibo.WeiBoUser;
+import com.zhongweixian.service.OssService;
 import com.zhongweixian.service.WbService;
 import com.zhongweixian.service.WeiBoHttpService;
 import com.zhongweixian.web.entity.BotVideo;
 import com.zhongweixian.web.entity.enums.Channel;
 import com.zhongweixian.web.service.BotVideoService;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.concurrent.BasicThreadFactory;
+import org.apache.http.client.utils.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,10 +21,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.Date;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 /**
  * 微博IM同步消息类
@@ -35,29 +41,38 @@ public class WbSyncMessage {
     @Autowired
     private WbService wbService;
 
+    private ScheduledExecutorService task = new ScheduledThreadPoolExecutor(20,
+            new BasicThreadFactory.Builder().namingPattern("download-schedule-pool-%d").daemon(true).build());
+
     @Autowired
     private ScheduledExecutorService wbExecutor;
 
     @Autowired
     private WeiBoHttpService weiBoHttpService;
-    ;
+
 
     @Autowired
     private BotVideoService botVideoService;
 
+    @Autowired
+    private OssService ossService;
+
+    String JD_HOST = "https://wb-video.s3.cn-south-1.jdcloud-oss.com/";
+    String CONTENT_TYPE = "application/octet-stream";
+
+    private WeiBoUser weiBoUser;
+
 
     @PostConstruct
-    public void init() throws URISyntaxException, MalformedURLException {
-        logger.info("PostConstruct {} , {}", wbService, wbExecutor);
-
+    public void init() {
         if (!wbService.login()) {
             return;
         }
 
         String uid = wbService.getUid();
-        String cookie = wbService.getCookie();
+        String cookie = "UOR=login.sina.com.cn,weibo.com,login.sina.com.cn; SINAGLOBAL=9456802003620.64.1561629285945; un=1923531384@qq.com; wvr=6; ALF=1593328489; SSOLoginState=1561792490; _s_tentry=-; Apache=1011454633032.7024.1561792502565; ULV=1561792503590:2:2:2:1011454633032.7024.1561792502565:1561629286071; SCF=Aqqh9eM0QX_5TJHvIT1Bp_DVlqjNkTXae_JopKR-sMiuhWyxr3ffdr-7J-UpYeEQbRGZjMnrQhwi9UEm017Qn1A.; SUB=_2A25wExQTDeRhGeFP4lYZ9CjPyDWIHXVTaQLbrDV8PUJbmtAKLXXGkW9NQO_ryifEhjFXYBmgA3tuIVYmoEtzJkCe; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9Whu6d1rS1RzpY.o0E_MyWMw5JpX5K-hUgL.FoMp1KBRShq0e0.2dJLoIEXLxK-L12qL12BLxKML1hnLB-eLxKqL1-eLB.2LxK-L1K.LBKnLxKBLB.2LB.2t; SUHB=0qjkw9PRy8WBd4; webim_unReadCount=%7B%22time%22%3A1561820459755%2C%22dm_pub_total%22%3A0%2C%22chat_group_pc%22%3A10104%2C%22allcountNum%22%3A10104%2C%22msgbox%22%3A0%7D";
 
-        WeiBoUser weiBoUser = new WeiBoUser();
+        weiBoUser = new WeiBoUser();
         weiBoUser.setId(Long.parseLong(uid));
         weiBoUser.setCookie(cookie);
 
@@ -145,33 +160,92 @@ public class WbSyncMessage {
                             if (info == null || info.size() < 8) {
                                 continue;
                             }
-                            BotVideo video = new BotVideo();
-                            video.setChannel(Channel.WB.name());
-                            video.setCts(new Date());
-                            video.setChatName(info.getString("group_name"));
-                            video.setChatType(data.getString("type"));
-                            video.setFromUid(info.getString("from_uid"));
-                            JSONObject fromUser = info.getJSONObject("from_user");
-                            video.setFromUser(fromUser.getString("screen_name"));
-                            video.setStatus(1);
-                            logger.info("group_name:{} , from_user:{} , content:{}", video.getChatName(), video.getFromUser(), info.getString("content"));
-                            if (!info.containsKey("media_type") || !info.getInteger("media_type").equals(MEDIA_TYPE)) {
-                                continue;
-                            }
-                            JSONArray fids = info.getJSONArray("fids");
-                            if (fids == null || fids.size() == 0) {
-                                continue;
-                            }
-                            logger.info("fids:{}", fids);
-                            Long videoId = Long.parseLong(fids.get(0).toString());
-                            video.setVideoUrl(String.format(VIDEO_URL, videoId));
-                           // botVideoService.add(video);
+
+                            downloadVideo(weiBoUser, info);
+
+
                         }
                     } catch (Exception e) {
-                        logger.error("{}", e.getMessage());
+                        logger.error("{}", e);
+                        try {
+                            Thread.sleep(5000);
+                        } catch (InterruptedException ex) {
+                            ex.printStackTrace();
+                        }
                     }
                 }
             }
         });
+    }
+
+    public void setCookie(String cookie) {
+        weiBoUser.setCookie(cookie);
+    }
+
+    private void downloadVideo(WeiBoUser weiBoUser, JSONObject info) {
+        BotVideo video = new BotVideo();
+        video.setChannel(Channel.WB.name());
+        video.setCts(new Date());
+        video.setChatName(info.getString("group_name"));
+        video.setChatType("groupchat");
+        video.setStatus(1);
+        video.setFromUid(info.getString("from_uid"));
+        JSONObject fromUser = info.getJSONObject("from_user");
+        if (fromUser == null) {
+            logger.warn("fromUser is null , from_user:{}", info);
+            return;
+        }
+        video.setFromUser(fromUser.getString("screen_name"));
+        logger.info("group_name:{} , from_user:{} , content:{}", video.getChatName(), video.getFromUser(), info.getString("content"));
+        if (!info.containsKey("media_type") || !info.getInteger("media_type").equals(MEDIA_TYPE)) {
+            return;
+        }
+        JSONArray fids = info.getJSONArray("fids");
+        if (fids == null || fids.size() == 0) {
+            return;
+        }
+        logger.info("fids:{}", fids);
+        Long videoId = Long.parseLong(fids.get(0).toString());
+        video.setFromUrl(String.format(VIDEO_URL, videoId));
+
+        task.execute(() -> {
+            try {
+                ResponseEntity<byte[]> fileEntity = weiBoHttpService.download(video.getFromUrl(), weiBoUser.getCookie());
+                if (fileEntity == null || fileEntity.getStatusCode() != HttpStatus.OK) {
+                    return;
+                }
+
+                String hashCode = DigestUtils.md5Hex(fileEntity.getBody());
+                Integer size = fileEntity.getBody().length;
+                logger.info("size:{} , hashCode:{} ", size, hashCode);
+
+                BotVideo exist = botVideoService.findByHashCode(size, hashCode);
+                if (exist != null) {
+                    logger.warn("file is exist:{}", JSONObject.toJSONString(exist));
+                    return;
+                }
+                logger.info("new video:{}", videoId);
+
+                /**
+                 * 上传云服务器
+                 */
+                InputStream inputStream = new ByteArrayInputStream(fileEntity.getBody());
+                String bucket = "wb-video/" + DateUtils.formatDate(new Date(), "yyyy-MM");
+                PutObjectResult result = ossService.uploadJdcloud(inputStream, size, CONTENT_TYPE, bucket, videoId.toString());
+
+                if (result == null) {
+                    return;
+                }
+                video.setVideoCloud("jdcloud");
+                video.setVideoUrl(JD_HOST + bucket + "/" + videoId.toString());
+                video.setHashCode(hashCode);
+                video.setVideoSize(size);
+                video.setStatus(2);
+            } catch (Exception e) {
+                logger.error("{}", e);
+            }
+            botVideoService.add(video);
+        });
+
     }
 }

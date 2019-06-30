@@ -14,7 +14,7 @@
         </commentGenerator>
         <!--数据库链接URL，用户名、密码 -->
         <jdbcConnection driverClass="com.mysql.jdbc.Driver"
-                        connectionURL="jdbc:mysql://192.168.183.145:3306/auxiliary" userId="root" password="ytxcc123">
+                        connectionURL="jdbc:mysql://106.12.84.202:3306/robot" userId="root" password="caoliang1918@gmail.com">
         </jdbcConnection>
         <javaTypeResolver>
             <!-- This property is used to specify whether MyBatis Generator should
@@ -22,7 +22,7 @@
             <property name="forceBigDecimals" value="false" />
         </javaTypeResolver>
         <!-- 生成模型的包名和位置 -->
-        <javaModelGenerator targetPackage="com.yuntongxun.aic.talker.entity"    targetProject="target">
+        <javaModelGenerator targetPackage="com.zhongweixian.web.entity"    targetProject="target">
             <property name="enableSubPackages" value="ture"/>
             <property name="trimStrings" value="true"/>
         </javaModelGenerator>
@@ -31,46 +31,14 @@
             <property name="enableSubPackages" value="true" />
         </sqlMapGenerator>
         <!-- 生成DAO的包名和位置 -->
-        <javaClientGenerator type="XMLMAPPER"  targetPackage="com.yuntongxun.aic.talker.mapper"   targetProject="target">
+        <javaClientGenerator type="XMLMAPPER"  targetPackage="com.zhongweixian.web.mapper"   targetProject="target">
             <property name="enableSubPackages" value="true" />
         </javaClientGenerator>
 
 
-        <!--辅助坐席监控 -->
-        <table tableName="auxv_monitor_statistics" domainObjectName="MonitorStat" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"
-               enableSelectByExample="false" selectByExampleQueryId="false" ></table>
-        <!--舆情配置表 -->
-        <table tableName="auxv_public_opinion_cfg" domainObjectName="OpinionCfg" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"
-               enableSelectByExample="false" selectByExampleQueryId="false" ></table>
-        <!--舆情详单 -->
-        <table tableName="auxv_public_opinion_list" domainObjectName="OpinionList" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"
-               enableSelectByExample="false" selectByExampleQueryId="false" ></table>
-        <!-- 舆情统计-->
-        <table tableName="auxv_public_opinion_statistics" domainObjectName="OpinionStat" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"
-               enableSelectByExample="false" selectByExampleQueryId="false" ></table>
-        <!-- 通话过程会话表-->
-        <table tableName="auxv_public_talk_entire" domainObjectName="TalkEntire" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"
-               enableSelectByExample="false" selectByExampleQueryId="false" ></table>
-        <!-- 电话落单 -->
-        <table tableName="auxv_public_talk_list" domainObjectName="TalkList" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"
-               enableSelectByExample="false" selectByExampleQueryId="false" ></table>
-        <!--质检配置表 -->
-        <table tableName="auxv_quality_testing_cfg" domainObjectName="QualityCfg" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"
-               enableSelectByExample="false" selectByExampleQueryId="false" ></table>
-        <!--质检详单 -->
-        <table tableName="auxv_quality_testing_list" domainObjectName="QualityList" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"
-               enableSelectByExample="false" selectByExampleQueryId="false" ></table>
-        <!--质检统计表 -->
-        <table tableName="auxv_quality_testing_statistics" domainObjectName="QualityStat" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"
-               enableSelectByExample="false" selectByExampleQueryId="false" ></table>
-
-        <table tableName="auxv_business_syn" domainObjectName="BusinessSyn" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"
-               enableSelectByExample="false" selectByExampleQueryId="false" ></table>
 
 
-
-        <!-- 电话落单 -->
-        <table tableName="auxv_intention_words" domainObjectName="IntentionWords" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"
+        <table tableName="bot_message_video" domainObjectName="BotVideo" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"
                enableSelectByExample="false" selectByExampleQueryId="false" ></table>
     </context>
 </generatorConfiguration>

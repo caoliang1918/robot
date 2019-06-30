@@ -7,7 +7,7 @@ import java.io.InputStream;
 /**
  * Created by caoliang on 2019-06-29
  */
-public interface FileUpload {
+public interface OssService {
 
 
     /**
@@ -17,7 +17,8 @@ public interface FileUpload {
      * @param length
      * @param contentType
      * @param bucket
+     * @param fileName
      * @return
      */
-    PutObjectResult uploadJdcloud(InputStream inputStream, int length, String contentType, String bucket);
+    PutObjectResult uploadJdcloud(InputStream inputStream, int length, String contentType, String bucket, String fileName);
 }

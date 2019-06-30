@@ -7,6 +7,7 @@ import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.zhongweixian.cache.CacheService;
 import com.zhongweixian.domain.weibo.WeiBoUser;
+import com.zhongweixian.login.WbSyncMessage;
 import com.zhongweixian.login.WxIMThread;
 import com.zhongweixian.service.WbBlockUser;
 import com.zhongweixian.service.WxHttpService;
@@ -15,10 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -45,6 +43,9 @@ public class LoginController {
     private WxMessageHandler wxMessageHandler;
     @Autowired
     private WbBlockUser wbBlockUser;
+
+    @Autowired
+    private WbSyncMessage wbSyncMessage;
 
 
     @GetMapping("login")
@@ -96,5 +97,11 @@ public class LoginController {
         return new HttpEntity<>(HttpStatus.OK);
     }
 
+
+    @PostMapping("setCookie")
+    public String setCookie(String cookie) {
+        wbSyncMessage.setCookie(cookie);
+        return "is ok";
+    }
 
 }

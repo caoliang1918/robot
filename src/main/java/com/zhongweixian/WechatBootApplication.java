@@ -1,5 +1,13 @@
 package com.zhongweixian;
 
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
@@ -62,6 +70,29 @@ public class WechatBootApplication {
         RestTemplate restTemplate = new RestTemplate(requestFactory);
         restTemplate.getMessageConverters().set(1, new StringHttpMessageConverter(StandardCharsets.UTF_8));
         return restTemplate;
+    }
+
+    @Bean
+    public AmazonS3 amazonS3() {
+        final String accessKey = "178C99D6543F73B79CE703A317B3A76D";
+        final String secretKey = "97257AF09F7834B76DC66A4DE081613E";
+        final String endpoint = "https://s3.cn-south-1.jdcloud-oss.com";
+        ClientConfiguration config = new ClientConfiguration();
+
+        AwsClientBuilder.EndpointConfiguration endpointConfig =
+                new AwsClientBuilder.EndpointConfiguration(endpoint, "cn-south-1");
+
+        AWSCredentials awsCredentials = new BasicAWSCredentials(accessKey, secretKey);
+        AWSCredentialsProvider awsCredentialsProvider = new AWSStaticCredentialsProvider(awsCredentials);
+
+        AmazonS3 s3 = AmazonS3Client.builder()
+                .withEndpointConfiguration(endpointConfig)
+                .withClientConfiguration(config)
+                .withCredentials(awsCredentialsProvider)
+                .disableChunkedEncoding()
+                .withPathStyleAccessEnabled(true)
+                .build();
+        return s3;
     }
 
     public static void main(String[] args) {

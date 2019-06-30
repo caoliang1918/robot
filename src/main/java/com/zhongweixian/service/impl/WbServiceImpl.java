@@ -124,12 +124,13 @@ public class WbServiceImpl implements WbService {
             responseEntity = restTemplate.exchange(LOFIN_URL, HttpMethod.POST, new HttpEntity<>(formData, httpHeaders), String.class);
         } catch (Exception e) {
             logger.error("{}", e);
+            return false;
         }
         logger.info("login responseEntity :{}", responseEntity.getBody());
         String text = responseEntity.getBody();
         JSONObject jsonObject = JSON.parseObject(text);
         if (!"0".equals(jsonObject.getString("retcode"))) {
-            logger.error("login error , username:{} , retcode:{}" , username ,jsonObject.getString("retcode") );
+            logger.error("login error , username:{} , retcode:{}", username, jsonObject.getString("retcode"));
             return false;
         }
         uid = jsonObject.getString("uid");

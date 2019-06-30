@@ -48,7 +48,7 @@ public interface BaseService<T> {
      * @param params
      * @return
      */
-    Page<T> findByPageParams(Map params);
+    Page<T> findByPageParams(Map<String , Object> params);
 
 
 }

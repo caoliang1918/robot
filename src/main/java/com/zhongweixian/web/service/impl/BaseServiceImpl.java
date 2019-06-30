@@ -35,7 +35,7 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
     }
 
     @Override
-    public Page<T> findByPageParams(Map params) {
+    public Page<T> findByPageParams(Map<String , Object> params) {
         int pageNum = (int) params.get("pageNum");
         int limit = (int) params.get("limit");
         params.put("offset", pageNum * limit);

@@ -20,4 +20,9 @@ public class BotVideoServiceImpl extends BaseServiceImpl<BotVideo> implements Bo
     BaseMapper<BotVideo> baseMapper() {
         return botVideoMapper;
     }
+
+    @Override
+    public BotVideo findByHashCode(Integer size, String hashCode) {
+        return botVideoMapper.selectByHashCode(size, hashCode);
+    }
 }
