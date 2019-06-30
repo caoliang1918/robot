@@ -63,14 +63,14 @@ public class WbSyncMessage {
     private WeiBoUser weiBoUser;
 
 
-    @PostConstruct
+   @PostConstruct
     public void init() {
         if (!wbService.login()) {
             return;
         }
 
         String uid = wbService.getUid();
-        String cookie = "UOR=login.sina.com.cn,weibo.com,login.sina.com.cn; SINAGLOBAL=9456802003620.64.1561629285945; un=1923531384@qq.com; wvr=6; ALF=1593328489; SSOLoginState=1561792490; _s_tentry=-; Apache=1011454633032.7024.1561792502565; ULV=1561792503590:2:2:2:1011454633032.7024.1561792502565:1561629286071; SCF=Aqqh9eM0QX_5TJHvIT1Bp_DVlqjNkTXae_JopKR-sMiuhWyxr3ffdr-7J-UpYeEQbRGZjMnrQhwi9UEm017Qn1A.; SUB=_2A25wExQTDeRhGeFP4lYZ9CjPyDWIHXVTaQLbrDV8PUJbmtAKLXXGkW9NQO_ryifEhjFXYBmgA3tuIVYmoEtzJkCe; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9Whu6d1rS1RzpY.o0E_MyWMw5JpX5K-hUgL.FoMp1KBRShq0e0.2dJLoIEXLxK-L12qL12BLxKML1hnLB-eLxKqL1-eLB.2LxK-L1K.LBKnLxKBLB.2LB.2t; SUHB=0qjkw9PRy8WBd4; webim_unReadCount=%7B%22time%22%3A1561820459755%2C%22dm_pub_total%22%3A0%2C%22chat_group_pc%22%3A10104%2C%22allcountNum%22%3A10104%2C%22msgbox%22%3A0%7D";
+        String cookie = "SUB=_2A25wHL5wDeRhGeFP61EU8i3JyDyIHXVTa6i4rDV8PUNbmtAKLVDZkW9NQS4244eLTn9AjnXEdFkx0MTHN2poqtUz; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9WF8puQJrYeKg6Y-pvo8b5.r5JpX5KzhUgL.FoMpehefeoefe052dJLoI0qLxKMLB.-L12-LxKnL1hzLBK2LxKnLBK2L12eLxKqL1heL1h-LxKqL12-LBKnLxK.L1h5L1h2t; SINAGLOBAL=4831074470676.414.1561308148789; ULV=1561906663347:2:2:1:1878978926110.9934.1561906663100:1561308148793; login_sid_t=316dd69102f40ae5d1d9698e363de1ad; cross_origin_proto=SSL; _s_tentry=-; Apache=1878978926110.9934.1561906663100; SUHB=0xnyGxYE1t0R7Y; ALF=1593442720; SSOLoginState=1561906720; wvr=6; webim_unReadCount=%7B%22time%22%3A1561906837780%2C%22dm_pub_total%22%3A0%2C%22chat_group_pc%22%3A0%2C%22allcountNum%22%3A0%2C%22msgbox%22%3A0%7D";
 
         weiBoUser = new WeiBoUser();
         weiBoUser.setId(Long.parseLong(uid));
@@ -147,7 +147,7 @@ public class WbSyncMessage {
                 while (true) {
                     try {
                         ResponseEntity<String> connectEntity = weiBoHttpService.connect(weiBoUser);
-                        logger.debug("status:{} , connectEntity:{}", connectEntity.getStatusCode(), connectEntity.getBody());
+                        logger.info("status:{} , connectEntity:{}", connectEntity.getStatusCode(), connectEntity.getBody());
                         String body = connectEntity.getBody();
                         JSONArray jsonArray = JSONObject.parseArray(body.substring(body.indexOf("([") + +1, body.indexOf("])") + 1));
                         for (Object object : jsonArray) {
@@ -161,7 +161,7 @@ public class WbSyncMessage {
                                 continue;
                             }
 
-                            downloadVideo(weiBoUser, info);
+                            //downloadVideo(weiBoUser, info);
 
 
                         }

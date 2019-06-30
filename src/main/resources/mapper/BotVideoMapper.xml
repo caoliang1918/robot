@@ -227,7 +227,7 @@
   </update>
 
   <select id="selectCountByMap" parameterType="java.util.Map" resultType="int">
-    select count(*) from bot_message_video
+    select count(*) from bot_message_video where 1 = 1
     <include refid="whereQuery"/>
   </select>
 
@@ -241,7 +241,7 @@
 
 
   <select id="selectByHashCode"  resultMap="BaseResultMap">
-    SELECT <include refid="Base_Column_List"/>  FROM bot_message_video where video_size = #{videoSize,jdbcType=INTEGER} and  hash_code = #{hashCode,jdbcType=VARCHAR} limit 1
+    SELECT <include refid="Base_Column_List"/>  FROM bot_message_video where video_size = #{videoSize,jdbcType=INTEGER} limit 1
   </select>
 
   <sql id="whereQuery">

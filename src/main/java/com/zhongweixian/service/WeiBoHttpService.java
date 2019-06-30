@@ -47,7 +47,7 @@ public class WeiBoHttpService {
      */
     private final static String CHAT_CONNECT = "https://web.im.weibo.com/im/connect";
 
-    private final static String CHAT_REFERER = "https://api.weibo.com/chat/";
+    private final static String   CHAT_REFERER = "https://api.weibo.com/chat/";
 
     private final static String CHAT_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36";
 
