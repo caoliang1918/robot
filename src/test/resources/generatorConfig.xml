@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE generatorConfiguration
+        PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"
+        "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
+<generatorConfiguration>
+    <context id="test" targetRuntime="MyBatis3">
+        <plugin type="org.mybatis.generator.plugins.SerializablePlugin"></plugin>
+        <commentGenerator>
+            <!-- 这个元素用来去除指定生成的注释中是否包含生成的日期 false:表示保护 -->
+            <!-- 如果生成日期，会造成即使修改一个字段，整个实体类所有属性都会发生变化，不利于版本控制，所以设置为true -->
+            <property name="suppressDate" value="false" />
+            <property name="suppressAllComments" value="false" />
+            <!-- 是否去除自动生成的注释 true：是 ： false:否 -->
+        </commentGenerator>
+        <!--数据库链接URL，用户名、密码 -->
+        <jdbcConnection driverClass="com.mysql.jdbc.Driver"
+                        connectionURL="jdbc:mysql://192.168.183.145:3306/auxiliary" userId="root" password="ytxcc123">
+        </jdbcConnection>
+        <javaTypeResolver>
+            <!-- This property is used to specify whether MyBatis Generator should
+                force the use of java.math.BigDecimal for DECIMAL and NUMERIC fields, -->
+            <property name="forceBigDecimals" value="false" />
+        </javaTypeResolver>
+        <!-- 生成模型的包名和位置 -->
+        <javaModelGenerator targetPackage="com.yuntongxun.aic.talker.entity"    targetProject="target">
+            <property name="enableSubPackages" value="ture"/>
+            <property name="trimStrings" value="true"/>
+        </javaModelGenerator>
+        <!-- 生成映射文件的包名和位置 -->
+        <sqlMapGenerator targetPackage="resource.mapper"     targetProject="target">
+            <property name="enableSubPackages" value="true" />
+        </sqlMapGenerator>
+        <!-- 生成DAO的包名和位置 -->
+        <javaClientGenerator type="XMLMAPPER"  targetPackage="com.yuntongxun.aic.talker.mapper"   targetProject="target">
+            <property name="enableSubPackages" value="true" />
+        </javaClientGenerator>
+
+
+        <!--辅助坐席监控 -->
+        <table tableName="auxv_monitor_statistics" domainObjectName="MonitorStat" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"
+               enableSelectByExample="false" selectByExampleQueryId="false" ></table>
+        <!--舆情配置表 -->
+        <table tableName="auxv_public_opinion_cfg" domainObjectName="OpinionCfg" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"
+               enableSelectByExample="false" selectByExampleQueryId="false" ></table>
+        <!--舆情详单 -->
+        <table tableName="auxv_public_opinion_list" domainObjectName="OpinionList" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"
+               enableSelectByExample="false" selectByExampleQueryId="false" ></table>
+        <!-- 舆情统计-->
+        <table tableName="auxv_public_opinion_statistics" domainObjectName="OpinionStat" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"
+               enableSelectByExample="false" selectByExampleQueryId="false" ></table>
+        <!-- 通话过程会话表-->
+        <table tableName="auxv_public_talk_entire" domainObjectName="TalkEntire" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"
+               enableSelectByExample="false" selectByExampleQueryId="false" ></table>
+        <!-- 电话落单 -->
+        <table tableName="auxv_public_talk_list" domainObjectName="TalkList" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"
+               enableSelectByExample="false" selectByExampleQueryId="false" ></table>
+        <!--质检配置表 -->
+        <table tableName="auxv_quality_testing_cfg" domainObjectName="QualityCfg" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"
+               enableSelectByExample="false" selectByExampleQueryId="false" ></table>
+        <!--质检详单 -->
+        <table tableName="auxv_quality_testing_list" domainObjectName="QualityList" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"
+               enableSelectByExample="false" selectByExampleQueryId="false" ></table>
+        <!--质检统计表 -->
+        <table tableName="auxv_quality_testing_statistics" domainObjectName="QualityStat" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"
+               enableSelectByExample="false" selectByExampleQueryId="false" ></table>
+
+        <table tableName="auxv_business_syn" domainObjectName="BusinessSyn" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"
+               enableSelectByExample="false" selectByExampleQueryId="false" ></table>
+
+
+
+        <!-- 电话落单 -->
+        <table tableName="auxv_intention_words" domainObjectName="IntentionWords" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"
+               enableSelectByExample="false" selectByExampleQueryId="false" ></table>
+    </context>
+</generatorConfiguration>
