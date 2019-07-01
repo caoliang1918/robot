@@ -137,7 +137,7 @@ public class WxHttpService {
         CookieStore cookieStore = new BasicCookieStore();
         HttpContext httpContext = new BasicHttpContext();
         httpContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
-        httpContext.setAttribute(HttpClientContext.REQUEST_CONFIG, RequestConfig.custom().setRedirectsEnabled(false).build());
+        httpContext.setAttribute(HttpClientContext.REQUEST_CONFIG, RequestConfig.custom().setSocketTimeout(50000).setConnectTimeout(2000).setRedirectsEnabled(false).build());
         return new StatefullRestTemplate(httpContext);
     }
 
