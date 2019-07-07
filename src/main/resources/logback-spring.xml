@@ -3,7 +3,7 @@
     <!-- 工程名 -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} - %thread - [%level] - %class->%line: %m%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} - %thread - [%level] : %m%n</pattern>
             <charset>UTF-8</charset>
         </encoder>
     </appender>
@@ -18,7 +18,7 @@
             </timeBasedFileNamingAndTriggeringPolicy>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} - %thread - [%level] - %class->%line: %m%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} - %thread - [%level] : %m%n</pattern>
             <charset>UTF-8</charset>
         </encoder>
     </appender>
@@ -37,6 +37,5 @@
     <root level="INFO">
         <appender-ref ref="CONSOLE" />
         <appender-ref ref="FILE-INFO" />
-        <appender-ref ref="LOGSTASH" />
     </root>
 </configuration>

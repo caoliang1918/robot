@@ -41,8 +41,8 @@ public class WbSyncMessage {
     @Autowired
     private WbService wbService;
 
-    private ScheduledExecutorService task = new ScheduledThreadPoolExecutor(20,
-            new BasicThreadFactory.Builder().namingPattern("download-schedule-pool-%d").daemon(true).build());
+    private ScheduledExecutorService task = new ScheduledThreadPoolExecutor(50,
+            new BasicThreadFactory.Builder().namingPattern("video-pool-%d").daemon(true).build());
 
     @Autowired
     private ScheduledExecutorService wbExecutor;
@@ -63,7 +63,7 @@ public class WbSyncMessage {
     private WeiBoUser weiBoUser;
 
 
-   @PostConstruct
+    //@PostConstruct
     public void init() {
         if (!wbService.login()) {
             return;
@@ -147,7 +147,7 @@ public class WbSyncMessage {
                 while (true) {
                     try {
                         ResponseEntity<String> connectEntity = weiBoHttpService.connect(weiBoUser);
-                        logger.info("status:{} , connectEntity:{}", connectEntity.getStatusCode(), connectEntity.getBody());
+                        logger.debug("status:{} , connectEntity:{}", connectEntity.getStatusCode(), connectEntity.getBody());
                         String body = connectEntity.getBody();
                         JSONArray jsonArray = JSONObject.parseArray(body.substring(body.indexOf("([") + +1, body.indexOf("])") + 1));
                         for (Object object : jsonArray) {
@@ -160,10 +160,7 @@ public class WbSyncMessage {
                             if (info == null || info.size() < 8) {
                                 continue;
                             }
-
-                            //downloadVideo(weiBoUser, info);
-
-
+                            downloadVideo(weiBoUser, info);
                         }
                     } catch (Exception e) {
                         logger.error("{}", e);
@@ -191,8 +188,8 @@ public class WbSyncMessage {
         video.setStatus(1);
         video.setFromUid(info.getString("from_uid"));
         JSONObject fromUser = info.getJSONObject("from_user");
-        if (fromUser == null) {
-            logger.warn("fromUser is null , from_user:{}", info);
+        if (fromUser == null && "322".equals(info.getString("type"))) {
+            logger.warn("{}   :{} ", info.getString("content"), info.getString("group_name"));
             return;
         }
         video.setFromUser(fromUser.getString("screen_name"));
@@ -217,8 +214,7 @@ public class WbSyncMessage {
 
                 String hashCode = DigestUtils.md5Hex(fileEntity.getBody());
                 Integer size = fileEntity.getBody().length;
-                logger.info("size:{} , hashCode:{} ", size, hashCode);
-
+                logger.info("groupName:{}, fromUser:{}, size:{} KB, hashCode:{}, video:{}", video.getChatName(), video.getFromUser(), size/1024, hashCode, video.getFromUrl());
                 BotVideo exist = botVideoService.findByHashCode(size, hashCode);
                 if (exist != null) {
                     logger.warn("file is exist:{}", JSONObject.toJSONString(exist));

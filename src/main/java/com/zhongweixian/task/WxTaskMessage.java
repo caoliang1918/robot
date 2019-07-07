@@ -18,14 +18,14 @@ import java.io.IOException;
  */
 
 @Component
-public class BaoMessage {
-    private Logger logger = LoggerFactory.getLogger(BaoMessage.class);
+public class WxTaskMessage {
+    private Logger logger = LoggerFactory.getLogger(WxTaskMessage.class);
 
 
-    @Value("${wx.uid2}")
+    @Value("${wx.uid}")
     private String uid;
 
-    private String baobao = "阿宝宝";
+    private String baobao = "林";
 
     @Autowired
     private WxMessageHandler wxMessageHandler;
@@ -37,39 +37,24 @@ public class BaoMessage {
     private WxUserCache wxUserCache = null;
 
 
-    @Scheduled(cron = "0 59 6 * * ?")
+    @Scheduled(cron = "0 30 7 * * ?")
     public void baobaoWakeUp() {
-        String[] array = new String[]{"宝宝，起床时间到了哦",
-                "宝宝，快点起床了好不好啊！不然我就要把你抱起来了喔~",
-                "起床了小可爱~，宝宝起床了。。。。",
-                "我的可爱的宝宝起床了,早安，起床了吗？",
-                "小仙女，早上好呀，在被窝里呢还是起床了？",
-                "早安啊[太阳]，宝宝"};
-        try {
-            sendMessage(array);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        String[] array = new String[]{"林妹妹，起床时间到了哦",
+                "小仙女，早上好啊!"};
+        sendMessage(array);
     }
 
 
-    @Scheduled(cron = "0 59 22 * * ?")
+    @Scheduled(cron = "0 30 23 * * ?")
     public void _2300() {
-        String[] array = new String[]{"宝宝，现在是睡觉时间",
-                "宝宝，你该休息啦！",
-                "晚安，宝宝，好梦！永远爱你的曹亮。[月亮][月亮][月亮]"};
-        try {
-            sendMessage(array);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        String[] array = new String[]{"林妹妹，现在是睡觉时间",
+                "该休息啦！",
+                "晚安，好梦！[月亮][月亮][月亮]"};
+        sendMessage(array);
+
     }
 
-    private void sendMessage(String[] array) throws IOException, InterruptedException {
+    private void sendMessage(String[] array) {
         this.wxUserCache = cacheService.getUserCache(uid);
         if (wxUserCache == null || !wxUserCache.getAlive()) {
             return;
@@ -86,7 +71,6 @@ public class BaoMessage {
         for (String str : array) {
             logger.info("send to {} , {}", contact.getRemarkName(), str);
             wxMessageHandler.sendText(wxUserCache, contact.getUserName(), str);
-            Thread.sleep(3500L);
         }
     }
 

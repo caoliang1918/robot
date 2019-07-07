@@ -4,7 +4,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.zhongweixian.service.OssService;
-import org.apache.http.client.utils.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +11,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Date;
 
 /**
  * Created by caoliang on 2019-06-29
@@ -27,6 +25,7 @@ public class OssServiceImpl implements OssService {
 
     @Override
     public PutObjectResult uploadJdcloud(InputStream inputStream, int length, String contentType, String bucket, String fileName) {
+        Long start = System.currentTimeMillis();
         ObjectMetadata objectMetadata = new ObjectMetadata();
         objectMetadata.setContentType(contentType);
         objectMetadata.setContentLength(length);
@@ -36,7 +35,8 @@ public class OssServiceImpl implements OssService {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        logger.info("uploadJdcloud is success:{}" , result.getETag());
+        Long end = System.currentTimeMillis();
+        logger.info("uploadJdcloud is success:{} , time:{}", result.getETag(), end - start);
         return result;
     }
 }

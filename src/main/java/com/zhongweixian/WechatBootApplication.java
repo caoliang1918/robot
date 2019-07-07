@@ -46,7 +46,7 @@ public class WechatBootApplication {
     @Bean
     public ScheduledExecutorService wbExecutor() {
         ScheduledExecutorService wbExecutor = new ScheduledThreadPoolExecutor(500,
-                new BasicThreadFactory.Builder().namingPattern("weibo-schedule-pool--%d").daemon(true).build());
+                new BasicThreadFactory.Builder().namingPattern("weibo-pool-%d").daemon(true).build());
         return wbExecutor;
     }
 

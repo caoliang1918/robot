@@ -33,8 +33,7 @@ public class WxMessageHandlerImpl implements WxMessageHandler {
 
     private String imageUrl = "%s/cgi-bin/mmwebwx-bin/webwxgetmsgimg?&MsgID=%s&skey=%s";
 
-    @Value("${image.dir}")
-    private String imageDir;
+    private String imageDir = "logs/images";
 
 
     @Override
