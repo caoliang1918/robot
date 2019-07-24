@@ -20,6 +20,8 @@ import java.io.InputStream;
 public class OssServiceImpl implements OssService {
     private Logger logger = LoggerFactory.getLogger(OssServiceImpl.class);
 
+    private final static String suffix = ".mp4";
+
     @Autowired
     private AmazonS3 amazonS3;
 
@@ -29,7 +31,7 @@ public class OssServiceImpl implements OssService {
         ObjectMetadata objectMetadata = new ObjectMetadata();
         objectMetadata.setContentType(contentType);
         objectMetadata.setContentLength(length);
-        PutObjectResult result = amazonS3.putObject(bucket, fileName, inputStream, objectMetadata);
+        PutObjectResult result = amazonS3.putObject(bucket, fileName + suffix, inputStream, objectMetadata);
         try {
             inputStream.close();
         } catch (IOException e) {

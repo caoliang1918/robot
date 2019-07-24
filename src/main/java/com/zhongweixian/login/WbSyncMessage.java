@@ -63,14 +63,14 @@ public class WbSyncMessage {
     private WeiBoUser weiBoUser;
 
 
-    //@PostConstruct
+  //  @PostConstruct
     public void init() {
         if (!wbService.login()) {
             return;
         }
 
         String uid = wbService.getUid();
-        String cookie = "SUB=_2A25wHL5wDeRhGeFP61EU8i3JyDyIHXVTa6i4rDV8PUNbmtAKLVDZkW9NQS4244eLTn9AjnXEdFkx0MTHN2poqtUz; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9WF8puQJrYeKg6Y-pvo8b5.r5JpX5KzhUgL.FoMpehefeoefe052dJLoI0qLxKMLB.-L12-LxKnL1hzLBK2LxKnLBK2L12eLxKqL1heL1h-LxKqL12-LBKnLxK.L1h5L1h2t; SINAGLOBAL=4831074470676.414.1561308148789; ULV=1561906663347:2:2:1:1878978926110.9934.1561906663100:1561308148793; login_sid_t=316dd69102f40ae5d1d9698e363de1ad; cross_origin_proto=SSL; _s_tentry=-; Apache=1878978926110.9934.1561906663100; SUHB=0xnyGxYE1t0R7Y; ALF=1593442720; SSOLoginState=1561906720; wvr=6; webim_unReadCount=%7B%22time%22%3A1561906837780%2C%22dm_pub_total%22%3A0%2C%22chat_group_pc%22%3A0%2C%22allcountNum%22%3A0%2C%22msgbox%22%3A0%7D";
+        String cookie = "UOR=login.sina.com.cn,weibo.com,login.sina.com.cn; SINAGLOBAL=9456802003620.64.1561629285945; wvr=6; SSOLoginState=1563845470; _s_tentry=login.sina.com.cn; Apache=5521194163294.984.1563845497220; ULV=1563845497227:15:13:2:5521194163294.984.1563845497220:1563758131879; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9Whu6d1rS1RzpY.o0E_MyWMw5JpX5KMhUgL.FoMp1KBRShq0e0.2dJLoIEXLxK-L12qL12BLxKML1hnLB-eLxKqL1-eLB.2LxK-L1K.LBKnLxKBLB.2LB.2t; ALF=1595473064; SCF=Aqqh9eM0QX_5TJHvIT1Bp_DVlqjNkTXae_JopKR-sMiuaEUEaRuVy-VeaxJM2Rp4s18HuPYN5JlVYR6NBQAMEug.; SUB=_2A25wM7l6DeRhGeFP4lYZ9CjPyDWIHXVTSK2yrDV8PUNbmtBeLWPikW9NQO_ryhDqV76oq88QYKZwHjmITytKxf5F; SUHB=0tK6CBPEpuIV6l; webim_unReadCount=%7B%22time%22%3A1563937089856%2C%22dm_pub_total%22%3A1%2C%22chat_group_client%22%3A806%2C%22allcountNum%22%3A808%2C%22msgbox%22%3A0%7D";
 
         weiBoUser = new WeiBoUser();
         weiBoUser.setId(Long.parseLong(uid));
@@ -226,7 +226,7 @@ public class WbSyncMessage {
                  * 上传云服务器
                  */
                 InputStream inputStream = new ByteArrayInputStream(fileEntity.getBody());
-                String bucket = "wb-video/" + DateUtils.formatDate(new Date(), "yyyy-MM");
+                String bucket = "weibo-video/" + DateUtils.formatDate(new Date(), "yyyy-MM")+"/"+DateUtils.formatDate(new Date(), "yyyy-MM-dd");
                 PutObjectResult result = ossService.uploadJdcloud(inputStream, size, CONTENT_TYPE, bucket, videoId.toString());
 
                 if (result == null) {

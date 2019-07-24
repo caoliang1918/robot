@@ -45,14 +45,14 @@ public class DemoApplicationTests {
     private ExecutorService task = Executors.newCachedThreadPool();
 
 
-    String cookie = "UOR=login.sina.com.cn,weibo.com,login.sina.com.cn; SINAGLOBAL=9456802003620.64.1561629285945; un=1923531384@qq.com; wvr=6; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9Whu6d1rS1RzpY.o0E_MyWMw5JpX5K-hUgL.FoMp1KBRShq0e0.2dJLoIEXLxK-L12qL12BLxKML1hnLB-eLxKqL1-eLB.2LxK-L1K.LBKnLxKBLB.2LB.2t; SCF=Aqqh9eM0QX_5TJHvIT1Bp_DVlqjNkTXae_JopKR-sMiuyX91sgM7lNRPHwTlluUkpmUn4L_wAslerXe6iaw13LI.; SUB=_2A25wJR2lDeRhGeFP4lYZ9CjPyDWIHXVTUwhtrDV8PUJbmtBeLXHukW9NQO_ryjs-DFNVjMB8mvglGIlQ2BGVgHII; SUHB=0bts2tnniBwwLX; ALF=1594007916; SSOLoginState=1562471926; _s_tentry=-; Apache=5083261133035.19.1562471927039; ULV=1562471927045:7:5:1:5083261133035.19.1562471927039:1562206661556; webim_unReadCount=%7B%22time%22%3A1562471960104%2C%22dm_pub_total%22%3A0%2C%22chat_group_pc%22%3A5457%2C%22allcountNum%22%3A5458%2C%22msgbox%22%3A0%7D";
+    String cookie = "UOR=login.sina.com.cn,weibo.com,login.sina.com.cn; SINAGLOBAL=9456802003620.64.1561629285945; wvr=6; SSOLoginState=1563845470; _s_tentry=login.sina.com.cn; Apache=5521194163294.984.1563845497220; ULV=1563845497227:15:13:2:5521194163294.984.1563845497220:1563758131879; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9Whu6d1rS1RzpY.o0E_MyWMw5JpX5KMhUgL.FoMp1KBRShq0e0.2dJLoIEXLxK-L12qL12BLxKML1hnLB-eLxKqL1-eLB.2LxK-L1K.LBKnLxKBLB.2LB.2t; ALF=1595473064; SCF=Aqqh9eM0QX_5TJHvIT1Bp_DVlqjNkTXae_JopKR-sMiuaEUEaRuVy-VeaxJM2Rp4s18HuPYN5JlVYR6NBQAMEug.; SUB=_2A25wM7l6DeRhGeFP4lYZ9CjPyDWIHXVTSK2yrDV8PUNbmtBeLWPikW9NQO_ryhDqV76oq88QYKZwHjmITytKxf5F; SUHB=0tK6CBPEpuIV6l; webim_unReadCount=%7B%22time%22%3A1563937089856%2C%22dm_pub_total%22%3A1%2C%22chat_group_client%22%3A806%2C%22allcountNum%22%3A808%2C%22msgbox%22%3A0%7D";
 
     @Test
     public void uploadVideo() {
         Map<String, Object> param = new HashMap<>();
         param.put("status", 1);
         param.put("pageNum", 0);
-        param.put("limit", 200);
+        param.put("limit", 1000);
         Page<BotVideo> page = botVideoService.findByPageParams(param);
 
         for (BotVideo botVideo : page.getList()) {
@@ -71,6 +71,7 @@ public class DemoApplicationTests {
             Long end = System.currentTimeMillis();
             logger.info("end-start={}", end - start);
         } catch (Exception e) {
+            botVideoService.deleteById(botVideo.getId());
             logger.error("{}", e.getMessage());
         }
         if (responseEntity == null || responseEntity.getBody() == null) {
@@ -84,7 +85,7 @@ public class DemoApplicationTests {
          * 上传云服务器
          */
         InputStream inputStream = new ByteArrayInputStream(bytes);
-        String bucket = "wb-video/" + DateUtils.formatDate(new Date(), "yyyy-MM");
+        String bucket = "weibo-video/" + DateUtils.formatDate(new Date(), "yyyy-MM")+"/"+DateUtils.formatDate(new Date(), "yyyy-MM-dd");
         String hashCode = DigestUtils.md5Hex(bytes);
         Integer size = bytes.length;
         String videoId = String.valueOf(System.currentTimeMillis());
@@ -98,7 +99,6 @@ public class DemoApplicationTests {
 
         try {
             PutObjectResult result = ossService.uploadJdcloud(inputStream, bytes.length, "application/octet-stream", bucket, videoId);
-
             botVideo.setVideoCloud("jdcloud");
             botVideo.setVideoUrl("https://wb-video.s3.cn-south-1.jdcloud-oss.com/" + bucket + "/" + videoId);
             botVideo.setHashCode(hashCode);
