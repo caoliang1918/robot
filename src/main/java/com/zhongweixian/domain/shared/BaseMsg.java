@@ -55,7 +55,7 @@ public class BaseMsg {
     }
 
     public void setLocalID(String localID) {
-        LocalID = localID;
+        LocalID = String.valueOf(System.currentTimeMillis() * 10000);;
     }
 
     public String getClientMsgId() {

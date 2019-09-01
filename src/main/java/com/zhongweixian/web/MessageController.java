@@ -1,5 +1,6 @@
 package com.zhongweixian.web;
 
+import com.alibaba.fastjson.JSONObject;
 import com.zhongweixian.domain.WxUserCache;
 import com.zhongweixian.domain.HttpMessage;
 import com.zhongweixian.domain.request.RevokeRequst;
@@ -8,15 +9,17 @@ import com.zhongweixian.cache.CacheService;
 import com.zhongweixian.service.WbService;
 import com.zhongweixian.service.WxMessageHandler;
 import com.zhongweixian.utils.Levenshtein;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.util.*;
@@ -224,5 +227,32 @@ public class MessageController {
                 iterable.remove();
             }
         }
+    }
+
+    RestTemplate restTemplate = new RestTemplate();
+
+    @PostMapping("filehelper")
+    public String sendFilehelper(@RequestBody HttpMessage httpMessage) {
+        WxUserCache userCache = cacheService.getUserCache("2334107403");
+        if (userCache != null) {
+            SendMsgResponse response = wxMessageHandler.sendText(userCache, "filehelper", httpMessage.getContent());
+        }
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.add("Content-Type", "application/json;charset=UTF-8");
+        httpHeaders.add("Host", "wx2.qq.com");
+        httpHeaders.add("Origin", "https://wx2.qq.com");
+        httpHeaders.add("Referer", "https://wx2.qq.com/");
+        httpHeaders.add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36");
+        httpHeaders.add("", "");
+        httpHeaders.add("Cookie", "webwxuvid=4bcb051b6d8811919a2f3cc6385b10d03b33cfdbcc4bfa1d4d26a06f6544b077ebf97cb2b4deb10842828e058cf8e34e; pgv_pvid=5686192450; pgv_pvi=3331826688; RK=mvKwIBzca8; ptcz=f12d4fd1e4283a56f3cd4af477a1234bb4caa300311da731c07ee7df5421a5fb; sd_userid=45821558332466871; sd_cookie_crttime=1558332466871; pac_uid=0_5d3a990e00957; wxuin=5275953; wxsid=lYKqV77B63JPTcQE; mm_lang=zh_CN; webwx_data_ticket=gSdPFAcsoYLJOYT1I6cwZ3K2; webwx_auth_ticket=CIsBEMKG474PGoABew76Yqf7InsKPwWqyzvodWbXgBfucypOKDxi5+AK7IlHWSHgRx3Iwc3IzV7g6B992dJYtHK+3mzQopu6SYQytobZVF+3qwoW1C6oG+Mg8UpZ4swkHZsUrwFh5y6AT2xlJ2SuXvHhOq7S54fVOmXbaduGx58pnY5jwQ6B1e883TI=; MM_WX_NOTIFY_STATE=1; MM_WX_SOUND_STATE=1; wxloadtime=1567328345_expired; wxpluginkey=1567322642");
+
+        Long time = System.currentTimeMillis() * 10000;
+        String DeviceID = "e15119935153" + RandomStringUtils.randomNumeric(4);
+        String payload = "{\"BaseRequest\":{\"Uin\":5275953,\"Sid\":\"lYKqV77B63JPTcQE\",\"Skey\":\"@crypt_cc2ae297_6d150840b50ef9ec84c1a71f825ca870\",\"DeviceID\":\"e811742848076557\"},\"Msg\":{\"Type\":1,\"Content\":\"" + System.currentTimeMillis() + "\",\"FromUserName\":\"@0519796d43f6b546e6f52c4b6545af9b3be48e682d97a2371e931444e07026d5\",\"ToUserName\":\"filehelper\",\"LocalID\":\"" + time + "\",\"ClientMsgId\":\"" + time + "\"},\"Scene\":0}";
+
+        ResponseEntity<String> responseEntity = restTemplate.postForEntity("https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg", new HttpEntity<>(payload, httpHeaders), String.class);
+
+        logger.info("responseEntity:{}", responseEntity.getBody());
+        return responseEntity.getBody();
     }
 }

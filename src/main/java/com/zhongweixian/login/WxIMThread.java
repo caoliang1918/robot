@@ -100,8 +100,7 @@ public class WxIMThread implements Runnable {
             } else if (LoginCode.AWAIT_SCANNING.getCode().equals(loginResult.getCode())) {
                 logger.info("[*] login status = AWAIT_SCANNING");
             } else if (LoginCode.EXPIRED.getCode().equals(loginResult.getCode())) {
-                logger.info("[*] login status = EXPIRED");
-                throw new WechatQRExpiredException();
+                logger.error("[*] login status = EXPIRED");
             } else {
                 logger.info("[*] login status = " + loginResult.getCode());
             }
@@ -211,7 +210,7 @@ public class WxIMThread implements Runnable {
         try {
             login();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("{}" , e);
         }
     }
 

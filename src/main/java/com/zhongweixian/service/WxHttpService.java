@@ -478,7 +478,7 @@ public class WxHttpService {
 
     public SendMsgResponse sendText(WxUserCache userCache, String content, String toUserName) {
         final int scene = 0;
-        final String rnd = String.valueOf(System.currentTimeMillis() * 10);
+        final String rnd = String.valueOf(System.currentTimeMillis() * 10000);
         final String url = String.format(WECHAT_URL_SEND_MSG, userCache.getWxHost());
         SendMsgRequest request = new SendMsgRequest();
         request.setBaseRequest(userCache.getBaseRequest());

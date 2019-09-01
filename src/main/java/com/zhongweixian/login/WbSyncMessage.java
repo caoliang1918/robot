@@ -63,7 +63,7 @@ public class WbSyncMessage {
     private WeiBoUser weiBoUser;
 
 
-  //  @PostConstruct
+    //@PostConstruct
     public void init() {
         if (!wbService.login()) {
             return;
@@ -202,7 +202,7 @@ public class WbSyncMessage {
             return;
         }
         logger.info("fids:{}", fids);
-        Long videoId = Long.parseLong(fids.get(0).toString());
+        String videoId = fids.get(0).toString();
         video.setFromUrl(String.format(VIDEO_URL, videoId));
 
         task.execute(() -> {
@@ -214,7 +214,7 @@ public class WbSyncMessage {
 
                 String hashCode = DigestUtils.md5Hex(fileEntity.getBody());
                 Integer size = fileEntity.getBody().length;
-                logger.info("groupName:{}, fromUser:{}, size:{} KB, hashCode:{}, video:{}", video.getChatName(), video.getFromUser(), size/1024, hashCode, video.getFromUrl());
+                logger.info("groupName:{}, fromUser:{}, size:{} KB, hashCode:{}, video:{}", video.getChatName(), video.getFromUser(), size / 1024, hashCode, video.getFromUrl());
                 BotVideo exist = botVideoService.findByHashCode(size, hashCode);
                 if (exist != null) {
                     logger.warn("file is exist:{}", JSONObject.toJSONString(exist));
@@ -226,14 +226,15 @@ public class WbSyncMessage {
                  * 上传云服务器
                  */
                 InputStream inputStream = new ByteArrayInputStream(fileEntity.getBody());
-                String bucket = "weibo-video/" + DateUtils.formatDate(new Date(), "yyyy-MM")+"/"+DateUtils.formatDate(new Date(), "yyyy-MM-dd");
-                PutObjectResult result = ossService.uploadJdcloud(inputStream, size, CONTENT_TYPE, bucket, videoId.toString());
+                String bucket = "weibo-video/" + DateUtils.formatDate(new Date(), "yyyy-MM") + "/" + DateUtils.formatDate(new Date(), "yyyy-MM-dd");
+                String videoId_ = videoId + ".mp4";
+                PutObjectResult result = ossService.uploadJdcloud(inputStream, size, CONTENT_TYPE, bucket, videoId_);
 
                 if (result == null) {
                     return;
                 }
                 video.setVideoCloud("jdcloud");
-                video.setVideoUrl(JD_HOST + bucket + "/" + videoId.toString());
+                video.setVideoUrl(JD_HOST + bucket + "/" + videoId_);
                 video.setHashCode(hashCode);
                 video.setVideoSize(size);
                 video.setStatus(2);
