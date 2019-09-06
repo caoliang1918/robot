@@ -63,7 +63,7 @@ public class WbSyncMessage {
     private WeiBoUser weiBoUser;
 
 
-    //@PostConstruct
+    @PostConstruct
     public void init() {
         if (!wbService.login()) {
             return;

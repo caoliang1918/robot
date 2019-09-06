@@ -1,5 +1,7 @@
 package com.zhongweixian.service;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.zhongweixian.domain.WxUserCache;
@@ -298,7 +300,7 @@ public class WxHttpService {
      * @throws IOException if the http response body can't be convert to {@link StatusNotifyResponse}
      */
     public StatusNotifyResponse statusNotify(String hostUrl, BaseRequest baseRequest, String userName, int code) throws IOException {
-        String rnd = String.valueOf(System.currentTimeMillis());
+        String rnd = String.valueOf(System.currentTimeMillis() * 1000);
         final String url = String.format(WECHAT_URL_STATUS_NOTIFY, hostUrl);
         StatusNotifyRequest request = new StatusNotifyRequest();
         request.setBaseRequest(baseRequest);
@@ -476,10 +478,26 @@ public class WxHttpService {
         return null;
     }
 
+    /**
+     * 发送文本消息
+     *
+     * @param userCache
+     * @param content
+     * @param toUserName
+     * @return
+     */
     public SendMsgResponse sendText(WxUserCache userCache, String content, String toUserName) {
         final int scene = 0;
         final String rnd = String.valueOf(System.currentTimeMillis() * 10000);
         final String url = String.format(WECHAT_URL_SEND_MSG, userCache.getWxHost());
+        URI uri = null;
+        try {
+            URIBuilder builder = new URIBuilder(url);
+            builder.addParameter("pass_ticket", userCache.getPassTicket());
+            uri = builder.build().toURL().toURI();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         SendMsgRequest request = new SendMsgRequest();
         request.setBaseRequest(userCache.getBaseRequest());
         request.setScene(scene);
@@ -494,6 +512,7 @@ public class WxHttpService {
         HttpHeaders customHeader = createPostCustomHeader(userCache);
         HeaderUtils.assign(customHeader, postHeader);
         try {
+            logger.debug("send to:{} ,  request:{}", toUserName, JSON.toJSONString(request));
             ResponseEntity<String> responseEntity = userCache.getRestTemplate().exchange(url, HttpMethod.POST, new HttpEntity<>(request, customHeader), String.class);
             return jsonMapper.readValue(WechatUtils.textDecode(responseEntity.getBody()), SendMsgResponse.class);
         } catch (Exception e) {
@@ -502,6 +521,13 @@ public class WxHttpService {
         return null;
     }
 
+    /**
+     * 撤回消息
+     *
+     * @param userCache
+     * @param toUserName
+     * @param messageId
+     */
     public void revoke(WxUserCache userCache, String toUserName, String messageId) {
         final String url = String.format(WECHAT_URL_REVOKE_MSG, userCache.getWxHost());
         RevokeRequst request = new RevokeRequst();

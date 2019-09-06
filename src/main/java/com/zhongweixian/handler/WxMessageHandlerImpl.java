@@ -183,8 +183,8 @@ public class WxMessageHandlerImpl implements WxMessageHandler {
     }
 
     @Override
-    public SendMsgResponse sendText(WxUserCache userCache, String toUser, String message) {
-        return wxHttpService.sendText(userCache, toUser, message);
+    public SendMsgResponse sendText(WxUserCache userCache, String content, String toUserName) {
+        return wxHttpService.sendText(userCache, content, toUserName);
     }
 
     @Override

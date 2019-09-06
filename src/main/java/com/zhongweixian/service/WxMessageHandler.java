@@ -124,14 +124,13 @@ public interface WxMessageHandler {
 
 
     /**
-     * 发送消息
      *
      * @param userCache
-     * @param toUser
-     * @param message
+     * @param content
+     * @param toUserName
      * @return
      */
-    SendMsgResponse sendText(WxUserCache userCache, String toUser, String message);
+    SendMsgResponse sendText(WxUserCache userCache, String content, String toUserName);
 
     /**
      * 撤回消息

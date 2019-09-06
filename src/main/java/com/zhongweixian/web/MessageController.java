@@ -235,7 +235,7 @@ public class MessageController {
     public String sendFilehelper(@RequestBody HttpMessage httpMessage) {
         WxUserCache userCache = cacheService.getUserCache("2334107403");
         if (userCache != null) {
-            SendMsgResponse response = wxMessageHandler.sendText(userCache, "filehelper", httpMessage.getContent());
+            SendMsgResponse response = wxMessageHandler.sendText(userCache, httpMessage.getContent(), "filehelper");
         }
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.add("Content-Type", "application/json;charset=UTF-8");
