@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI大师</title>
+    <link th:href="@{/css/bootstrap.min.css}" rel="stylesheet"/>
+    <link th:href="@{/fonts/font-awesome/css/font-awesome.css}" rel="stylesheet"/>
+    <link th:href="@{/css/plugins/icheck/custom.css}" rel="stylesheet"/>
+    <link th:href="@{/css/animate.css}" rel="stylesheet"/>
+    <link th:href="@{/css/style.css}" rel="stylesheet"/>
+    <link th:href="@{/css/plugins/awesome-bootstrap-checkbox/awesome-bootstrap-checkbox.css}" rel="stylesheet">
+    <link th:href="@{/css/plugins/footable/footable.bootstrap.min.css}" rel="stylesheet"/>
+    <link th:href="@{/css/plugins/datapicker/datepicker3.css}" rel="stylesheet"/>
+    <link th:href="@{/css/plugins/switchery/switchery.css}" rel="stylesheet"/>
+
+    <script th:src="@{/js/jquery-2.1.1.min.js}"></script>
+    <script th:src="@{/js/bootstrap.min.js}"></script>
+    <script th:src="@{/js/artTemplate-3.0.1.js}"></script>
+    <script th:src="@{/js/plugins/metismenu/jquery.metisMenu.js}"></script>
+    <script th:src="@{/js/plugins/slimscroll/jquery.slimscroll.min.js}"></script>
+    <script th:src="@{/js/inspinia.js}"></script>
+    <script th:src="@{/js/plugins/pace/pace.min.js}"></script>
+    <script th:src="@{/js/plugins/icheck/icheck.min.js}"></script>
+    <script th:src="@{/js/plugins/datapicker/bootstrap-datepicker.js}"></script>
+    <script th:src="@{/js/plugins/moment/moment.js}"></script>
+    <script th:src="@{/js/plugins/footable/footable.min.js}"></script>
+    <script th:src="@{/js/bootstrapValidator.min.js}"></script>
+</head>
+<body>
+<div id="wrapper">
+    <nav th:include="common/navbar.html :: navbar" class="navbar-default navbar-static-side" role="navigation"></nav>
+    <div id="page-wrapper" class="gray-bg">
+        <div th:include="common/header.html :: header" class="row border-bottom"></div>
+        <div class="side-content"></div>
+        <div class="footer">
+           <!-- <div class="pull-right"> <strong>辅助坐席</strong> 版权所有</div>-->
+            <div><strong>AI坐席大师</strong> &copy; 2019-2022</div>
+        </div>
+    </div>
+    <div id="right-sidebar">
+        <div class="sidebar-container">
+            <ul class="nav nav-tabs navs-2">
+                <li class="active"><a data-toggle="tab" href="index.html#tab-1">会话记录</a></li>
+                <li><a class="sidebar-list"><i class="glyphicon glyphicon-remove"></i></a></li>
+            </ul>
+            <div class="tab-content"></div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/js/plugins/switchery/switchery.js}"></script>
+<script th:src="@{/js/_app.js}"></script>
+<div th:include="common/pagetmp.html :: page_tmp"></div>
+<script th:inline="javascript">
+    $(document).ready(function () {
+        _app._contentUrl = [[${#httpServletRequest.getContextPath()}]];
+        $('.i-checks').iCheck({
+            checkboxClass: 'icheckbox_square-green',
+            radioClass: 'iradio_square-green',
+        });
+        _app.sidebarList($("div#wrapper a.sidebar-list"));
+    });
+
+</script>
+</body>
+
+</html>

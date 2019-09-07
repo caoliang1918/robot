@@ -103,7 +103,7 @@ public class MessageController {
             revokeRequsts = new ArrayList<>();
             checkMessage(userCache, httpMessage.getContent());
             for (String user : toUsers) {
-                response = wxMessageHandler.sendText(userCache, user, httpMessage.getContent());
+                response = wxMessageHandler.sendText(userCache, httpMessage.getContent(), user);
                 if (response == null || response.getMsgID() == null) {
                     if (!cacheService.getUserCache(uid).getAlive()) {
                         toUsers.clear();
@@ -149,7 +149,7 @@ public class MessageController {
             SendMsgResponse response = null;
             httpMessage.setSendTime(new Date());
             for (String user : optionUser) {
-                response = wxMessageHandler.sendText(userCache, user, httpMessage.getContent());
+                response = wxMessageHandler.sendText(userCache, httpMessage.getContent(), user);
                 logger.info("sendOption message : {} ,  {} , {} , {}", response.getMsgID(), httpMessage.getId(), httpMessage.getOption(), httpMessage.getContent());
             }
         } catch (Exception e) {
@@ -184,7 +184,7 @@ public class MessageController {
         SendMsgResponse response = null;
         httpMessage.setSendTime(new Date());
         for (String user : positions) {
-            response = wxMessageHandler.sendText(userCache, user, httpMessage.getContent());
+            response = wxMessageHandler.sendText(userCache, httpMessage.getContent(), user);
             logger.info("send message : {} ,  {} , {} , {}", response.getMsgID(), httpMessage.getId(), httpMessage.getOption(), httpMessage.getContent());
         }
 

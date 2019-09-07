@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="utf-8">
+</head>
+<body th:fragment="header">
+        <nav class="navbar navbar-static-top" role="navigation" style="margin-bottom: 0">
+            <div class="navbar-header">
+                <a class="navbar-minimalize minimalize-styl-2 btn btn-primary " href="javascrpt:void(0);"><i class="fa fa-bars"></i> </a>
+            </div>
+            <ul class="nav navbar-top-links navbar-right">
+                <li><span class="m-r-sm text-muted welcome-message">AI坐席大师</span></li>
+                <li><a th:href="@{/manager/user/loginout}"><i class="fa fa-sign-out"></i> 登出</a></li>
+            </ul>
+        </nav>
+</body>
+
+</html>

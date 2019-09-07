@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="utf-8">
+</head>
+<body>
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-10">
+        <h2></h2>
+        <ol class="breadcrumb">
+            <li>
+                <a th:href="@{/manager/main}">Home</a>
+            </li>
+            <li>
+                <a th:href="@{/manager/monitor/view}" class="menu-entity">坐席辅助监控</a>
+            </li>
+        </ol>
+    </div>
+</div>
+<div class="wrapper wrapper-content animated fadeInRight ecommerce" th:data-url="@{/manager/monitor/count}" data-type="ajax" data-tmpjs="monitor_count" data-code="monitor_count" data-load="true">
+</div>
+<script id="monitor_count" type="text/html">
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="ibox float-e-margins">
+                <div class="ibox-title">
+                    <span class="label label-warning  pull-right">实时</span>
+                    <h5>坐席辅助调用量</h5>
+                </div>
+                <div class="ibox-content"><h1 class="no-margins">{{data.agent}}</h1></div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="ibox float-e-margins">
+                <div class="ibox-title">
+                    <span class="label label-info pull-right">今日</span>
+                    <h5>质检违规坐席数量</h5>
+                </div>
+                <div class="ibox-content"><h1 class="no-margins">{{data.quality}}</h1></div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="ibox float-e-margins">
+                <div class="ibox-title">
+                    <span class="label label-success pull-right">今日</span>
+                    <h5>舆情监控数量</h5>
+                </div>
+                <div class="ibox-content"><h1 class="no-margins">{{data.opinion}}</h1></div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox float-e-margins">
+                <div class="ibox-content">
+                    <div>
+                        <span class="pull-right text-right">
+                            <small>单位: <strong>次</strong>.</small><br/>
+                            开始时间: {{dateFormat data.time}}.
+                        </span>
+                        <h1 class="m-b-xs">{{data.agentMax}}</h1>
+                        <small>今日坐席辅助调用峰值</small>
+                    </div>
+                    <div><canvas id="lineChart" height="70"></canvas></div>
+                    <div class="m-t-md">
+                        <small class="pull-right"><i class="fa fa-clock-o"></i>更新时间 {{dateFormat data.time}}.</small>
+                        <small><strong>附注:</strong> 统计时间轴单位小时.</small>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+<script th:src="@{/js/plugins/chartjs/Chart.min.js}"></script>
+<script>
+    $(document).ready(function () {
+        _app.ajaxDomParam.monitor_count= function(data){
+            let monitorCount = {};
+            if(data.agentList){
+                let segmentObj = data.agentList;
+                let segmentKeys = Object.keys(segmentObj);
+                segmentKeys.sort();
+                let keys = [];
+                let values = [];
+                let key;
+                for(let i = 0; i < segmentKeys.length; i ++){
+                    key = segmentKeys[i];
+                    keys.push(_dateFormat(parseInt(key), 1));
+                    values.push(parseInt(segmentObj[key]));
+                }
+                monitorCount.labels = keys;
+                monitorCount.datasets = [
+                    {
+                        label: "Example dataset",
+                        fillColor: "rgba(26,179,148,0.5)",
+                        strokeColor: "rgba(26,179,148,0.7)",
+                        pointColor: "rgba(26,179,148,1)",
+                        pointStrokeColor: "#fff",
+                        pointHighlightFill: "#fff",
+                        pointHighlightStroke: "rgba(26,179,148,1)",
+                        data: values
+                    }
+                ]
+                var lineOptions = {
+                    scaleShowGridLines: true,
+                    scaleGridLineColor: "rgba(0,0,0,.05)",
+                    scaleGridLineWidth: 1,
+                    bezierCurve: true,
+                    bezierCurveTension: 0.4,
+                    pointDot: true,
+                    pointDotRadius: 4,
+                    pointDotStrokeWidth: 1,
+                    pointHitDetectionRadius: 20,
+                    datasetStroke: true,
+                    datasetStrokeWidth: 2,
+                    datasetFill: true,
+                    responsive: true,
+                };
+                var ctx = document.getElementById("lineChart").getContext("2d");
+                var myNewChart = new Chart(ctx).Line(monitorCount, lineOptions);
+            }
+
+        }
+    });
+</script>
+</body>
+
+</html>

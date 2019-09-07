@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="utf-8">
+</head>
+<body>
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-10">
+        <h2></h2>
+        <ol class="breadcrumb">
+            <li>
+                <a th:href="@{/manager/main}">Home</a>
+            </li>
+            <li>
+                <a th:href="@{/manager/quality/info/statistical/pageview}" class="menu-entity">实时质检统计报表</a>
+            </li>
+        </ol>
+    </div>
+</div>
+<div class="wrapper wrapper-content animated fadeInRight ecommerce quality_statistical_page _page_content">
+    <div class="ibox-content m-b-sm">
+        <div class="row">
+            <div class="col-sm-12 text-right">
+                <a href="javascript:void(0);" type="button" class="btn-sm btn-outline btn-warning" name="name-refresh"><i class="glyphicon glyphicon-repeat"></i></a>
+                <a href="javascript:void(0);" type="button" class="btn-sm btn-outline btn-primary" name="name-s"><i class="glyphicon glyphicon-search"></i></a>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="control-label" for="len">统计步长:</label>
+                    <select id="len" name="len" class="form-control">
+                        <option value="0" selected>日报</option>
+                        <option value="1">月报</option>
+                        <option value="2">年报</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="control-label" for="date_start">开始日期:</label>
+                    <div class="input-group date">
+                        <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                        <input id="date_start" type="text" class="form-control" name="date_start" autocomplete="off">
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="control-label" for="date_end">结束日期:</label>
+                    <div class="input-group date">
+                        <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                        <input id="date_end" type="text" class="form-control" name="date_end" autocomplete="off">
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="control-label" for="agentNumber">坐席工号:</label>
+                    <input id="agentNumber" name="agentNumber" class="form-control" placeholder="坐席工号">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-content">
+                    <div class="table-responsive">
+                        <div class="mail-box">
+                            <div class="mail-body">
+                                <table class="table table-striped text-center _page" data-code="quality_statistical_page" th:data-url="@{/manager/quality/info/statistical/page}" data-type="ajax" data-option="page"></table>
+                                <div class="text-right">
+                                    <div class="btn-group">
+                                        <p class="help-block pull-left _page_total">共计<mark>0</mark>条,<code>0</code>页.当前<kbd>0</kbd>页&emsp; </p>
+                                        <button class="btn btn-white btn-sm"><i class="fa fa-arrow-left"></i></button>
+                                        <button class="btn btn-white btn-sm"><i class="fa fa-arrow-right"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        _app.ajaxDomParam.quality_statistical_page = {table:{
+                keys: 'none'
+                , column: [{name:'时间', key: 'datetime', func: function (data) {
+                        if(data){
+                            return _dateFormat(data, 5);
+                        }else{
+                            return "";
+                        }
+                    }}
+                , {name:'坐席工号', key: 'agent_number', view: 'popover', func: function (data) {
+                        if(data && data.length > 11){
+                            return data.substring(0, 8) + "<code>..</code>";
+                        }else{
+                            return data;
+                        }
+                    }}
+                    , {name: '坐席名称', key: 'agent_name', view: 'popover', func : function (data) {
+                            if(data && data.length > 11){
+                                return data.substring(0, 8) + "<code>..</code>";
+                            }else{
+                                return data;
+                            }
+                        }}, {name:'通话总数', key: 'call_number'}
+                    , {name: '命中违禁词通话数', key: 'banned_call_number'}
+                    , {name: '违禁率', key: 'banned_rate', func : function (data) {
+                            if(data === 0){
+                               return "0%"
+                            }else{
+                                if(data >= 0){
+                                    let _str = new String(data);
+                                    let _index = _str.indexOf(".");
+                                    if(_index > 0){
+                                        data = data.split(".")[0];
+                                    }
+                                    return data + "%";
+                                }
+                                return "";
+                            }
+                        }}
+                    , {name: '命中次数', key: 'banned_number'}]}
+            , template: {header: 'page-header', body: 'page-tbody-sm'}
+            , prevload: function () {
+                let _this = this;
+                let _o_selet = _this.table.content.find("select[name='opinionWordType']:first");
+                _o_selet.append("<option value='-1'>" + '请选择' + "</option>");
+                _app.ajax({url: _app.getContentUrl('/manager/opinion/all'), param: {}, async : false, dataType: 'json'
+                    , func: function (data) {
+                        if(data.result && data.result.length > 0){
+                            if(_o_selet){
+                                let _tmp;
+                                for(let i = 0 ; i < data.result.length; i++){
+                                    _tmp = data.result[i];
+                                    _o_selet.append("<option value='" + _tmp.id + "'>" + _tmp.opinion_word_type + "</option>");
+                                }
+                            }
+                        }
+                    }});
+            }
+            , ajax:{func: function (dom) {
+                    _app.doPopoverList(dom);
+                }}
+            , countCondition: [
+                , {name: 'date_end', type: 'input', onEvt: 'datepicker', key: 'endTime'}
+                , {name: 'date_start', type: 'input', onEvt: 'datepicker', key: 'startTime'}
+                , {name: 'len', type: 'select', onEvt: 'change'}
+                , {name: 'agentNumber', type: 'input', onEvt: 'change'}
+                , {name: 'name-refresh', type: 'a', onEvt: 'click', func: function(tableContent, data, ele, countCondition){
+                        tableContent.find("input[name='date_end']:first").val("");
+                        tableContent.find("input[name='date_start']:first").val("");
+                        tableContent.find("select[name='len']:first").find("option:first").prop("selected", "selected");
+                        tableContent.find("input[name='agentNumber']:first").val("");
+                        delete data.param. startTime;
+                        delete data.param. endTime;
+                        delete data.param. len;
+                        delete data.param. agentNumber;
+                        _app.initDatepicker(countCondition);
+                    }}
+                , {name: 'name-s', type: 'a', onEvt: 'click', func: function (tableContent, data, ele) {
+                        if(data.param && data.param.startTime && data.param.endTime && data.param.startTime > data.param.endTime){
+                            alert('开始时间不能小于结束时间');
+                            return ;
+                        }
+                        _app.addPageParam("quality_statistical_page", {pageNumber: 1, _fi: -666});
+                        _app.pageReLoad('quality_statistical_page');
+                    }}
+            ]
+        };
+    });
+
+</script>
+</body>
+
+</html>

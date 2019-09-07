@@ -25,7 +25,7 @@ public class WxTaskMessage {
     @Value("${wx.uid}")
     private String uid;
 
-    private String baobao = "林";
+    private String toUser = "朝颜";
 
     @Autowired
     private WxMessageHandler wxMessageHandler;
@@ -39,7 +39,7 @@ public class WxTaskMessage {
 
     @Scheduled(cron = "0 30 7 * * ?")
     public void baobaoWakeUp() {
-        String[] array = new String[]{"林妹妹，起床时间到了哦",
+        String[] array = new String[]{"小宝宝，起床时间到了哦",
                 "小仙女，早上好啊!"};
         sendMessage(array);
     }
@@ -47,7 +47,7 @@ public class WxTaskMessage {
 
     @Scheduled(cron = "0 30 23 * * ?")
     public void _2300() {
-        String[] array = new String[]{"林妹妹，现在是睡觉时间",
+        String[] array = new String[]{"小宝宝，现在是睡觉时间",
                 "该休息啦！",
                 "晚安，好梦！[月亮][月亮][月亮]"};
         sendMessage(array);
@@ -60,7 +60,7 @@ public class WxTaskMessage {
             return;
         }
         wxUserCache.getChatContants().values().forEach(contact -> {
-            if (contact.getRemarkName().equals(baobao)) {
+            if (contact.getRemarkName().contains(toUser)) {
                 this.contact = contact;
             }
         });

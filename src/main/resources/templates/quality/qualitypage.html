@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="utf-8">
+</head>
+<body>
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-10">
+        <h2></h2>
+        <ol class="breadcrumb">
+            <li>
+                <a th:href="@{/manager/main}">Home</a>
+            </li>
+            <li>
+                <a th:href="@{/manager/qualitytesting/pageview}" class="menu-entity">实时质检配置</a>
+            </li>
+        </ol>
+    </div>
+</div>
+<div class="wrapper wrapper-content animated fadeInRight ecommerce quality_page">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-content">
+
+                    <div class="table-responsive _page_content">
+                        <div class="mail-box-header">
+                            <div class="mail-tools tooltip-demo m-t-md">
+                                <button class="btn btn-success btn-sm" data-type="ajax" data-code="quality_entity" th:data-url="@{/manager/qualitytesting/one}" data-tmpjs="quality_entity"><i class="glyphicon glyphicon-plus"></i> </button>
+                                <button class="btn btn-danger btn-sm" name="cct-del"><i class="glyphicon glyphicon-trash"></i> </button>
+                                <div class="btn-group">
+                                    <div method="get" action="index.html" class="pull-right mail-search">
+                                        <div class="input-group">
+                                            <input type="text" class="form-control input-sm" name="banned_word" placeholder="查找违禁词">
+                                            <div class="input-group-btn">
+                                                <button type="button" class="btn btn-sm btn-primary" name="quality_name-s"><span class="glyphicon glyphicon-search"></span></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mail-box">
+                            <div class="mail-body">
+                                <table class="table table-striped text-center _page" data-code="quality_page" th:data-url="@{/manager/qualitytesting/page}" data-type="ajax" data-option="page"></table>
+                                <div class="text-right">
+                                    <div class="btn-group">
+                                        <p class="help-block pull-left _page_total">共计<mark>0</mark>条,<code>0</code>页.当前<kbd>0</kbd>页&emsp; </p>
+                                        <button class="btn btn-white btn-sm"><i class="fa fa-arrow-left"></i></button>
+                                        <button class="btn btn-white btn-sm"><i class="fa fa-arrow-right"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        let _businesslist = [];
+        _app.ajaxDomParam.quality_page = {table:{column: [{name:'配置类型', key: 'overall', func:function (data) {
+                        if(data != undefined){
+                            return data ? "全局" : "业务";
+                        }else{
+                            return "";
+                        }
+                    }}, {name:'业务类型', key: 'business_id', defaultKey: "全部", func: function(data, ajaxParams){
+                        if(ajaxParams && ajaxParams.businesslist){
+                            let _tmp;
+                            for(let i = 0 ; i < ajaxParams.businesslist.length; i ++){
+                                _tmp = ajaxParams.businesslist[i];
+                                if(_tmp.id && _tmp.id == data){
+                                    return _tmp.name;
+                                }
+                            }
+                            return "全部";
+                        }
+                        return "";
+                    }}, {name:'违禁词类型', key: 'banned_word_type'}, {name:'违禁原因', key: 'illegal_reason'}, {name:'违禁词', key: 'banned_word'}
+                        , {name:'启用', key: 'disjunctor' , view: 'html', func:function (data, info) {
+                         return "<input type='checkbox' class='js-switch' name='"+info.id+"' " + (info.disjunctor? "checked" : "") +"/>";
+                    }}]}
+            , prevload: function () {
+                let _this = this;
+                _this.ajaxParams.js_switch_url=_app.getContentUrl('/manager/qualitytesting/disjunctor');
+                _app.ajax({url: _app.getContentUrl('/manager/business/type/all'), param: {}, async : false, dataType: 'json'
+                    , func: function (data) {
+                        _this.ajaxParams['businesslist'] = data.result;
+                        _businesslist = data.result;
+                    }});
+            }
+            , template: {header: 'page-header', body: 'page-tbody-sm',bodyOption: 'page-tbody-option-sm-quality-page'}
+            , countCondition: [{name:'banned_word', type: 'input'}
+                , { name:'cct-del', type: 'button', func: function (tableContent, data) {
+                        let _checkeds = tableContent.find("table:first input[type='checkbox'][name='input[]']:checked");
+                        if(_checkeds && _checkeds.length > 0){
+                            let _keys = [];
+                            _checkeds.each(function () {
+                                _keys.push($(this).val());
+                            });
+                            _app.ajax({url: _app.getContentUrl("/manager/qualitytesting/del")
+                                , dataType: 'json'
+                                , param: {'keys[]': _keys}
+                                , func: function (data) {
+                                    _app.pageInitLoad('quality_page')
+                                }})
+                        }
+
+                    }
+                }
+                , {name: 'quality_name-s', type: 'button', func: function (tableContent, data) {
+                        _app.pageInitLoad('quality_page')
+                    }}
+            ]
+        };
+        _app.ajaxDomParam.quality_entity = function(data){
+            let _formEle = "div#wrapper div#page-wrapper div.side-content div.wrapper-content form.quality_form:first";
+            let fields = {
+                fieldsInsert: {
+                    business_id: {
+                        validators: {
+                            notEmpty: {message: '必须选择业务'}
+                            , callback: {message: '必须选择业务'}
+                        }
+                    }
+                    , banned_word_type: {
+                        validators: {
+                            notEmpty: {message: '违禁词类型必填'}
+                            , callback: {message: '违禁词类型必填,或者重复'}
+                        }
+                    }
+                    , banned_word: {
+                        validators: {
+                            notEmpty: {message: '违禁词必填'}
+                            , callback: {message: '违禁词必填'}
+                        }
+                    }
+                }
+                , fieldsUpdate: {
+                    business_id: {
+                        validators: {
+                            notEmpty: {message: '必须选择业务'}
+                            , callback: {message: '必须选择业务'}
+                        }
+                    }
+                    , banned_word_type: {
+                        validators: {
+                            notEmpty: {message: '违禁词类型必填'}
+                            , callback: {message: '违禁词类型必填,或者重复'}
+                        }
+                    }
+                    , banned_word: {
+                        validators: {
+                            notEmpty: {message: '违禁词必填'}
+                            , callback: {message: '违禁词必填'}
+                        }
+                    }
+                }
+                ,init: function () {
+                    let isUpdate = $(_formEle).find('input[type="hidden"][name="id"]:first');
+                    if(isUpdate && isUpdate.length > 0){
+                        return this.fieldsUpdate;
+                    }else{
+                        return this.fieldsInsert;
+                    }
+                }
+            }
+            let _ebody = $(_formEle);
+            let _selet = _ebody.find("select[name='business_id']:first");
+            let _divEle = _selet.parents("div.form-group:first");
+            if(_divEle && _divEle.length > 0){
+                $("input[type='radio'][name='overall']").on('ifChecked', function(event){
+                    if($(event.target).val() === "1"){
+                        _divEle.hide();
+                    }else{
+                        _divEle.show();
+                    }
+                });
+            }
+            _app.doBootstrapValidator({formEle:_formEle
+                , fields: fields.init()
+                , prevload: function(){
+                    if(_businesslist && _businesslist.length > 0){
+                        if(_selet){
+                            let _tmp;
+                            for(let i = 0 ; i < _businesslist.length; i++){
+                                _tmp = _businesslist[i];
+                                _selet.append("<option value='" + _tmp.id + "' " + (data.business_id == _tmp.id ? "selected" : "" )+">" + _tmp.name + "</option>");
+                            }
+                        }
+                    }
+                }
+                ,func: function (data) {
+                    if(data.error_code == 0){
+                        _app.ajax({url:_app.getContentUrl('/manager/qualitytesting/pageview')});
+                    }else{
+                        switch (data.error_code) {
+                            case 1101: this.formEle.data('bootstrapValidator').updateStatus('business_id', 'INVALID', "callback"); break;
+                            case 1107: this.formEle.data('bootstrapValidator').updateStatus('banned_word_type', 'INVALID', "callback"); break;
+                            case 1108: this.formEle.data('bootstrapValidator').updateStatus('banned_word_type', 'INVALID', "callback"); break;
+                        }
+                    }
+                }})
+        }
+    });
+
+</script>
+
+<script id="quality_entity" type="text/html">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox float-e-margins">
+                <div class="ibox-content">
+                    <h2>实时质检配置</h2>
+                    <form class="form-horizontal quality_form" th:action="@{/manager/qualitytesting/save}" method="post" autocomplete="off">
+                        <div class="hr-line-dashed"></div>
+                        {{if data.id != undefined}}
+                        <input type="hidden" class="form-control" name="id" value="{{data.id}}">
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">启用开关</label>
+                            <div class="col-sm-10">
+                                <div class="i-checks"><label>
+                                    {{if data.disjunctor != undefined && data.disjunctor == 1}}
+                                    <input type="radio" value="1" name="disjunctor" checked> <i></i>启用
+                                    {{else}}
+                                    <input type="radio" value="1" name="disjunctor"> <i></i>启用
+                                    {{/if}}
+                                </label>
+                                </div>
+                                <div class="i-checks"><label>
+                                    {{if data.disjunctor == undefined || data.disjunctor != 1}}
+                                    <input type="radio" value="0" name="disjunctor" checked> <i></i>关闭
+                                    {{else}}
+                                    <input type="radio" value="0" name="disjunctor"> <i></i>关闭
+                                    {{/if}}
+                                </label>
+                                </div>
+                            </div>
+                        </div>
+                        {{/if}}
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">配置类型</label>
+                            <div class="col-sm-10">
+                                <div class="i-checks"><label>
+                                    {{if data.overall != undefined && data.overall == 1}}
+                                    <input type="radio" value="1" name="overall" checked> <i></i>全局
+                                    {{else}}
+                                    <input type="radio" value="1" name="overall"> <i></i>全局
+                                    {{/if}}
+                                    </label>
+                                </div>
+                                <div class="i-checks"><label>
+                                    {{if data.overall == undefined || data.overall != 1}}
+                                    <input type="radio" value="0" name="overall" checked> <i></i>业务
+                                    {{else}}
+                                    <input type="radio" value="0" name="overall"> <i></i>业务
+                                    {{/if}}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        {{if data.overall == undefined || data.overall == 0}}
+                            <div class="form-group">
+                        {{else}}
+                            <div class="form-group" style="display: none;">
+                        {{/if}}
+                            <label class="col-sm-2 control-label">业务类型</label>
+                            <div class="col-sm-10">
+                                <select name="business_id" class="form-control" ></select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">违禁词类型</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" required="required" name="banned_word_type" value="{{data.banned_word_type}}" placeholder="请填写违禁词类型">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">违禁原因</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" name="illegal_reason" value="{{data.illegal_reason}}" placeholder="请填写违禁原因">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">违禁词</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" required="required" name="banned_word" value="{{data.banned_word}}" placeholder="请使用中英文的 ; 作为监控词分割">
+                            </div>
+                        </div>
+                        <div class="hr-line-dashed"></div>
+                        <div class="form-group">
+                            <div class="col-sm-4 col-sm-offset-2">
+                                <button type="submit" class="btn btn-primary bg_submit_btn">确认</button>
+                                <a th:href="@{/manager/qualitytesting/pageview}" class="btn btn-white menu-entity">返回</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+</body>
+
+</html>

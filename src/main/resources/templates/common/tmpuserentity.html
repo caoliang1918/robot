@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body th:fragment="user_tmp">
+<script id="user_entity" type="text/html">
+    <div class="row wrapper border-bottom white-bg page-heading">
+        <div class="col-sm-4">
+            <h2>管理员信息</h2>
+            <ol class="breadcrumb">
+                <li>
+                    <a th:href="@{/manager/main}">Home</a>
+                </li>
+                <li class="active">
+                    <span href="javascript:void(0);">管理员信息</span>
+                </li>
+            </ol>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="wrapper wrapper-content animated fadeInUp">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="ibox float-e-margins">
+                            <div class="ibox-content">
+                                <form class="form-horizontal user_form" th:action="@{/manager/user/update}" method="post" autocomplete="off">
+                                    <input type="hidden" class="form-control" name="id" value="{{data.id}}">
+                                    <div class="form-group">
+                                        <label class="col-sm-2 control-label">登录名称</label>
+                                        <div class="col-sm-10">
+                                            <input type="text" class="form-control" readonly required="required" name="login_name" value="{{data.login_name}}">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-sm-2 control-label">用户昵称</label>
+                                        <div class="col-sm-10">
+                                            <input type="text" class="form-control" required="required" name="user_name" value="{{data.user_name}}">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-sm-2 control-label">旧密码</label>
+                                        <div class="col-sm-10">
+                                            <input type="password" class="form-control" required="required" name="oldPassword">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-sm-2 control-label">新密码</label>
+                                        <div class="col-sm-10">
+                                            <input type="password" class="form-control" required="required" name="password">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-sm-2 control-label">确认密码</label>
+                                        <div class="col-sm-10">
+                                            <input type="password" class="form-control" required="required" name="confirmPassword">
+                                        </div>
+                                    </div>
+                                    <div class="hr-line-dashed"></div>
+                                    <div class="form-group">
+                                        <div class="col-sm-4 col-sm-offset-2">
+                                            <button type="submit" class="btn btn-primary bg_submit_btn">修改</button>
+                                            <a th:href="@{/manager/main}" class="btn btn-white">返回</a>
+                                        </div>
+                                    </div>
+
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+</body>
+</html>

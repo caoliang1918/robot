@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登陆</title>
+    <link th:href="@{/css/bootstrap.min.css}" rel="stylesheet"/>
+    <link th:href="@{/fonts/font-awesome/css/font-awesome.css}" rel="stylesheet"/>
+    <link th:href="@{/css/plugins/toastr/toastr.min.css}" rel="stylesheet"/>
+    <link th:href="@{/css/animate.css}" rel="stylesheet"/>
+    <link th:href="@{/css/style.css}" rel="stylesheet"/>
+</head>
+<body class="gray-bg">
+<div class="middle-box text-center loginscreen animated fadeInDown">
+    <div>
+        <div><h1 class="logo-name">AI</h1></div>
+        <h3>坐席大师</h3>
+        <p>AMP,Assistant Platform Management</p>
+        <p>请您登陆</p>
+        <form class="m-t" id="loginForm" th:action="@{/login}" method="post" autocomplete="off">
+            <div class="form-group">
+                <input type="text" name="loginname" class="form-control" placeholder="用户" required="required">
+            </div>
+            <div class="form-group">
+                <input type="password" name="password" class="form-control" placeholder="密码" required="required">
+            </div>
+            <button type="submit" class="btn btn-primary block full-width m-b bg_submit_btn">登录</button>
+           <!-- <a th:href="@{/forgotpassword}"><small>忘记密码?</small></a>-->
+        </form>
+        <p class="m-t"> <small>AI坐席大师 &copy; 2019_v1.0.0.3</small> </p>
+    </div>
+</div>
+<script th:src="@{/js/jquery-2.1.1.min.js}"></script>
+<script th:src="@{/js/bootstrap.min.js}"></script>
+<script th:src="@{/js/bootstrapValidator.min.js}"></script>
+<script th:src="@{/js/_app.js}"></script>
+<script th:inline="javascript">
+    $(document).ready(function(){
+        _app.doBootstrapValidator({formEle:"#loginForm", fields: {
+                loginname: {
+                    validators: {
+                        notEmpty: {
+                            message: '用户名必填'
+                        },
+                        callback: {
+                            message: '用户名不存在'
+                        }
+                    }
+                },
+                password: {
+                    validators: {
+                        notEmpty: {
+                            message: '密码必填'
+                        },
+                        stringLength: {
+                            min: 1,
+                            max: 32,
+                            message: '密码必须1到32位'
+                        },
+                        callback: {
+                            message: '用户名或者密码错误'
+                        }
+                    }
+                }
+            }
+            ,func: function (data) {
+                if(data.error_code == 0){
+                    location.href='./manager/main'
+                }else{
+                    this.formEle.data('bootstrapValidator').updateStatus('password', 'INVALID', "callback");
+                }
+            }})
+    });
+</script>
+</body>
+</html>

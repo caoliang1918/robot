@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="utf-8">
+</head>
+<body>
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-10">
+        <h2></h2>
+        <ol class="breadcrumb">
+            <li>
+                <a th:href="@{/manager/main}">Home</a>
+            </li>
+            <li>
+                <a th:href="@{/manager/opinion/info/pageview}" class="menu-entity">舆情监控详单</a>
+            </li>
+        </ol>
+    </div>
+</div>
+<div class="wrapper wrapper-content animated fadeInRight ecommerce opinion_info_page _page_content">
+    <div class="ibox-content m-b-sm">
+        <div class="row">
+            <div class="col-sm-12 text-right">
+                <a href="javascript:void(0);" type="button" class="btn-sm btn-outline btn-warning" name="name-refresh"><i class="glyphicon glyphicon-repeat"></i></a>
+                <a href="javascript:void(0);" type="button" class="btn-sm btn-outline btn-primary" name="name-s"><i class="glyphicon glyphicon-search"></i></a>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="control-label" for="date_start">开始日期:</label>
+                    <div class="input-group date">
+                        <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                        <input id="date_start" type="text" class="form-control" name="date_start" autocomplete="off">
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="control-label" for="date_end">结束日期:</label>
+                    <div class="input-group date">
+                        <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                        <input id="date_end" type="text" class="form-control" name="date_end" autocomplete="off">
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="control-label" for="calling">主叫号码:</label>
+                    <input type="text" id="calling" name="calling_number" value="" placeholder="主叫号码" class="form-control">
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="control-label" for="calledNumber">被叫号码:</label>
+                    <input type="text" class="form-control" name="called_number" id="calledNumber" placeholder="被叫号码">
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="control-label" for="ivr">坐席工号:</label>
+                    <input type="text" id="ivr" name="agent_number" value="" placeholder="坐席工号" class="form-control">
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="control-label" for="direction">呼叫类型:</label>
+                    <select class="form-control" name="direction" id="direction">
+                        <option value="-1">全部</option>
+                        <option value="0">呼入</option>
+                        <option value="1">呼出</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="control-label" for="time">命中数:</label>
+                    <div class="input-daterange input-group length100 date" id="time">
+                        <input type="number" class="form-control" name="opinion_number_start" placeholder="单位/次"/>
+                        <span class="input-group-addon">to</span>
+                        <input type="number" class="form-control" name="opinion_number_end" placeholder="单位/次"/>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="control-label" for="callTime">通话时长:</label>
+                    <div class="input-daterange input-group length100 date" id="callTime">
+                        <span class="input-group-addon" style="border-width: 1px;"><i class="fa fa-clock-o"></i></span>
+                        <input type="number" class="form-control" name="call_time_start" placeholder="单位/秒"/>
+                        <span class="input-group-addon">to</span>
+                        <input type="number" class="form-control" name="call_time_end" placeholder="单位/秒"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-content">
+                    <div class="table-responsive">
+                        <div class="mail-box">
+                            <div class="mail-body">
+                                <table class="table table-striped text-center _page" data-code="opinion_info_page" th:data-url="@{/manager/opinion/info/page}" data-type="ajax" data-option="page"></table>
+                                <div class="text-right">
+                                    <div class="btn-group">
+                                        <p class="help-block pull-left _page_total">共计<mark>0</mark>条,<code>0</code>页.当前<kbd>0</kbd>页&emsp; </p>
+                                        <button class="btn btn-white btn-sm"><i class="fa fa-arrow-left"></i></button>
+                                        <button class="btn btn-white btn-sm"><i class="fa fa-arrow-right"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        _app.ajaxDomParam.opinion_info_page = {table:{
+                keys: 'none'
+                , column: [{name:'通话标识', key: 'call_id', view: 'popover', func: function (data) {
+                        if(data && data.length > 8){
+                            return data.substring(0, 5) + "<code>..</code>";
+                        }else{
+                            return data;
+                        }
+                    }}, {name:'业务类型', key: 'business_name', defaultKey: "全部"}
+                    , {name: '呼叫类型', key: 'direction', func: function(data){
+                            if(data != undefined){
+                                return data == 0 ? "呼入" : "呼出";
+                            }else {
+                                return "";
+                            }
+                        }}
+                    , {name:'主叫号码', key: 'calling_number', view: 'popover', func: function (data) {
+                            if(data && data.length > 8){
+                                return data.substring(0, 5) + "<code>..</code>";
+                            }else{
+                                return data;
+                            }
+                        }}, {name: '被叫号码', key: 'called_number', view: 'popover', func: function (data) {
+                            if(data && data.length > 8){
+                                return data.substring(0, 5) + "<code>..</code>";
+                            }else{
+                                return data;
+                            }
+                        }}, {name: '坐席工号', key: 'agent_number'}
+                    , {name: '坐席姓名', key: 'agent_name'}, {name:'通话开始', key:'call_start_time', view: 'popoverTime', func: function(data){
+                            if(data){
+                                let _arr = data.split(" ");
+                                if(_arr.length == 2){
+                                    return _arr[1] + "<code>..</code>";
+                                }else{
+                                    _arr[0];
+                                }
+                            }
+                        }}, {name:'通话结束', key: 'call_end_time', view: 'popoverTime', func: function(data){
+                            if(data){
+                                let _arr = data.split(" ");
+                                if(_arr.length == 2){
+                                    return _arr[1] + "<code>..</code>";
+                                }else{
+                                    _arr[0];
+                                }
+                            }
+                        }}
+                    , {name: '通话时长', key: 'call_time', func: function(data){
+                            return _dateFormat(data, 3);
+                        }}, {name:'挂断方', key:'hang_up', func:function(data){
+                            if(data != undefined){
+                                return data ? "客户" : "坐席";
+                            }else {
+                                return "";
+                            }
+                        }}, {name:'舆情类型', key: 'opinion_word_type', defaultKey: "无"}, {name:'舆情内容', defaultKey: "无", key:'opinion_content', view: 'popover', func: function (data) {
+                            if(data && data.length > 6){
+                                return data.substring(0, 3) + "<code>..</code>";
+                            }else{
+                                return data;
+                            }
+                        }}
+                        , {name:'命中项', key: 'opinion_type_number'}
+                        , {name:'命中数', key:'opinion_number'}]}
+            , template: {header: 'page-header', body: 'page-tbody-sm'}
+            , ajax:{func: function (dom) {
+                _app.doPopoverList(dom);
+                }}
+            , countCondition: [
+                {name: 'calling_number', type: 'input', onEvt: 'change'}
+                , {name: 'called_number', type: 'input', onEvt: 'change'}
+                , {name: 'agent_number', type: 'input', onEvt: 'change'}
+                , {name: 'opinion_number_start', type: 'input', onEvt: 'change'}
+                , {name: 'opinion_number_end', type: 'input', onEvt: 'change'}
+                , {name: 'date_end', type: 'input', onEvt: 'datepicker', key: 'endTime'}
+                , {name: 'date_start', type: 'input', onEvt: 'datepicker', key: 'startTime'}
+                , {name: 'call_time_start', type: 'input', onEvt: 'change'}
+                , {name: 'call_time_end', type: 'input', onEvt: 'change'}
+                , {name: 'direction', type: 'select', onEvt: 'change'}
+                , {name: 'name-refresh', type: 'a', onEvt: 'click', func: function(tableContent, data, ele, countCondition){
+                        tableContent.find("input[name='calling_number']:first").val("");
+                        tableContent.find("input[name='called_number']:first").val("");
+                        tableContent.find("input[name='agent_number']:first").val("");
+                        tableContent.find("input[name='opinion_number_start']:first").val("");
+                        tableContent.find("input[name='opinion_number_end']:first").val("");
+                        tableContent.find("input[name='date_end']:first").val("");
+                        tableContent.find("input[name='date_start']:first").val("");
+                        tableContent.find("input[name='call_time_start']:first").val("");
+                        tableContent.find("input[name='call_time_end']:first").val("");
+                        tableContent.find("select[name='direction']:first").find("option:first").prop("selected", "selected");
+                        delete data.param.calling_number;
+                        delete data.param.called_number;
+                        delete data.param.agent_number;
+                        delete data.param.opinion_number_start;
+                        delete data.param.opinion_number_end;
+                        delete data.param.startTime;
+                        delete data.param.endTime;
+                        delete data.param.call_time_start;
+                        delete data.param.call_time_end;
+                        delete data.param.direction;
+                        _app.initDatepicker(countCondition);
+                    }}
+                , {name: 'name-s', type: 'a', onEvt: 'click', func: function (tableContent, data, ele) {
+                        if(data.param){
+                            if(data.param.startTime && data.param.endTime && data.param.startTime > data.param.endTime){
+                                alert('开始时间不能小于结束时间');
+                                return ;
+                            }
+                            let _nStrat = data.param.opinion_number_start;
+                            let _nEnd = data.param.opinion_number_end;
+                            if(_nStrat != undefined){
+                                _nStrat = parseInt(_nStrat);
+                            }
+                            if(_nEnd != undefined){
+                                _nEnd = parseInt(_nEnd);
+                            }
+                            if(_nStrat != undefined && _nStrat < 0){
+                                alert('命中开始 必须大于等于 0');
+                                return ;
+                            }
+                            if(_nEnd != undefined && _nEnd < 0){
+                                alert('命中结束 必须大于等于 0');
+                                return ;
+                            }
+                            if(_nStrat != undefined && _nEnd != undefined){
+                                if(_nStrat >= _nEnd ){
+                                    alert('命中开始数量 不能大于等于 结束数量');
+                                    return ;
+                                }
+
+                            }
+                            let _sStrat = data.param.call_time_start;
+                            let _sEnd = data.param.call_time_end;
+                            if(_sStrat != undefined){
+                                _sStrat = parseInt(_sStrat);
+                            }
+                            if(_sEnd != undefined){
+                                _sEnd = parseInt(_sEnd);
+                            }
+                            if(_sStrat != undefined && _sStrat < 0){
+                                alert('通话时长开始时间 必须大于等于 0');
+                                return ;
+                            }
+                            if(_sEnd != undefined && _sEnd < 0){
+                                alert('通话时长结束时间 必须大于等于 0');
+                                return ;
+                            }
+                            if(_sStrat != undefined && _sEnd != undefined){
+                                if(_sStrat >= _sEnd ){
+                                    alert('通话时长开始时间 不能大于等于 结束时间');
+                                    return ;
+                                }
+
+                            }
+                        }
+                        _app.addPageParam("opinion_info_page", {pageNumber: 1, _fi: -666});
+                        _app.pageReLoad('opinion_info_page');
+                    }}
+            ]
+        };
+    });
+
+</script>
+</body>
+
+</html>

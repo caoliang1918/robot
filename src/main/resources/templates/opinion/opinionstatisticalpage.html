@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="utf-8">
+</head>
+<body>
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-10">
+        <h2></h2>
+        <ol class="breadcrumb">
+            <li>
+                <a th:href="@{/manager/main}">Home</a>
+            </li>
+            <li>
+                <a th:href="@{/manager/opinion/info/statistical/pageview}" class="menu-entity">舆情统计报表</a>
+            </li>
+        </ol>
+    </div>
+</div>
+<div class="wrapper wrapper-content animated fadeInRight ecommerce opinion_statistical_page _page_content">
+    <div class="ibox-content m-b-sm">
+        <div class="row">
+            <div class="col-sm-12 text-right">
+                <a href="javascript:void(0);" type="button" class="btn-sm btn-outline btn-warning" name="name-refresh"><i class="glyphicon glyphicon-repeat"></i></a>
+                <a href="javascript:void(0);" type="button" class="btn-sm btn-outline btn-primary" name="name-s"><i class="glyphicon glyphicon-search"></i></a>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="control-label" for="len">统计步长:</label>
+                    <select id="len" name="len" class="form-control">
+                        <option value="0" selected>日报</option>
+                        <option value="1">月报</option>
+                        <option value="2">年报</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="control-label" for="date_start">开始日期:</label>
+                    <div class="input-group date">
+                        <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                        <input id="date_start" type="text" class="form-control" name="date_start" autocomplete="off">
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="control-label" for="date_end">结束日期:</label>
+                    <div class="input-group date">
+                        <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                        <input id="date_end" type="text" class="form-control" name="date_end" autocomplete="off">
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="control-label" for="opinionWordType">舆情类型:</label>
+                    <select id="opinionWordType" name="opinionWordType" class="form-control"></select>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-content">
+                    <div class="table-responsive">
+                        <div class="mail-box">
+                            <div class="mail-body">
+                                <table class="table table-striped text-center _page" data-code="opinion_statistical_page" th:data-url="@{/manager/opinion/info/statistical/page}" data-type="ajax" data-option="page"></table>
+                                <div class="text-right">
+                                    <div class="btn-group">
+                                        <p class="help-block pull-left _page_total">共计<mark>0</mark>条,<code>0</code>页.当前<kbd>0</kbd>页&emsp; </p>
+                                        <button class="btn btn-white btn-sm"><i class="fa fa-arrow-left"></i></button>
+                                        <button class="btn btn-white btn-sm"><i class="fa fa-arrow-right"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        _app.ajaxDomParam.opinion_statistical_page = {table:{
+                keys: 'none'
+                , column: [{name:'时间', key: 'datetime', func: function(data){
+                        if(data){
+                            return _dateFormat(data, 5);
+                        }else{
+                            return "";
+                        }
+                    }}, {name:'配置类型', key: 'overall', func: function (data) {
+                        if(data){
+                            return "全局";
+                        }else{
+                            return "业务";
+                        }
+                    }}
+                    , {name: '业务类型', key: 'business_name', defaultKey: "全部"}, {name:'舆情类型', key: 'opinion_word_type', defaultKey: "无"}
+                    , {name: '命中监控内容', key: 'opinion_content', view: 'popover', func: function (data) {
+                            if(data && data.length > 15){
+                                return data.substring(0, 12) + "<code>..</code>";
+                            }else{
+                                return data;
+                            }
+                        }}, {name: '通话总数', key: 'call_number'}
+                    , {name: '命中通话数量', key: 'opinion_number'}, {name:'命中次数', key:'opinion_rate'}]}
+            , template: {header: 'page-header', body: 'page-tbody-sm'}
+            , prevload: function () {
+                let _this = this;
+                let _o_selet = _this.table.content.find("select[name='opinionWordType']:first");
+                _o_selet.append("<option value='-1'>" + '请选择' + "</option>");
+                _app.ajax({url: _app.getContentUrl('/manager/opinion/all'), param: {}, async : false, dataType: 'json'
+                    , func: function (data) {
+                        if(data.result && data.result.length > 0){
+                            if(_o_selet){
+                                let _tmp;
+                                for(let i = 0 ; i < data.result.length; i++){
+                                    _tmp = data.result[i];
+                                    _o_selet.append("<option value='" + _tmp.id + "'>" + _tmp.opinion_word_type + "</option>");
+                                }
+                            }
+                        }
+                    }});
+            }
+            , ajax:{func: function (dom) {
+                    _app.doPopoverList(dom);
+                }}
+            , countCondition: [
+                , {name: 'date_end', type: 'input', onEvt: 'datepicker', key: 'endTime'}
+                , {name: 'date_start', type: 'input', onEvt: 'datepicker', key: 'startTime'}
+                , {name: 'len', type: 'select', onEvt: 'change'}
+                , {name: 'opinionWordType', type: 'select', onEvt: 'change'}
+                , {name: 'name-refresh', type: 'a', onEvt: 'click', func: function(tableContent, data, ele, countCondition){
+                        tableContent.find("input[name='date_end']:first").val("");
+                        tableContent.find("input[name='date_start']:first").val("");
+                        tableContent.find("select[name='len']:first").find("option:first").prop("selected", "selected");
+                        tableContent.find("select[name='opinionWordType']:first").find("option:first").prop("selected", true);
+                        delete data.param. startTime;
+                        delete data.param. endTime;
+                        delete data.param. len;
+                        delete data.param. opinionWordType;
+                        _app.initDatepicker(countCondition);
+                    }}
+                , {name: 'name-s', type: 'a', onEvt: 'click', func: function (tableContent, data, ele) {
+                        if(data.param && data.param.startTime && data.param.endTime && data.param.startTime > data.param.endTime){
+                            alert('开始时间不能小于结束时间');
+                            return ;
+                        }
+                        _app.addPageParam("opinion_statistical_page", {pageNumber: 1, _fi: -666});
+                        _app.pageReLoad('opinion_statistical_page');
+                    }}
+            ]
+        };
+    });
+
+</script>
+</body>
+
+</html>
