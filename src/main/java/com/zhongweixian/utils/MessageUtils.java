@@ -9,7 +9,7 @@ public class MessageUtils {
             throw new IllegalArgumentException("content");
         }
         return content.replaceAll("^(@([0-9]|[a-z])+):", "")
-                .replaceAll("<br/>", "\r\n");
+                .replaceAll("<br/>", "");
     }
 
     public static String getSenderOfChatRoomTextMessage(String content) {

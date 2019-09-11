@@ -160,10 +160,15 @@ public class WxIMThread implements Runnable {
             logger.info("[*] getContactResponse memberCount = " + contactResponse.getMemberCount());
             AtomicInteger count = new AtomicInteger(1);
             contactResponse.getMemberList().forEach(contact -> {
-                if (WechatUtils.isChatRoom(contact)) {
+                if (WechatUtils.isChatRoom(contact.getUserName())) {
                     userCache.getChatRoomMembers().put(contact.getUserName(), contact);
                     logger.info("chatRoom name :{} ,memberSize:{} ,  id :{} ", contact.getNickName(), contact.getMemberList().size(), contact.getUserName());
                     chatRooms.add(contact);
+
+                    contact.getMemberList().forEach(chatRoomMember -> {
+                        contact.getMemberMap().put(chatRoomMember.getUserName(), chatRoomMember);
+                    });
+
                 } else {
                     logger.info("{} nickName:{} , remarkName:{} , userName:{}", count.get(), contact.getNickName(), contact.getRemarkName(), contact.getUserName());
                     count.decrementAndGet();
@@ -178,7 +183,7 @@ public class WxIMThread implements Runnable {
 
 
         initResponse.getContactList().stream()
-                .filter(x -> WechatUtils.isChatRoom(x)).forEach(x -> {
+                .filter(x -> WechatUtils.isChatRoom(x.getUserName())).forEach(x -> {
             userCache.getChatRoomMembers().put(x.getUserName(), x);
             logger.info("chatRoom name :{} ,memberSize:{} ,  id :{} ", x.getNickName(), x.getMemberList().size(), x.getUserName());
             chatRooms.add(x);

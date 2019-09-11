@@ -1,5 +1,6 @@
 package com.zhongweixian.login;
 
+import com.alibaba.fastjson.JSON;
 import com.zhongweixian.domain.WxUserCache;
 import com.zhongweixian.domain.response.SyncCheckResponse;
 import com.zhongweixian.domain.response.SyncResponse;
@@ -77,10 +78,12 @@ public class WxSyncMessage {
 
         //mod包含新增和修改
         if (syncResponse.getModContactCount() > 0) {
+            logger.info("add member");
             onContactsModified(syncResponse.getModContactList());
         }
         //del->联系人移除
         if (syncResponse.getDelContactCount() > 0) {
+            logger.info("delete member");
             onContactsDeleted(syncResponse.getDelContactList());
         }
         return syncResponse;
@@ -119,6 +122,8 @@ public class WxSyncMessage {
         if (wxMessageHandler == null) {
             return;
         }
+        logger.debug("onNewMessage : {}", JSON.toJSONString(syncResponse));
+
         for (Message message : syncResponse.getAddMsgList()) {
             //文本消息
             if (message.getMsgType() == MessageType.TEXT.getCode()) {
@@ -182,18 +187,23 @@ public class WxSyncMessage {
         }
     }
 
+    /**
+     * 群成员变更
+     *
+     * @param contacts
+     */
     private void onContactsModified(Set<Contact> contacts) {
         Set<Contact> individuals = new HashSet<>();
         Set<Contact> chatRooms = new HashSet<>();
 
         for (Contact contact : contacts) {
             logger.info("onContactsModified:{}", contact.getNickName());
-            if (WechatUtils.isIndividual(contact)) {
+            if (WechatUtils.isChatRoom(contact.getUserName()) || WechatUtils.isChatRoom(contact.getFromUserName())) {
+                chatRooms.add(contact);
+            } else if (WechatUtils.isIndividual(contact)) {
                 individuals.add(contact);
             } else if (WechatUtils.isMediaPlatform(contact)) {
 
-            } else if (WechatUtils.isChatRoom(contact)) {
-                chatRooms.add(contact);
             }
         }
 
@@ -222,11 +232,18 @@ public class WxSyncMessage {
                      * 有变更的群组
                      */
                     modifiedChatRooms.add(chatRoom);
+                    chatRoom.getMemberList().forEach(chatRoomMember -> {
+                        chatRoom.getMemberMap().put(chatRoomMember.getUserName(), chatRoomMember);
+                    });
+
                 } else {
                     /**
                      * 新的群组
                      */
                     newChatRooms.add(chatRoom);
+                    chatRoom.getMemberList().forEach(chatRoomMember -> {
+                        chatRoom.getMemberMap().put(chatRoomMember.getUserName(), chatRoomMember);
+                    });
                 }
                 wxUserCache.getChatRoomMembers().put(chatRoom.getUserName(), chatRoom);
             }
@@ -259,7 +276,7 @@ public class WxSyncMessage {
             if (WechatUtils.isIndividual(contact)) {
                 individuals.add(contact);
                 wxUserCache.getChatContants().remove(contact.getUserName());
-            } else if (WechatUtils.isChatRoom(contact)) {
+            } else if (WechatUtils.isChatRoom(contact.getUserName()) || WechatUtils.isChatRoom(contact.getFromUserName())) {
                 chatRooms.add(contact);
                 wxUserCache.getChatRoomMembers().remove(contact.getUserName());
             }

@@ -3,6 +3,7 @@ package com.zhongweixian.utils;
 import com.zhongweixian.domain.shared.Contact;
 import com.zhongweixian.domain.response.component.WechatHttpResponseBase;
 import com.zhongweixian.exception.RobotException;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +21,7 @@ public class WechatUtils {
 
     public static String textDecode(String text) {
         if (text == null) {
-            throw new IllegalArgumentException("text");
+            return null;
         }
         return new String(text.getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8);
     }
@@ -32,16 +33,16 @@ public class WechatUtils {
         return contact.getUserName().startsWith("@") && !contact.getUserName().startsWith("@@") && ((contact.getVerifyFlag() & 8) == 0);
     }
 
-    public static boolean isChatRoom(Contact contact) {
-        if (contact == null) {
-            throw new IllegalArgumentException("contact");
+    public static boolean isChatRoom(String contact) {
+        if (StringUtils.isBlank(contact)) {
+            return false;
         }
-        return contact.getUserName().startsWith("@@");
+        return contact.startsWith("@@");
     }
 
     public static boolean isMediaPlatform(Contact contact) {
         if (contact == null) {
-            throw new IllegalArgumentException("contact");
+            return false;
         }
         return contact.getUserName().startsWith("@") && !contact.getUserName().startsWith("@@") && ((contact.getVerifyFlag() & 8) > 0);
     }

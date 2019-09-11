@@ -40,13 +40,19 @@ public class WxMessageHandlerImpl implements WxMessageHandler {
     public void onReceivingChatRoomTextMessage(WxUserCache userCache, Message message) {
         Contact chatRoom = userCache.getChatRoomMembers().get(message.getFromUserName());
         String content = MessageUtils.getChatRoomTextMessageContent(message.getContent());
+        String fromUser = null;
         if (chatRoom == null) {
             chatRoom = userCache.getChatRoomMembers().get(message.getToUserName());
-            logger.info("roomName : {} ,from person: me ", chatRoom.getNickName());
+            fromUser = message.getFromUserName();
         } else {
-            logger.info("roomName :{} ,from person: {} ", chatRoom.getNickName(), MessageUtils.getSenderOfChatRoomTextMessage(message.getContent()));
+            fromUser = MessageUtils.getSenderOfChatRoomTextMessage(message.getContent());
         }
-        logger.info("content:{}", content);
+
+        if (chatRoom.getMemberMap().size() > 0) {
+            logger.info("roomName : {} ,from person:{} ,content:{}", chatRoom.getNickName(), chatRoom.getMemberMap().get(fromUser).getNickName(), content);
+        } else {
+            logger.info("roomName : {} ,from person:{} ,content:{}", chatRoom.getNickName(), fromUser, content);
+        }
     }
 
     @Override
@@ -63,12 +69,11 @@ public class WxMessageHandlerImpl implements WxMessageHandler {
 
     @Override
     public void onReceivingPrivateTextMessage(WxUserCache userCache, Message message) {
-        logger.info("content:{}", message.getContent());
         try {
             if (userCache.getOwner().getUserName().equals(message.getFromUserName())) {
-                logger.info("from me ");
+                logger.info("from me content:{}", message.getContent());
             } else {
-                logger.info("from:{} ", userCache.getChatContants().get(message.getFromUserName()).getNickName());
+                logger.info("from:{} , content:{} ", userCache.getChatContants().get(message.getFromUserName()).getNickName(), message.getContent());
             }
         } catch (Exception e) {
             logger.error("from:{} , to:{} , error:{}", message.getFromUserName(), message.getToUserName(), e);

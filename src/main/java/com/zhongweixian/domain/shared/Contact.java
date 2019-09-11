@@ -3,6 +3,8 @@ package com.zhongweixian.domain.shared;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -11,6 +13,8 @@ public class Contact extends Member {
     private int MemberCount;
     @JsonProperty
     private Set<ChatRoomMember> MemberList;
+
+    private Map<String, ChatRoomMember> memberMap = new HashMap<>();
     @JsonProperty
     private int OwnerUin;
     @JsonProperty
@@ -35,6 +39,10 @@ public class Contact extends Member {
     private String EncryChatRoomId;
     @JsonProperty
     private int IsOwner;
+
+    private String fromUserName;
+
+    private String toUserName;
 
     public long getStatues() {
         return Statues;
@@ -147,6 +155,27 @@ public class Contact extends Member {
     public void setOwnerUin(int ownerUin) {
         OwnerUin = ownerUin;
     }
+
+    public String getFromUserName() {
+        return fromUserName;
+    }
+
+    public void setFromUserName(String fromUserName) {
+        this.fromUserName = fromUserName;
+    }
+
+    public String getToUserName() {
+        return toUserName;
+    }
+
+    public void setToUserName(String toUserName) {
+        this.toUserName = toUserName;
+    }
+
+    public Map<String, ChatRoomMember> getMemberMap() {
+        return memberMap;
+    }
+
 
     @Override
     public boolean equals(Object o) {

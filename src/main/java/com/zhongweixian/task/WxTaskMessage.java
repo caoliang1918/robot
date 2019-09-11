@@ -37,7 +37,8 @@ public class WxTaskMessage {
     private WxUserCache wxUserCache = null;
 
 
-    @Scheduled(cron = "0 30 7 * * ?")
+
+    @Scheduled(cron = "0 30 6 * * ?")
     public void baobaoWakeUp() {
         String[] array = new String[]{"小宝宝，起床时间到了哦",
                 "小仙女，早上好啊!"};
@@ -45,7 +46,7 @@ public class WxTaskMessage {
     }
 
 
-    @Scheduled(cron = "0 30 23 * * ?")
+    @Scheduled(cron = "0 0 23 * * ?")
     public void _2300() {
         String[] array = new String[]{"小宝宝，现在是睡觉时间",
                 "该休息啦！",
