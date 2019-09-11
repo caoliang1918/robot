@@ -13,7 +13,6 @@ import com.zhongweixian.enums.LoginCode;
 import com.zhongweixian.enums.RetCode;
 import com.zhongweixian.enums.StatusNotifyCode;
 import com.zhongweixian.exception.RobotException;
-import com.zhongweixian.exception.WechatQRExpiredException;
 import com.zhongweixian.service.WxHttpService;
 import com.zhongweixian.service.WxMessageHandler;
 import com.zhongweixian.utils.QRCodeUtils;
@@ -37,7 +36,7 @@ public class WxIMThread implements Runnable {
     private WxMessageHandler wxMessageHandler;
 
 
-    public WxIMThread(CacheService cacheService, WxHttpService wxHttpService,WxMessageHandler wxMessageHandler) {
+    public WxIMThread(CacheService cacheService, WxHttpService wxHttpService, WxMessageHandler wxMessageHandler) {
         this.cacheService = cacheService;
         this.wxHttpService = wxHttpService;
         this.wxMessageHandler = wxMessageHandler;
@@ -207,7 +206,6 @@ public class WxIMThread implements Runnable {
                 logger.error("synccheck error:{}", e);
             }
         }
-
     }
 
     @Override
@@ -215,9 +213,7 @@ public class WxIMThread implements Runnable {
         try {
             login();
         } catch (Exception e) {
-            logger.error("{}" , e);
+            logger.error("{}", e);
         }
     }
-
-
 }

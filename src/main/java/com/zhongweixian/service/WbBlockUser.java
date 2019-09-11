@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 public class WbBlockUser {
     private Logger logger = LoggerFactory.getLogger(WbBlockUser.class);
 
-
     private HttpHeaders headers;
 
     /**

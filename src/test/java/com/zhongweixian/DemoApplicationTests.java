@@ -1,14 +1,10 @@
 package com.zhongweixian;
 
-import com.alibaba.fastjson.JSONObject;
-import com.amazonaws.services.s3.model.PutObjectResult;
 import com.zhongweixian.service.OssService;
 import com.zhongweixian.service.WeiBoHttpService;
 import com.zhongweixian.web.entity.BotVideo;
 import com.zhongweixian.web.entity.page.Page;
 import com.zhongweixian.web.service.BotVideoService;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.http.client.utils.DateUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -16,12 +12,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;

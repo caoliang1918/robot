@@ -243,6 +243,5 @@ public class WbSyncMessage {
             }
             botVideoService.add(video);
         });
-
     }
 }
