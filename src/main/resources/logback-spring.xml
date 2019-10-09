@@ -14,11 +14,7 @@
             <fileNamePattern>${LOG_FILE}-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <maxHistory>30</maxHistory>
             <timeBasedFileNamingAndTriggeringPolicy  class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-<<<<<<< HEAD
                 <maxFileSize>500MB</maxFileSize>
-=======
-                <maxFileSize>100MB</maxFileSize>
->>>>>>> 3d5cab77295dbb253eab1a5e13029279543518ab
             </timeBasedFileNamingAndTriggeringPolicy>
         </rollingPolicy>
         <encoder>
@@ -26,27 +22,9 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
-<<<<<<< HEAD
-=======
-    <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
-        <destination>192.168.180.102:5044</destination>
-        <encoder charset="UTF-8" class="net.logstash.logback.encoder.LogstashEncoder">
-            <customFields>{"app":"wechat-bot"}</customFields>
-        </encoder>
-    </appender>
->>>>>>> 3d5cab77295dbb253eab1a5e13029279543518ab
-
-
-    <!--开发测试环境配置 start-->
-    <logger name="com.zhongweixian" level="INFO" />
-    <logger name="org.apache" level="WARN"/>
-
+    
     <root level="INFO">
         <appender-ref ref="CONSOLE" />
         <appender-ref ref="FILE-INFO" />
-<<<<<<< HEAD
-=======
-        <appender-ref ref="LOGSTASH" />
->>>>>>> 3d5cab77295dbb253eab1a5e13029279543518ab
     </root>
 </configuration>

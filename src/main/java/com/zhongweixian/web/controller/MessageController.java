@@ -1,11 +1,11 @@
-package com.zhongweixian.web;
+package com.zhongweixian.web.controller;
 
-import com.alibaba.fastjson.JSONObject;
 import com.zhongweixian.domain.WxUserCache;
 import com.zhongweixian.domain.HttpMessage;
 import com.zhongweixian.domain.request.RevokeRequst;
 import com.zhongweixian.domain.response.SendMsgResponse;
 import com.zhongweixian.cache.CacheService;
+import com.zhongweixian.domain.shared.Contact;
 import com.zhongweixian.service.WbService;
 import com.zhongweixian.service.WxMessageHandler;
 import com.zhongweixian.utils.Levenshtein;
@@ -233,7 +233,7 @@ public class MessageController {
 
     @PostMapping("filehelper")
     public String sendFilehelper(@RequestBody HttpMessage httpMessage) {
-        WxUserCache userCache = cacheService.getUserCache("2334107403");
+        WxUserCache userCache = cacheService.getUserCache("5275953");
         if (userCache != null) {
             SendMsgResponse response = wxMessageHandler.sendText(userCache, httpMessage.getContent(), "filehelper");
         }
@@ -254,5 +254,31 @@ public class MessageController {
 
         logger.info("responseEntity:{}", responseEntity.getBody());
         return responseEntity.getBody();
+    }
+
+    @PostMapping("sendAll")
+    public String sendAll(String uid) {
+        WxUserCache userCache = cacheService.getUserCache(uid);
+        if (userCache == null) {
+            logger.error("userCache is null");
+            return "userCache is null";
+        }
+        userCache.getChatContants().values().forEach(contact -> {
+
+           // if (contact.getNickName().equals("李文杰") || contact.getNickName().equals("曹亮") || contact.getNickName().equals("佛系")) {
+                SendMsgResponse response = wxMessageHandler.sendText(userCache, "您好，我是搬运工，输入：进群，我将拉你进去指定的微信群。", contact.getUserName());
+                try {
+                    Thread.sleep(9000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                logger.info("nickname:{} , response:{}", contact.getNickName(), response);
+                wxMessageHandler.revoke(userCache, response.getMsgID(), contact.getUserName());
+           // }
+
+        });
+
+
+        return "";
     }
 }

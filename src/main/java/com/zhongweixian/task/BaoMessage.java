@@ -85,7 +85,7 @@ public class BaoMessage {
         }
         for (String str : array) {
             logger.info("send to {} , {}", contact.getRemarkName(), str);
-            wxMessageHandler.sendText(wxUserCache, contact.getUserName(), str);
+            wxMessageHandler.sendText(wxUserCache, str,contact.getUserName());
             Thread.sleep(3500L);
         }
     }

@@ -213,6 +213,7 @@ public class WxIMThread implements Runnable {
         try {
             login();
         } catch (Exception e) {
+            run();
             logger.error("{}", e);
         }
     }

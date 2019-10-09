@@ -1,4 +1,4 @@
-package com.zhongweixian.web;
+package com.zhongweixian.web.controller;
 
 import com.alibaba.fastjson.JSONObject;
 import com.amazonaws.services.s3.model.PutObjectResult;
@@ -8,10 +8,10 @@ import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.zhongweixian.cache.CacheService;
-import com.zhongweixian.domain.weibo.WeiBoUser;
 import com.zhongweixian.login.WbSyncMessage;
 import com.zhongweixian.login.WxIMThread;
 import com.zhongweixian.service.*;
+import com.zhongweixian.web.CommonResponse;
 import com.zhongweixian.web.entity.BotVideo;
 import com.zhongweixian.web.entity.page.Page;
 import com.zhongweixian.web.service.BotVideoService;
@@ -20,11 +20,9 @@ import org.apache.http.client.utils.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
@@ -66,8 +64,24 @@ public class LoginController {
     @Autowired
     private OssService ossService;
 
+    /**
+     * 登录页面
+     *
+     * @return
+     */
+    @GetMapping
+    public ModelAndView loginPage() {
+        return new ModelAndView("/welcome");
+    }
 
-    @GetMapping("login")
+
+    @PostMapping("login")
+    public CommonResponse login(@RequestParam String username, @RequestParam String password) {
+        logger.info("username:{} login success!", username);
+        return new CommonResponse();
+    }
+
+    @GetMapping("qrcode")
     public void qrcode(HttpServletResponse response) throws IOException, WriterException {
         WxIMThread wxIMThread = new WxIMThread(cacheService, wxHttpService, wxMessageHandler);
         wxExecutor.execute(wxIMThread);
@@ -84,36 +98,6 @@ public class LoginController {
         //关闭流
         os.flush();
         os.close();
-    }
-
-
-    @GetMapping
-    public HttpEntity addBlackUser(@RequestParam Long userId, @RequestParam(defaultValue = "1") Integer pageNum) {
-        int defaultPage = pageNum;
-        List<WeiBoUser> weiBoUserList = new ArrayList<>();
-        List<WeiBoUser> pageList = null;
-        wbBlockUser.addBlackUser(userId);
-        while (true) {
-            pageList = wbBlockUser.fans(userId, pageNum);
-            if (CollectionUtils.isEmpty(pageList)) {
-                break;
-            }
-            weiBoUserList.addAll(pageList);
-            pageNum++;
-        }
-        pageNum = defaultPage;
-        while (true) {
-            pageList = wbBlockUser.follow(userId, pageNum);
-            if (CollectionUtils.isEmpty(pageList)) {
-                break;
-            }
-            weiBoUserList.addAll(pageList);
-            pageNum++;
-        }
-        for (WeiBoUser weiBoUser : weiBoUserList) {
-            wbBlockUser.addBlackUser(weiBoUser.getId());
-        }
-        return new HttpEntity<>(HttpStatus.OK);
     }
 
 

@@ -39,7 +39,7 @@ public class WechatBootApplication {
     @Bean
     public ExecutorService wxExecutor() {
         ScheduledExecutorService wxExecutor = new ScheduledThreadPoolExecutor(10,
-                new BasicThreadFactory.Builder().namingPattern("wx-login-schedule-pool-%d").daemon(true).build());
+                new BasicThreadFactory.Builder().namingPattern("wx-login-pool-%d").daemon(true).build());
         return wxExecutor;
     }
 

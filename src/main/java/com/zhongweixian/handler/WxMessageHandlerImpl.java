@@ -12,7 +12,6 @@ import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.FileOutputStream;
@@ -78,19 +77,38 @@ public class WxMessageHandlerImpl implements WxMessageHandler {
         } catch (Exception e) {
             logger.error("from:{} , to:{} , error:{}", message.getFromUserName(), message.getToUserName(), e);
         }
-        if ("进群".equals(message.getContent())) {
-            String roomName = null;
-            userCache.getChatRoomMembers().values().forEach(x -> {
-                if ("免费分享".equals(x.getNickName())) {
-                    logger.info("拉用户:{} 进 {} 群", message.getFromUserName(), x.getUserName());
-                    try {
-                        wxHttpService.addChatRoomMember(userCache, x.getUserName(), message.getFromUserName());
-                    } catch (Exception e) {
-                        logger.error("chatRoom add member error:{} ", e);
-                    }
+
+        switch (userCache.getUin()) {
+            case "5275953":
+                if (message.getContent().contains("进群")) {
+                    userCache.getChatRoomMembers().values().forEach(x -> {
+                        if ("免费分享".equals(x.getNickName())) {
+                            logger.info("拉用户:{} 进 {} 群", message.getFromUserName(), x.getUserName());
+                            try {
+                                wxHttpService.addChatRoomMember(userCache, x.getUserName(), message.getFromUserName());
+                            } catch (Exception e) {
+                                logger.error("chatRoom add member error:{} ", e);
+                            }
+                        }
+                    });
                 }
-            });
+                break;
+            case "2014329040":
+                if (message.getContent().contains("进群")) {
+                    userCache.getChatRoomMembers().values().forEach(x -> {
+                        if ("沧海遗珠".equals(x.getNickName())) {
+                            logger.info("拉用户:{} 进 {} 群", message.getFromUserName(), x.getUserName());
+                            try {
+                                wxHttpService.addChatRoomMember(userCache, x.getUserName(), message.getFromUserName());
+                            } catch (Exception e) {
+                                logger.error("chatRoom add member error:{} ", e);
+                            }
+                        }
+                    });
+                }
+                break;
         }
+
     }
 
     @Override

@@ -97,11 +97,6 @@ public class WxSyncMessage {
         try {
             verifyUserResponse = wxHttpService.acceptFriend(wxUserCache, new VerifyUser[]{user});
             WechatUtils.checkBaseResponse(verifyUserResponse);
-            /**
-             * 给新加的好友发送一段话
-             */
-            String welcome = "你好，我是搬运工，输入:进群，我将拉你进入指定微信群。\n";
-            wxHttpService.sendText(wxUserCache, welcome, info.getUserName());
         } catch (Exception e) {
             logger.error("{}", e);
         }
@@ -178,12 +173,19 @@ public class WxSyncMessage {
                     logger.info("[*] you've accepted the invitation");
                     acceptFriendInvitation(message.getRecommendInfo());
                     wxMessageHandler.postAcceptFriendInvitation(wxUserCache, message);
+
+                    /**
+                     * 给新加的好友发送一段话
+                     */
+                    if (wxUserCache.getUin().equals("5275953")) {
+                        String welcome = "你好，我是搬运工，输入:进群，我将拉你进入指定微信群。\n";
+                        wxHttpService.sendText(wxUserCache, welcome, message.getRecommendInfo().getUserName());
+                    }
                 } else {
                     logger.info("[*] you've declined the invitation");
                     //TODO decline invitation
                 }
             }
-
         }
     }
 
