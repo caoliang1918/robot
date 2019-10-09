@@ -181,8 +181,7 @@ public class WxHttpService {
         customHeader.set(HttpHeaders.ACCEPT, "image/webp,image/apng,image/*,*/*;q=0.8");
         customHeader.set(HttpHeaders.REFERER, WECHAT_HOST);
         HeaderUtils.assign(customHeader, getHeader);
-        ResponseEntity<byte[]> responseEntity
-                = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(customHeader), new ParameterizedTypeReference<byte[]>() {
+        ResponseEntity<byte[]> responseEntity = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(customHeader), new ParameterizedTypeReference<byte[]>() {
         });
         return responseEntity.getBody();
     }

@@ -17,11 +17,14 @@ import com.zhongweixian.service.WxHttpService;
 import com.zhongweixian.service.WxMessageHandler;
 import com.zhongweixian.utils.QRCodeUtils;
 import com.zhongweixian.utils.WechatUtils;
+import org.apache.commons.lang3.time.DateFormatUtils;
+import org.apache.http.client.utils.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -72,16 +75,23 @@ public class WxIMThread implements Runnable {
         //2 qr
         byte[] qrData = wxHttpService.getQR(uuid);
         ByteArrayInputStream stream = new ByteArrayInputStream(qrData);
-        qrUrl = QRCodeUtils.decode(stream);
-        stream.close();
-        String qr = QRCodeUtils.generateQR(qrUrl, 40, 40);
-        logger.info("\r\n" + qr);
+
+        try {
+            qrUrl = QRCodeUtils.decode(stream);
+            stream.close();
+            String qr = QRCodeUtils.generateQR(qrUrl, 40, 40);
+            logger.info("\r\n" + qr);
+        } catch (Exception e) {
+            logger.error("get qrcode error:{}", e);
+            login();
+        }
         logger.info("[2] qrcode completed");
 
         //4 login
         LoginResult loginResult;
 
         WxUserCache userCache = new WxUserCache();
+        int btn = 0;
         while (true) {
             loginResult = wxHttpService.login(uuid);
             logger.info("loginResult:{}", loginResult.toString());
@@ -102,6 +112,10 @@ public class WxIMThread implements Runnable {
                 logger.error("[*] login status = EXPIRED");
             } else {
                 logger.info("[*] login status = " + loginResult.getCode());
+            }
+            btn++;
+            if (btn > 3) {
+                return;
             }
         }
 
@@ -213,7 +227,6 @@ public class WxIMThread implements Runnable {
         try {
             login();
         } catch (Exception e) {
-            run();
             logger.error("{}", e);
         }
     }

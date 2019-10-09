@@ -4,7 +4,7 @@ import com.zhongweixian.domain.WxUserCache;
 import com.zhongweixian.domain.shared.Contact;
 import com.zhongweixian.cache.CacheService;
 import com.zhongweixian.service.WxMessageHandler;
-import org.apache.http.client.utils.DateUtils;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.Date;
 
 /**
@@ -58,13 +57,13 @@ public class WxTaskMessage {
 
     @Scheduled(cron = "0 0 0/1 * * ?")
     public void time() {
-        String content = "现在是北京时间: " + DateUtils.formatDate(new Date(), "HH:mm:ss");
+        String content = "现在是北京时间: " + DateFormatUtils.format(new Date(), "HH:mm:ss");
         this.wxUserCache = cacheService.getUserCache("2014329040");
         if (wxUserCache == null) {
             return;
         }
         wxUserCache.getChatRoomMembers().values().forEach(room -> {
-            if (room.getNickName().equals("沧海遗珠")) {
+            if (room.getNickName().equals("沧海遗珠") ) {
                 wxMessageHandler.sendText(wxUserCache, content, room.getUserName());
             }
         });

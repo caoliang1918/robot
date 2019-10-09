@@ -10,7 +10,10 @@ import com.google.zxing.common.BitMatrix;
 import com.zhongweixian.cache.CacheService;
 import com.zhongweixian.login.WbSyncMessage;
 import com.zhongweixian.login.WxIMThread;
-import com.zhongweixian.service.*;
+import com.zhongweixian.service.OssService;
+import com.zhongweixian.service.WeiBoHttpService;
+import com.zhongweixian.service.WxHttpService;
+import com.zhongweixian.service.WxMessageHandler;
 import com.zhongweixian.web.CommonResponse;
 import com.zhongweixian.web.entity.BotVideo;
 import com.zhongweixian.web.entity.page.Page;
@@ -29,7 +32,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -49,8 +54,6 @@ public class LoginController {
     private WxHttpService wxHttpService;
     @Autowired
     private WxMessageHandler wxMessageHandler;
-    @Autowired
-    private WbBlockUser wbBlockUser;
 
     @Autowired
     private WbSyncMessage wbSyncMessage;

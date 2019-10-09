@@ -71,6 +71,7 @@ public class WxMessageHandlerImpl implements WxMessageHandler {
         try {
             if (userCache.getOwner().getUserName().equals(message.getFromUserName())) {
                 logger.info("from me content:{}", message.getContent());
+                return;
             } else {
                 logger.info("from:{} , content:{} ", userCache.getChatContants().get(message.getFromUserName()).getNickName(), message.getContent());
             }
