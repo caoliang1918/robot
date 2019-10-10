@@ -26,7 +26,12 @@ public class WxTaskMessage {
     @Value("${wx.uid}")
     private String uid;
 
-    private String toUser = "朝颜";
+    String[] zhao_up = new String[]{"小宝宝，起床时间到了哦", "小仙女，早上好啊!"};
+    String[] zhao_night = new String[]{"小宝宝，现在是睡觉时间", "该休息啦！", "晚安，好梦！[月亮][月亮][月亮]"};
+
+
+    String[] la_up = new String[]{"蜡笔小珠，起床时间到了哦", "小仙女，早上好啊!"};
+    String[] la_night = new String[]{"蜡笔小珠，现在是睡觉时间", "该休息啦！", "晚安，好梦！[月亮][月亮][月亮]"};
 
     @Autowired
     private WxMessageHandler wxMessageHandler;
@@ -39,53 +44,56 @@ public class WxTaskMessage {
 
 
     @Scheduled(cron = "0 30 6 * * ?")
-    public void baobaoWakeUp() {
-        String[] array = new String[]{"小宝宝，起床时间到了哦",
-                "小仙女，早上好啊!"};
-        sendMessage(array);
+    public void _0630() {
+        sendMessage("朝颜", zhao_up);
+    }
+
+    @Scheduled(cron = "0 30 7 * * ?")
+    public void _0730() {
+        sendMessage("蜡笔小猪", la_up);
     }
 
 
     @Scheduled(cron = "0 0 23 * * ?")
     public void _2300() {
-        String[] array = new String[]{"小宝宝，现在是睡觉时间",
-                "该休息啦！",
-                "晚安，好梦！[月亮][月亮][月亮]"};
-        sendMessage(array);
+        sendMessage("朝颜", zhao_night);
+        sendMessage("蜡笔小猪", la_night);
 
     }
 
     @Scheduled(cron = "0 0 0/1 * * ?")
     public void time() {
         String content = "现在是北京时间: " + DateFormatUtils.format(new Date(), "HH:mm:ss");
-        this.wxUserCache = cacheService.getUserCache("2014329040");
+        this.wxUserCache = cacheService.getUserCache(uid);
         if (wxUserCache == null) {
             return;
         }
         wxUserCache.getChatRoomMembers().values().forEach(room -> {
-            if (room.getNickName().equals("沧海遗珠") ) {
+            if (room.getNickName().equals("沧海遗珠")) {
                 wxMessageHandler.sendText(wxUserCache, content, room.getUserName());
             }
         });
         logger.info("send to: 沧海遗珠 , content:{}", content);
     }
 
-    private void sendMessage(String[] array) {
+    private void sendMessage(String toUser, String[] array) {
         this.wxUserCache = cacheService.getUserCache(uid);
         if (wxUserCache == null || !wxUserCache.getAlive()) {
+            logger.warn("user:{} not login", uid);
             return;
         }
         wxUserCache.getChatContants().values().forEach(contact -> {
-            if (contact.getRemarkName().contains(toUser)) {
+            if (toUser.equals(contact.getRemarkName()) || toUser.equals(contact.getNickName())) {
                 this.contact = contact;
             }
         });
 
         if (contact == null) {
+            logger.warn("contact:{} not found", toUser);
             return;
         }
         for (String str : array) {
-            logger.info("send to {} , {}", contact.getRemarkName(), str);
+            logger.info("send to {} , {}", contact.getNickName(), str);
             wxMessageHandler.sendText(wxUserCache, str, contact.getUserName());
         }
     }
