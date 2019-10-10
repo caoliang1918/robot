@@ -32,7 +32,7 @@ public class WxMessageHandlerImpl implements WxMessageHandler {
 
     private String imageUrl = "%s/cgi-bin/mmwebwx-bin/webwxgetmsgimg?&MsgID=%s&skey=%s";
 
-    private String imageDir = "logs/images";
+    private String imageDir = "../logs/images";
 
 
     @Override
@@ -123,14 +123,15 @@ public class WxMessageHandlerImpl implements WxMessageHandler {
         if (message.getFromUserName().startsWith("@@")) {
             Contact chatRoom = userCache.getChatRoomMembers().get(message.getFromUserName());
             logger.info("roomName :{} ,from person: {} ", chatRoom.getNickName(), MessageUtils.getSenderOfChatRoomTextMessage(message.getContent()));
-            if (chatRoom.getNickName().startsWith("老九群") || chatRoom.getNickName().startsWith("免费")) {
+            if (chatRoom.getNickName().contains("免费分享") || chatRoom.getNickName().contains("沧海遗珠")) {
                 String content = MessageUtils.getChatRoomTextMessageContent(message.getContent());
                 logger.info("AppMsgType:{} , content:{} ", message.getAppMsgType(), content);
-                if (message.getAppMsgType() == 5) {
+                //if (message.getAppMsgType() == 36) {
                     /**
                      * 非法的外面连接，必须给予警告
                      */
-                }
+                    sendText(userCache, "请不要发送广告链接，谢谢合作！", chatRoom.getUserName());
+               // }
             }
         }
     }

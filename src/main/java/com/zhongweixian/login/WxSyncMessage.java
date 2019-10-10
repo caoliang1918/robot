@@ -117,9 +117,9 @@ public class WxSyncMessage {
         if (wxMessageHandler == null) {
             return;
         }
-        logger.debug("onNewMessage : {}", JSON.toJSONString(syncResponse));
 
         for (Message message : syncResponse.getAddMsgList()) {
+            logger.debug("onNewMessage : {}", JSON.toJSONString(message));
             //文本消息
             if (message.getMsgType() == MessageType.TEXT.getCode()) {
                 //个人
