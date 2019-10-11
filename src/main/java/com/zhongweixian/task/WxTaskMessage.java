@@ -12,7 +12,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Created by caoliang on 2019-05-05
@@ -39,7 +41,6 @@ public class WxTaskMessage {
     @Autowired
     private CacheService cacheService;
 
-    private Contact contact = null;
     private WxUserCache wxUserCache = null;
 
 
@@ -57,11 +58,11 @@ public class WxTaskMessage {
     @Scheduled(cron = "0 0 23 * * ?")
     public void _2300() {
         sendMessage("朝颜", zhao_night);
-        sendMessage("蜡笔小猪", la_night);
+        sendMessage("蜡笔小珠", la_night);
 
     }
 
-    @Scheduled(cron = "0 0 0/1 * * ?")
+    @Scheduled(cron = "0 0 23 * * ?")
     public void time() {
         String content = "现在是北京时间: " + DateFormatUtils.format(new Date(), "HH:mm:ss");
         this.wxUserCache = cacheService.getUserCache(uid);
@@ -82,19 +83,22 @@ public class WxTaskMessage {
             logger.warn("user:{} not login", uid);
             return;
         }
-        wxUserCache.getChatContants().values().forEach(contact -> {
-            if (toUser.equals(contact.getRemarkName()) || toUser.equals(contact.getNickName())) {
-                this.contact = contact;
+        List<Contact> contacts = new ArrayList<>();
+        wxUserCache.getChatContants().values().forEach(c -> {
+            if (toUser.equals(c.getRemarkName()) || toUser.equals(c.getNickName())) {
+                contacts.add(c);
             }
         });
 
-        if (contact == null) {
+        if (contacts.size() == 0) {
             logger.warn("contact:{} not found", toUser);
             return;
         }
         for (String str : array) {
-            logger.info("send to {} , {}", contact.getNickName(), str);
-            wxMessageHandler.sendText(wxUserCache, str, contact.getUserName());
+            for (Contact contact : contacts) {
+                logger.info("send to {} , {}", contact.getNickName(), str);
+                wxMessageHandler.sendText(wxUserCache, str, contact.getUserName());
+            }
         }
     }
 

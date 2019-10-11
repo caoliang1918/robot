@@ -126,12 +126,12 @@ public class WxMessageHandlerImpl implements WxMessageHandler {
             if (chatRoom.getNickName().contains("免费分享") || chatRoom.getNickName().contains("沧海遗珠")) {
                 String content = MessageUtils.getChatRoomTextMessageContent(message.getContent());
                 logger.info("AppMsgType:{} , content:{} ", message.getAppMsgType(), content);
-                //if (message.getAppMsgType() == 36) {
+                if (message.getAppMsgType() == 5 || message.getAppMsgType() == 36) {
                     /**
                      * 非法的外面连接，必须给予警告
                      */
                     sendText(userCache, "请不要发送广告链接，谢谢合作！", chatRoom.getUserName());
-               // }
+                }
             }
         }
     }
