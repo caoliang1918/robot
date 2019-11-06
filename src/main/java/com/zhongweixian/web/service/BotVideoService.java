@@ -13,4 +13,6 @@ public interface BotVideoService extends BaseService<BotVideo> {
      * @return
      */
     BotVideo findByHashCode(Integer size, String hashCode);
+
+
 }

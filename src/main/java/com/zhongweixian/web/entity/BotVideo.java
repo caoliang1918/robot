@@ -440,4 +440,23 @@ public class BotVideo implements Serializable {
     public void setStatus(Integer status) {
         this.status = status;
     }
+
+    @Override
+    public String toString() {
+        return "BotVideo{" +
+                "id=" + id +
+                ", cts=" + cts +
+                ", channel='" + channel + '\'' +
+                ", chatType='" + chatType + '\'' +
+                ", chatName='" + chatName + '\'' +
+                ", fromUrl='" + fromUrl + '\'' +
+                ", videoUrl='" + videoUrl + '\'' +
+                ", videoSize=" + videoSize +
+                ", videoCloud='" + videoCloud + '\'' +
+                ", hashCode='" + hashCode + '\'' +
+                ", fromUid='" + fromUid + '\'' +
+                ", fromUser='" + fromUser + '\'' +
+                ", status=" + status +
+                '}';
+    }
 }

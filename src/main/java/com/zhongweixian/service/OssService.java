@@ -21,4 +21,13 @@ public interface OssService {
      * @return
      */
     PutObjectResult uploadJdcloud(InputStream inputStream, int length, String contentType, String bucket, String fileName);
+
+
+    /**
+     * 文件下载
+     *
+     * @param bucket
+     * @param fileName
+     */
+    void getMediaFile(String bucket, String fileName);
 }
