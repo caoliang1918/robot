@@ -212,7 +212,8 @@ public class WeiBoHttpService {
             logger.debug("status:{} , connectEntity:{}", connectEntity.getStatusCode(), connectEntity.getBody());
             return connectEntity;
         } catch (Exception e) {
-            logger.error("{}", e);
+            //日志太多了
+            logger.debug("{}", e);
         }
         return null;
     }

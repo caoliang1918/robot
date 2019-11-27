@@ -2,6 +2,7 @@ package com.zhongweixian.service;
 
 import com.zhongweixian.domain.HttpMessage;
 import com.zhongweixian.domain.request.RevokeRequst;
+import com.zhongweixian.domain.weibo.WeiBoUser;
 
 /**
  * Created by caoliang on 2019-06-25
@@ -9,11 +10,11 @@ import com.zhongweixian.domain.request.RevokeRequst;
 public interface WbService {
 
     /**
-     * 微博登录
-     *
+     * @param username
+     * @param pwd
      * @return
      */
-    Boolean login();
+    WeiBoUser login(String username, String pwd);
 
     /**
      * 获取微博cookie
@@ -26,16 +27,18 @@ public interface WbService {
     /**
      * 发送微博
      *
+     * @param weiBoUser
      * @param httpMessage
      */
-    void sendWbBlog(HttpMessage httpMessage);
+    void sendWbBlog(WeiBoUser weiBoUser, HttpMessage httpMessage);
 
     /**
      * 删除微博
      *
+     * @param weiBoUser
      * @param revokeRequst
      */
-    void deleteWeiBo(RevokeRequst revokeRequst);
+    void deleteWeiBo(WeiBoUser weiBoUser, RevokeRequst revokeRequst);
 
 
     /**
@@ -46,8 +49,4 @@ public interface WbService {
      */
     void sendWbMessage(String username, String message);
 
-    /**
-     * @return
-     */
-    String getUid();
 }

@@ -1,6 +1,9 @@
 package com.zhongweixian.domain.weibo;
 
+import org.springframework.http.HttpHeaders;
+
 import java.io.Serializable;
+import java.util.Date;
 
 public class WeiBoUser implements Serializable {
 
@@ -10,6 +13,9 @@ public class WeiBoUser implements Serializable {
     private String address;
     private String cookie;
     private String clientId;
+    private Date lastLoginTime;
+
+    private HttpHeaders defaultHeader;
 
 
     /**
@@ -95,6 +101,22 @@ public class WeiBoUser implements Serializable {
 
     public void setClientId(String clientId) {
         this.clientId = clientId;
+    }
+
+    public Date getLastLoginTime() {
+        return lastLoginTime;
+    }
+
+    public void setLastLoginTime(Date lastLoginTime) {
+        this.lastLoginTime = lastLoginTime;
+    }
+
+    public HttpHeaders getDefaultHeader() {
+        return defaultHeader;
+    }
+
+    public void setDefaultHeader(HttpHeaders defaultHeader) {
+        this.defaultHeader = defaultHeader;
     }
 
     @Override

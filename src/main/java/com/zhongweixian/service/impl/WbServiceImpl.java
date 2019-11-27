@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.zhongweixian.domain.HttpMessage;
 import com.zhongweixian.domain.request.RevokeRequst;
+import com.zhongweixian.domain.weibo.WeiBoUser;
 import com.zhongweixian.service.WbBlockUser;
 import com.zhongweixian.service.WbService;
 import com.zhongweixian.utils.Levenshtein;
@@ -33,17 +34,10 @@ import java.util.concurrent.TimeUnit;
 public class WbServiceImpl implements WbService {
     private Logger logger = LoggerFactory.getLogger(WbServiceImpl.class);
 
-    @Value("${weibo.username}")
-    private String username;
-
-    @Value("${weibo.password}")
-    private String password;
 
     @Autowired
     private ScheduledExecutorService wbExecutor;
 
-    @Autowired
-    private WbBlockUser wbBlockUser;
 
     private String cookie;
 
@@ -63,42 +57,15 @@ public class WbServiceImpl implements WbService {
     private static final String SEND_URL = "https://www.weibo.com/aj/mblog/add?ajwvr=6&__rnd=";
     private static final String DELETE_URL = "https://www.weibo.com/aj/mblog/del?ajwvr=6";
 
-    private HttpHeaders defaultHeader;
 
     private String homeReferer = "https://www.weibo.com/u/%s/home?topnav=1&wvr=6";
 
-    private String uid;
-
-
-    @PostConstruct
-    private void task() {
-        /**
-         * 定时任务1:打开我的主页
-         */
-        wbExecutor.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    if (uid == null || cookie == null) {
-                        return;
-                    }
-                    ResponseEntity<String> responseEntity = new RestTemplate().exchange(String.format(HOME, uid), HttpMethod.GET, new HttpEntity<>(defaultHeader), String.class);
-                    logger.info("get weibo base home ,status:{}", responseEntity.getStatusCode());
-                } catch (Exception e) {
-                    logger.error("{}", e);
-                }
-                nextLogin = true;
-            }
-        }, 5, HONE_RATE, TimeUnit.MINUTES);
-
-    }
-
 
     @Override
-    public Boolean login() {
+    public WeiBoUser login(String username, String pwd) {
         if (!nextLogin) {
             logger.warn("登录次数过多 , loginTime:{}", loginTime);
-            return false;
+            return null;
         }
         loginTime++;
         nextLogin = false;
@@ -106,7 +73,7 @@ public class WbServiceImpl implements WbService {
         try {
             formData = String.format(
                     "entry=sso&gateway=1&from=null&savestate=30&useticket=0&pagerefer=&vsnf=1&su=%s&service=sso&sp=%s&sr=1280*800&encoding=UTF-8&cdult=3&domain=sina.com.cn&prelt=0&returntype=TEXT",
-                    URLEncoder.encode(Base64.encodeBase64String(username.replace("@", "%40").getBytes()), "UTF-8"), password);
+                    URLEncoder.encode(Base64.encodeBase64String(username.replace("@", "%40").getBytes()), "UTF-8"), pwd);
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
@@ -124,16 +91,17 @@ public class WbServiceImpl implements WbService {
             responseEntity = restTemplate.exchange(LOFIN_URL, HttpMethod.POST, new HttpEntity<>(formData, httpHeaders), String.class);
         } catch (Exception e) {
             logger.error("{}", e);
-            return false;
+            return null;
         }
         logger.info("login responseEntity :{}", responseEntity.getBody());
         String text = responseEntity.getBody();
         JSONObject jsonObject = JSON.parseObject(text);
         if (!"0".equals(jsonObject.getString("retcode"))) {
             logger.error("login error , username:{} , retcode:{}", username, jsonObject.getString("retcode"));
-            return false;
+            return null;
         }
-        uid = jsonObject.getString("uid");
+
+        Long uid = jsonObject.getLong("uid");
         String token = null;
         try {
             token = text.substring(text.indexOf("https:"), text.indexOf(",\"https:") - 1).replace("\\", "");
@@ -141,7 +109,7 @@ public class WbServiceImpl implements WbService {
             logger.error("{}", e);
         }
         if (token == null) {
-            return false;
+            return null;
         }
         logger.info("token:{}", token);
         ResponseEntity<String> cookieResponse = null;
@@ -153,7 +121,7 @@ public class WbServiceImpl implements WbService {
         HttpHeaders responseHeaders = cookieResponse.getHeaders();
         if (!responseHeaders.containsKey("Set-Cookie")) {
             logger.error("can not find Cookies");
-            return false;
+            return null;
         }
         StringBuilder cookies = new StringBuilder();
         List<String> list = responseHeaders.get("Set-Cookie");
@@ -164,15 +132,21 @@ public class WbServiceImpl implements WbService {
         });
         cookie = cookies.toString().substring(0, cookies.length() - 1);
 
-        defaultHeader = new HttpHeaders();
+        HttpHeaders defaultHeader = new HttpHeaders();
         defaultHeader.add("origin", "https://www.weibo.com");
         defaultHeader.add("Referer", String.format(homeReferer, uid));
         defaultHeader.add("User-Agent", userAgent);
         defaultHeader.add("X-Requested-With", "XMLHttpRequest");
         defaultHeader.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE);
         defaultHeader.add("Cookie", cookie);
-        wbBlockUser.setHeaders(defaultHeader);
-        return true;
+
+        WeiBoUser weiBoUser = new WeiBoUser();
+        weiBoUser.setCookie(cookie);
+        weiBoUser.setId(uid);
+        weiBoUser.setDefaultHeader(defaultHeader);
+
+        openHomePage(weiBoUser);
+        return weiBoUser;
     }
 
     @Override
@@ -181,9 +155,9 @@ public class WbServiceImpl implements WbService {
     }
 
     @Override
-    public void sendWbBlog(HttpMessage httpMessage) {
+    public void sendWbBlog(WeiBoUser weiBoUser, HttpMessage httpMessage) {
         if ("delete".equals(httpMessage.getOption()) || "update".equals(httpMessage.getOption())) {
-            deleteWeiBo(messageMap.get(httpMessage.getId()));
+            deleteWeiBo(weiBoUser, messageMap.get(httpMessage.getId()));
             if ("delete".equals(httpMessage.getOption())) {
                 return;
             }
@@ -191,7 +165,7 @@ public class WbServiceImpl implements WbService {
         /**
          * 发微博去重
          */
-        checkMessage(httpMessage);
+        checkMessage(weiBoUser, httpMessage);
 
 
         String formData = null;
@@ -199,7 +173,7 @@ public class WbServiceImpl implements WbService {
         try {
             formData = "location=v6_content_home&text=" + URLEncoder.encode(httpMessage.getContent(), "UTF-8") + "&appkey=&style_type=1&pic_id=&tid=&pdetail=&mid=&isReEdit=false&rank=0&rankid=&module=stissue&pub_source=main_&pub_type=dialog&isPri=0&_t=0";
             responseEntity = new RestTemplate().exchange(SEND_URL + System.currentTimeMillis(), HttpMethod.POST,
-                    new HttpEntity<>(formData, defaultHeader), String.class);
+                    new HttpEntity<>(formData, weiBoUser.getDefaultHeader()), String.class);
         } catch (Exception e) {
             logger.error("{}", e);
             return;
@@ -235,11 +209,11 @@ public class WbServiceImpl implements WbService {
     }
 
     @Override
-    public void deleteWeiBo(RevokeRequst revokeRequst) {
+    public void deleteWeiBo(WeiBoUser weiBoUser, RevokeRequst revokeRequst) {
         if (revokeRequst == null) {
             return;
         }
-        ResponseEntity<String> responseEntity = new RestTemplate().exchange(DELETE_URL, HttpMethod.POST, new HttpEntity<>("mid=" + revokeRequst.getClientMsgId(), defaultHeader), String.class);
+        ResponseEntity<String> responseEntity = new RestTemplate().exchange(DELETE_URL, HttpMethod.POST, new HttpEntity<>("mid=" + revokeRequst.getClientMsgId(), weiBoUser.getDefaultHeader()), String.class);
         if (responseEntity.getStatusCode() != HttpStatus.OK) {
             logger.error("delete weibo error : {}", responseEntity);
             return;
@@ -263,9 +237,10 @@ public class WbServiceImpl implements WbService {
     /**
      * 检查重复微博
      *
+     * @param weiBoUser
      * @param httpMessage
      */
-    private void checkMessage(HttpMessage httpMessage) {
+    private void checkMessage(WeiBoUser weiBoUser, HttpMessage httpMessage) {
         if (httpMessage.getContent().contains(checkContent)) {
             String content = httpMessage.getContent();
             httpMessage.setContent(content.substring(0, content.indexOf(checkContent)));
@@ -293,14 +268,34 @@ public class WbServiceImpl implements WbService {
              */
             if (levenshtein.getSimilarityRatio(revokeRequst.getContent(), httpMessage.getContent()) > 0.5F || httpMessage.getId().equals(revokeRequst.getSvrMsgId())) {
                 iterable.remove();
-                deleteWeiBo(revokeRequst);
+                deleteWeiBo(weiBoUser, revokeRequst);
             }
         }
     }
 
-    @Override
-    public String getUid() {
-        return uid;
+
+    /**
+     * 定时打开首页
+     *
+     * @param weiBoUser
+     */
+    private void openHomePage(WeiBoUser weiBoUser) {
+        /**
+         * 定时任务1:打开我的主页
+         */
+        wbExecutor.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    ResponseEntity<String> responseEntity = new RestTemplate().exchange(String.format(HOME, weiBoUser.getId()), HttpMethod.GET, new HttpEntity<>(weiBoUser.getDefaultHeader()), String.class);
+                    logger.info("get weibo base home ,status:{}", responseEntity.getStatusCode());
+                } catch (Exception e) {
+                    logger.error("{}", e);
+                }
+                nextLogin = true;
+            }
+        }, 5, HONE_RATE, TimeUnit.MINUTES);
+
     }
 
 }

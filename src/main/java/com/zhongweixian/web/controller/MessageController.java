@@ -6,6 +6,7 @@ import com.zhongweixian.domain.request.RevokeRequst;
 import com.zhongweixian.domain.response.SendMsgResponse;
 import com.zhongweixian.cache.CacheService;
 import com.zhongweixian.domain.shared.Contact;
+import com.zhongweixian.domain.weibo.WeiBoUser;
 import com.zhongweixian.service.WbService;
 import com.zhongweixian.service.WxMessageHandler;
 import com.zhongweixian.utils.Levenshtein;
@@ -41,6 +42,8 @@ public class MessageController {
     @Autowired
     private WbService wbService;
 
+    private WeiBoUser weiBoUser;
+
     private Map<Long, List<RevokeRequst>> messageMap = new HashMap<>();
 
     private String[] array = new String[]{"美股新闻机器人群"};
@@ -62,8 +65,16 @@ public class MessageController {
      */
     @PostMapping("sendMessage")
     public String send(@RequestBody HttpMessage httpMessage) {
+        if (weiBoUser == null) {
+            weiBoUser = wbService.login("", "");
+
+            if (weiBoUser == null) {
+                return "weiBoUser is null";
+            }
+        }
+
         try {
-            wbService.sendWbBlog(httpMessage);
+            wbService.sendWbBlog(weiBoUser, httpMessage);
         } catch (Exception e) {
             logger.error("{}", e);
         }
@@ -258,27 +269,25 @@ public class MessageController {
 
     @PostMapping("sendAll")
     public String sendAll(String uid) {
+        StringBuilder sbf = new StringBuilder("滕王高阁临江渚，佩玉鸣鸾罢歌舞。\n");
+        sbf.append("画栋朝飞南浦云，珠帘暮卷西山雨。\n");
+        sbf.append("闲云潭影日悠悠，物换星移几度秋。\n");
+        sbf.append("阁中帝子今何在?槛外长江空自流。\n");
         WxUserCache userCache = cacheService.getUserCache(uid);
         if (userCache == null) {
-            logger.error("userCache is null");
+            logger.error("user:{} is not login", uid);
             return "userCache is null";
         }
         userCache.getChatContants().values().forEach(contact -> {
-
-           // if (contact.getNickName().equals("李文杰") || contact.getNickName().equals("曹亮") || contact.getNickName().equals("佛系")) {
-                SendMsgResponse response = wxMessageHandler.sendText(userCache, "您好，我是搬运工，输入：进群，我将拉你进去指定的微信群。", contact.getUserName());
-                try {
-                    Thread.sleep(9000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                logger.info("nickname:{} , response:{}", contact.getNickName(), response);
-                wxMessageHandler.revoke(userCache, response.getMsgID(), contact.getUserName());
-           // }
-
+            SendMsgResponse response = wxMessageHandler.sendText(userCache, sbf.toString(), contact.getUserName());
+            try {
+                Thread.sleep(50000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            logger.info("nickname:{} , response:{}", contact.getNickName(), response);
+            wxMessageHandler.revoke(userCache, response.getMsgID(), contact.getUserName());
         });
-
-
-        return "";
+        return "send All test";
     }
 }

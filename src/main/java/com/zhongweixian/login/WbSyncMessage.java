@@ -16,6 +16,7 @@ import org.apache.http.client.utils.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -26,6 +27,7 @@ import java.io.InputStream;
 import java.util.Date;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 微博IM同步消息类
@@ -41,11 +43,9 @@ public class WbSyncMessage {
     @Autowired
     private WbService wbService;
 
-    private ScheduledExecutorService task = new ScheduledThreadPoolExecutor(50,
+    private ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(100,
             new BasicThreadFactory.Builder().namingPattern("video-pool-%d").daemon(true).build());
 
-    @Autowired
-    private ScheduledExecutorService wbExecutor;
 
     @Autowired
     private WeiBoHttpService weiBoHttpService;
@@ -62,19 +62,21 @@ public class WbSyncMessage {
 
     private WeiBoUser weiBoUser;
 
+    @Value("${weibo.username}")
+    private String username;
+
+    @Value("${weibo.password}")
+    private String password;
+
 
     @PostConstruct
     public void init() {
-        if (!wbService.login()) {
+        weiBoUser = wbService.login(username , password);
+
+        if (weiBoUser == null){
             return;
         }
 
-        String uid = wbService.getUid();
-        String cookie = "UOR=login.sina.com.cn,weibo.com,login.sina.com.cn; SINAGLOBAL=9456802003620.64.1561629285945; wvr=6; SSOLoginState=1563845470; _s_tentry=login.sina.com.cn; Apache=5521194163294.984.1563845497220; ULV=1563845497227:15:13:2:5521194163294.984.1563845497220:1563758131879; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9Whu6d1rS1RzpY.o0E_MyWMw5JpX5KMhUgL.FoMp1KBRShq0e0.2dJLoIEXLxK-L12qL12BLxKML1hnLB-eLxKqL1-eLB.2LxK-L1K.LBKnLxKBLB.2LB.2t; ALF=1595473064; SCF=Aqqh9eM0QX_5TJHvIT1Bp_DVlqjNkTXae_JopKR-sMiuaEUEaRuVy-VeaxJM2Rp4s18HuPYN5JlVYR6NBQAMEug.; SUB=_2A25wM7l6DeRhGeFP4lYZ9CjPyDWIHXVTSK2yrDV8PUNbmtBeLWPikW9NQO_ryhDqV76oq88QYKZwHjmITytKxf5F; SUHB=0tK6CBPEpuIV6l; webim_unReadCount=%7B%22time%22%3A1563937089856%2C%22dm_pub_total%22%3A1%2C%22chat_group_client%22%3A806%2C%22allcountNum%22%3A808%2C%22msgbox%22%3A0%7D";
-
-        weiBoUser = new WeiBoUser();
-        weiBoUser.setId(Long.parseLong(uid));
-        weiBoUser.setCookie(cookie);
 
         /**
          *
@@ -129,7 +131,6 @@ public class WbSyncMessage {
          * https://web.im.weibo.com/im/?jsonp=jQuery112406869571085748343_1561447840951&message=
          * [{"channel":"/meta/subscribe","subscription":"/im/2672447121","id":"3","clientId":"1jl3zr1vvsca5hspfp6ww6vxgc6ne2s"}]&_=1561447840953
          */
-        weiBoUser.setCookie("_s_tentry=login.sina.com.cn; UOR=login.sina.com.cn,weibo.com,login.sina.com.cn; Apache=9456802003620.64.1561629285945; SINAGLOBAL=9456802003620.64.1561629285945; ULV=1561629286071:1:1:1:9456802003620.64.1561629285945:; BAYEUX_BROWSER=f80f-1qs8ysmrs5nhojxehriqn1czz; login_sid_t=7ef39c96c39b4c611ff3ab52ab13f681; cross_origin_proto=SSL; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9Whu6d1rS1RzpY.o0E_MyWMw5JpX5K2hUgL.FoMp1KBRShq0e0.2dJLoIf2LxKqL122LBKBLxK.LB.-L1K.LxK-LBo2LBo2LxK-LB.2L1hBLxK-LBKBLBK.LxK-LB-BL1KMLxKMLB-eLB-eLxKBLBonL1h5LxK-L12qLBoMt; ALF=1593165375; SSOLoginState=1561629375; SCF=Aqqh9eM0QX_5TJHvIT1Bp_DVlqjNkTXae_JopKR-sMiuT-7t3hhhu1-_txV34Ed3yGyBBe3pYFNaOydNZdKpP1M.; SUB=_2A25wEOKQDeRhGeFP4lYZ9CjPyDWIHXVTZFNYrDV8PUNbmtBeLUzykW9NQO_rykPBZjlLxPMsdDujy8O6LC3bU0g7; SUHB=0vJYo4Mu_LBsWG; un=1923531384@qq.com; wvr=6; webim_unReadCount=%7B%22time%22%3A1561629481545%2C%22dm_pub_total%22%3A0%2C%22chat_group_pc%22%3A5452%2C%22allcountNum%22%3A5452%2C%22msgbox%22%3A0%7D");
         ResponseEntity<String> subscribeEntity = weiBoHttpService.subscribe(weiBoUser);
         /**
          * 发送report
@@ -141,38 +142,33 @@ public class WbSyncMessage {
          * https://web.im.weibo.com/im/connect?jsonp=jQuery112405320978791403412_1561451503942&message=
          * [{"channel":"/meta/connect","connectionType":"callback-polling","advice":{"timeout":0},"id":"4","clientId":"1jlveqbjc1xat687b71kh97b7s7ssjl"}]&_=1561451503943
          */
-        wbExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    try {
-                        ResponseEntity<String> connectEntity = weiBoHttpService.connect(weiBoUser);
-                        logger.debug("status:{} , connectEntity:{}", connectEntity.getStatusCode(), connectEntity.getBody());
-                        String body = connectEntity.getBody();
-                        JSONArray jsonArray = JSONObject.parseArray(body.substring(body.indexOf("([") + +1, body.indexOf("])") + 1));
-                        for (Object object : jsonArray) {
-                            JSONObject json = JSONObject.parseObject(object.toString());
-                            JSONObject data = json.getJSONObject("data");
-                            if (data == null) {
-                                continue;
-                            }
-                            JSONObject info = data.getJSONObject("info");
-                            if (info == null || info.size() < 8) {
-                                continue;
-                            }
-                            downloadVideo(weiBoUser, info);
-                        }
-                    } catch (Exception e) {
-                        logger.error("{}", e);
-                        try {
-                            Thread.sleep(5000);
-                        } catch (InterruptedException ex) {
-                            ex.printStackTrace();
-                        }
-                    }
+
+
+        scheduledExecutorService.scheduleWithFixedDelay(() -> {
+            try {
+                ResponseEntity<String> connectEntity = weiBoHttpService.connect(weiBoUser);
+                if (connectEntity == null) {
+                    return;
                 }
+                logger.debug("status:{} , connectEntity:{}", connectEntity.getStatusCode(), connectEntity.getBody());
+                String body = connectEntity.getBody();
+                JSONArray jsonArray = JSONObject.parseArray(body.substring(body.indexOf("([") + +1, body.indexOf("])") + 1));
+                for (Object object : jsonArray) {
+                    JSONObject json = JSONObject.parseObject(object.toString());
+                    JSONObject data = json.getJSONObject("data");
+                    if (data == null) {
+                        continue;
+                    }
+                    JSONObject info = data.getJSONObject("info");
+                    if (info == null || info.size() < 8) {
+                        continue;
+                    }
+                    downloadVideo(weiBoUser, info);
+                }
+            } catch (Exception e) {
+                logger.error("{}", e);
             }
-        });
+        }, 1, 1, TimeUnit.SECONDS);
     }
 
     public void setCookie(String cookie) {
@@ -205,7 +201,7 @@ public class WbSyncMessage {
         String videoId = fids.get(0).toString();
         video.setFromUrl(String.format(VIDEO_URL, videoId));
 
-        task.execute(() -> {
+        scheduledExecutorService.execute(() -> {
             try {
                 ResponseEntity<byte[]> fileEntity = weiBoHttpService.download(video.getFromUrl(), weiBoUser.getCookie());
                 if (fileEntity == null || fileEntity.getStatusCode() != HttpStatus.OK) {
@@ -229,8 +225,8 @@ public class WbSyncMessage {
                 String bucket = "weibo-video/" + DateUtils.formatDate(new Date(), "yyyy-MM") + "/" + DateUtils.formatDate(new Date(), "yyyy-MM-dd");
                 String videoId_ = videoId + ".mp4";
                 PutObjectResult result = ossService.uploadJdcloud(inputStream, size, CONTENT_TYPE, bucket, videoId_);
-
                 if (result == null) {
+                    logger.warn("upload oss error");
                     return;
                 }
                 video.setVideoCloud("jdcloud");

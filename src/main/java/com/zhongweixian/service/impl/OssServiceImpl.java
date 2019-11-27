@@ -75,7 +75,6 @@ public class OssServiceImpl implements OssService {
      *
      * @return
      */
-
     private void getAllMedia() {
         Integer start = 0;
         Map<String , Object> params = new HashMap<>();
@@ -104,7 +103,7 @@ public class OssServiceImpl implements OssService {
         for (BotVideo botVideo : list){
             bucket = botVideo.getVideoUrl().substring(47 , 77);
             key =  botVideo.getVideoUrl().substring(78 , botVideo.getVideoUrl().length());
-            logger.info("bucket:{} key:{} , botVideo:{}" ,bucket , key ,  botVideo.getVideoUrl());
+            logger.debug("bucket:{} key:{} , botVideo:{}" ,bucket , key ,  botVideo.getVideoUrl());
             getMediaFile(bucket , key);
         }
     }
