@@ -230,8 +230,13 @@ public class WeiBoHttpService {
         httpHeaders.add(HttpHeaders.REFERER, CHAT_REFERER);
         httpHeaders.add(HttpHeaders.COOKIE, cookie);
         httpHeaders.add(HttpHeaders.USER_AGENT, USER_AGENT);
-        ResponseEntity<byte[]> responseEntity = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<byte[]>(httpHeaders), byte[].class);
-        return responseEntity;
+        try {
+            ResponseEntity<byte[]> responseEntity = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<byte[]>(httpHeaders), byte[].class);
+            return responseEntity;
+        } catch (Exception e) {
+            logger.error("download media file error:{}", e.getMessage());
+        }
+        return null;
 
     }
 }

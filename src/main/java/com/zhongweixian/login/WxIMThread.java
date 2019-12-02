@@ -115,6 +115,7 @@ public class WxIMThread implements Runnable {
             }
             btn++;
             if (btn > 3) {
+                logger.warn("user not login");
                 return;
             }
         }
