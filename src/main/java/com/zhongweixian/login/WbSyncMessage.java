@@ -69,7 +69,7 @@ public class WbSyncMessage {
     private String password;
 
 
-    @PostConstruct
+    //@PostConstruct
     public void init() {
         weiBoUser = wbService.login(username , password);
 

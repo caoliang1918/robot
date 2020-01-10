@@ -83,24 +83,10 @@ public class WxMessageHandlerImpl implements WxMessageHandler {
             case "5275953":
                 if (message.getContent().contains("进群")) {
                     userCache.getChatRoomMembers().values().forEach(x -> {
-                        if ("免费分享".equals(x.getNickName())) {
-                            logger.info("拉用户:{} 进 {} 群", message.getFromUserName(), x.getUserName());
+                        if (x.getNickName().startsWith("天南地北")) {
                             try {
                                 wxHttpService.addChatRoomMember(userCache, x.getUserName(), message.getFromUserName());
-                            } catch (Exception e) {
-                                logger.error("chatRoom add member error:{} ", e);
-                            }
-                        }
-                    });
-                }
-                break;
-            case "2014329040":
-                if (message.getContent().contains("进群")) {
-                    userCache.getChatRoomMembers().values().forEach(x -> {
-                        if ("沧海遗珠".equals(x.getNickName())) {
-                            logger.info("拉用户:{} 进 {} 群", message.getFromUserName(), x.getUserName());
-                            try {
-                                wxHttpService.addChatRoomMember(userCache, x.getUserName(), message.getFromUserName());
+                                logger.info("拉用户:{} 进 {} 群", message.getFromUserName(), x.getRemarkName());
                             } catch (Exception e) {
                                 logger.error("chatRoom add member error:{} ", e);
                             }
@@ -123,7 +109,7 @@ public class WxMessageHandlerImpl implements WxMessageHandler {
         if (message.getFromUserName().startsWith("@@")) {
             Contact chatRoom = userCache.getChatRoomMembers().get(message.getFromUserName());
             logger.info("roomName :{} ,from person: {} ", chatRoom.getNickName(), MessageUtils.getSenderOfChatRoomTextMessage(message.getContent()));
-            if (chatRoom.getNickName().contains("免费分享") || chatRoom.getNickName().contains("沧海遗珠")) {
+            if (chatRoom.getNickName().contains("天南地北")) {
                 String content = MessageUtils.getChatRoomTextMessageContent(message.getContent());
                 logger.info("AppMsgType:{} , content:{} ", message.getAppMsgType(), content);
                 if (message.getAppMsgType() == 5 || message.getAppMsgType() == 36) {

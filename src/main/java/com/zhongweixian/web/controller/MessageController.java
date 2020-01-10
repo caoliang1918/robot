@@ -56,7 +56,6 @@ public class MessageController {
     @Value("${wx.uid}")
     private String uid = "5275953";
 
-
     /**
      * 给微信、微博推送美股实时资讯
      *
@@ -65,16 +64,8 @@ public class MessageController {
      */
     @PostMapping("sendMessage")
     public String send(@RequestBody HttpMessage httpMessage) {
-        if (weiBoUser == null) {
-            weiBoUser = wbService.login("", "");
-
-            if (weiBoUser == null) {
-                return "weiBoUser is null";
-            }
-        }
-
         try {
-            wbService.sendWbBlog(weiBoUser, httpMessage);
+            wbService.sendWbBlog(httpMessage);
         } catch (Exception e) {
             logger.error("{}", e);
         }

@@ -50,6 +50,8 @@ public class WbServiceImpl implements WbService {
      */
     private static final Integer HONE_RATE = 10;
 
+    private WeiBoUser weiBoUser;
+
 
     private static final String HOME = "https://weibo.com/u/%s/home?topnav=1&wvr=6";
     private static final String userAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36 SE 2.X MetaSr 1.0";
@@ -146,6 +148,7 @@ public class WbServiceImpl implements WbService {
         weiBoUser.setDefaultHeader(defaultHeader);
 
         openHomePage(weiBoUser);
+        this.weiBoUser = weiBoUser;
         return weiBoUser;
     }
 
@@ -155,9 +158,13 @@ public class WbServiceImpl implements WbService {
     }
 
     @Override
-    public void sendWbBlog(WeiBoUser weiBoUser, HttpMessage httpMessage) {
+    public void sendWbBlog(HttpMessage httpMessage) {
+        if (weiBoUser == null) {
+            return;
+        }
+
         if ("delete".equals(httpMessage.getOption()) || "update".equals(httpMessage.getOption())) {
-            deleteWeiBo(weiBoUser, messageMap.get(httpMessage.getId()));
+            deleteWeiBo(messageMap.get(httpMessage.getId()));
             if ("delete".equals(httpMessage.getOption())) {
                 return;
             }
@@ -165,7 +172,7 @@ public class WbServiceImpl implements WbService {
         /**
          * 发微博去重
          */
-        checkMessage(weiBoUser, httpMessage);
+        checkMessage(httpMessage);
 
 
         String formData = null;
@@ -209,8 +216,8 @@ public class WbServiceImpl implements WbService {
     }
 
     @Override
-    public void deleteWeiBo(WeiBoUser weiBoUser, RevokeRequst revokeRequst) {
-        if (revokeRequst == null) {
+    public void deleteWeiBo(RevokeRequst revokeRequst) {
+        if (revokeRequst == null || weiBoUser == null) {
             return;
         }
         ResponseEntity<String> responseEntity = new RestTemplate().exchange(DELETE_URL, HttpMethod.POST, new HttpEntity<>("mid=" + revokeRequst.getClientMsgId(), weiBoUser.getDefaultHeader()), String.class);
@@ -220,12 +227,6 @@ public class WbServiceImpl implements WbService {
         }
         logger.info("delete mblog responseEntity:{}", responseEntity.getBody());
     }
-
-    @Override
-    public void sendWbMessage(String username, String message) {
-
-    }
-
 
     /**
      * 把已经发送的微博存在hashMap中
@@ -237,10 +238,9 @@ public class WbServiceImpl implements WbService {
     /**
      * 检查重复微博
      *
-     * @param weiBoUser
      * @param httpMessage
      */
-    private void checkMessage(WeiBoUser weiBoUser, HttpMessage httpMessage) {
+    private void checkMessage(HttpMessage httpMessage) {
         if (httpMessage.getContent().contains(checkContent)) {
             String content = httpMessage.getContent();
             httpMessage.setContent(content.substring(0, content.indexOf(checkContent)));
@@ -268,7 +268,7 @@ public class WbServiceImpl implements WbService {
              */
             if (levenshtein.getSimilarityRatio(revokeRequst.getContent(), httpMessage.getContent()) > 0.5F || httpMessage.getId().equals(revokeRequst.getSvrMsgId())) {
                 iterable.remove();
-                deleteWeiBo(weiBoUser, revokeRequst);
+                deleteWeiBo(revokeRequst);
             }
         }
     }
