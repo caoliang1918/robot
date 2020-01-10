@@ -69,15 +69,12 @@ public class WbSyncMessage {
     private String password;
 
 
-    //@PostConstruct
+    @PostConstruct
     public void init() {
         weiBoUser = wbService.login(username , password);
-
         if (weiBoUser == null){
             return;
         }
-
-
         /**
          *
          */
@@ -163,7 +160,7 @@ public class WbSyncMessage {
                     if (info == null || info.size() < 8) {
                         continue;
                     }
-                    downloadVideo(weiBoUser, info);
+                   //downloadVideo(weiBoUser, info);
                 }
             } catch (Exception e) {
                 logger.error("{}", e);

@@ -5,7 +5,6 @@ import com.zhongweixian.domain.HttpMessage;
 import com.zhongweixian.domain.request.RevokeRequst;
 import com.zhongweixian.domain.response.SendMsgResponse;
 import com.zhongweixian.cache.CacheService;
-import com.zhongweixian.domain.shared.Contact;
 import com.zhongweixian.domain.weibo.WeiBoUser;
 import com.zhongweixian.service.WbService;
 import com.zhongweixian.service.WxMessageHandler;
