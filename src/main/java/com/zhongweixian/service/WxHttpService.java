@@ -19,6 +19,8 @@ import com.zhongweixian.utils.HeaderUtils;
 import com.zhongweixian.utils.RandomUtils;
 import com.zhongweixian.utils.WechatUtils;
 import com.zhongweixian.utils.rest.StatefullRestTemplate;
+import org.apache.commons.lang3.time.DateFormatUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.protocol.HttpClientContext;
@@ -139,7 +141,7 @@ public class WxHttpService {
         CookieStore cookieStore = new BasicCookieStore();
         HttpContext httpContext = new BasicHttpContext();
         httpContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
-        httpContext.setAttribute(HttpClientContext.REQUEST_CONFIG, RequestConfig.custom().setConnectTimeout(5000).setSocketTimeout(50000).setRedirectsEnabled(false).build());
+        httpContext.setAttribute(HttpClientContext.REQUEST_CONFIG, RequestConfig.custom().setConnectionRequestTimeout(50000).setConnectTimeout(5000).setSocketTimeout(50000).setRedirectsEnabled(false).build());
         return new StatefullRestTemplate(httpContext);
     }
 
@@ -396,9 +398,13 @@ public class WxHttpService {
         HeaderUtils.assign(customHeader, getHeader);
 
         ResponseEntity<String> responseEntity = null;
+        Long t1 = System.currentTimeMillis();
         try {
             responseEntity = wxUserCache.getRestTemplate().exchange(uri, HttpMethod.GET, new HttpEntity<>(customHeader), String.class);
         } catch (Exception e) {
+            Long t2 = System.currentTimeMillis();
+            logger.info("startTime {}" , DateFormatUtils.format(t1, "yyyy-MM-dd HH:mm:ss.SSS"));
+            logger.info("timeout {}" , DateFormatUtils.format(t2, "yyyy-MM-dd HH:mm:ss.SSS"));
             logger.error("linsten error:{}", e);
             return null;
         }
