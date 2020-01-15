@@ -56,6 +56,9 @@ public class WbServiceImpl implements WbService {
 
     private WeiBoUser weiBoUser;
 
+    @Autowired
+    private RestTemplate restTemplate;
+
 
     private static final String HOME = "https://weibo.com/u/%s/home?topnav=1&wvr=6";
     private static final String userAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36 SE 2.X MetaSr 1.0";
@@ -91,30 +94,17 @@ public class WbServiceImpl implements WbService {
         httpHeaders.add("X-Requested-With", "XMLHttpRequest");
         httpHeaders.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE);
 
-        CloseableHttpClient httpClient = HttpsClient.createSSLClientDefault();
-
-
-        CloseableHttpResponse responseEntity = null;
-        String responseText = null;
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> responseEntity = null;
         try {
-            HttpPost httpPost = new HttpPost();
-            httpPost.addHeader("origin", "https://www.weibo.com");
-            httpPost.addHeader("Referer", "https://www.weibo.com");
-            httpPost.addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36 SE 2.X MetaSr 1.0");
-            httpPost.addHeader("X-Requested-With", "XMLHttpRequest");
-            httpPost.addHeader(org.apache.http.HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_FORM_URLENCODED.getMimeType());
-            URIBuilder builder = new URIBuilder(LOFIN_URL);
-            httpPost.setURI(builder.build().toURL().toURI());
-            org.apache.http.HttpEntity httpEntity = new UrlEncodedFormEntity(null, "UTF-8");
-            httpPost.setEntity(httpEntity);
-            responseEntity = httpClient.execute(httpPost);
-            responseText = EntityUtils.toString(responseEntity.getEntity(), "UTF-8");
+            responseEntity = restTemplate.exchange(LOFIN_URL, HttpMethod.POST, new HttpEntity<>(formData, httpHeaders), String.class);
         } catch (Exception e) {
             logger.error("{}", e);
             return null;
         }
-        logger.info("login responseEntity :{}", responseEntity.getEntity());
-        JSONObject jsonObject = JSON.parseObject(responseText);
+        logger.info("login responseEntity :{}", responseEntity.getBody());
+        String text = responseEntity.getBody();
+        JSONObject jsonObject = JSON.parseObject(text);
         if (!"0".equals(jsonObject.getString("retcode"))) {
             logger.error("login error , username:{} , retcode:{}", username, jsonObject.getString("retcode"));
             return null;
