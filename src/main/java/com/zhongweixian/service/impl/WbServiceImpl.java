@@ -6,16 +6,8 @@ import com.zhongweixian.domain.HttpMessage;
 import com.zhongweixian.domain.request.RevokeRequst;
 import com.zhongweixian.domain.weibo.WeiBoUser;
 import com.zhongweixian.service.WbService;
-import com.zhongweixian.utils.HttpsClient;
 import com.zhongweixian.utils.Levenshtein;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.entity.ContentType;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -92,6 +84,7 @@ public class WbServiceImpl implements WbService {
         httpHeaders.add("Referer", "https://www.weibo.com");
         httpHeaders.add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36 SE 2.X MetaSr 1.0");
         httpHeaders.add("X-Requested-With", "XMLHttpRequest");
+        httpHeaders.add("Cookie" , "SINAGLOBAL=9456802003620.64.1561629285945; UOR=login.sina.com.cn,weibo.com,login.sina.com.cn; TC-V5-G0=4de7df00d4dc12eb0897c97413797808; _s_tentry=login.sina.com.cn; Apache=5227047013600.363.1577259951596; ULV=1577259951621:31:3:1:5227047013600.363.1577259951596:1576048583336; Ugrow-G0=140ad66ad7317901fc818d7fd7743564; login_sid_t=c61a0f22336b0b7f41c9029a23366070; cross_origin_proto=SSL; wvr=6; wb_timefeed_2672447121=1; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9WF8puQJrYeKg6Y-pvo8b5.r5JpX5K2hUgL.FoMpehefeoefe052dJLoI0qLxKMLB.-L12-LxKnL1hzLBK2LxKnLBK2L12eLxKqL1heL1h-LxKqL12-LBKnLxK.L1h5L1h2t; ALF=1610614460; SSOLoginState=1579078461; SCF=Aqqh9eM0QX_5TJHvIT1Bp_DVlqjNkTXae_JopKR-sMiuLlTnxKBn4JTs9jmVFM_tHTk0jkPSsSUglFbv1Sbpn_o.; SUB=_2A25zGqNtDeRhGeFP61EU8i3JyDyIHXVQUZOlrDV8PUNbmtAfLU_EkW9NQS424zza9JYlU1vmNVQe98xpOWVnoGMQ; SUHB=0YhhSFYNApzlnY; wb_view_log_7103523530=1680*10502; wb_timefeed_7103523530=1; TC-Page-G0=c9fb286cd873ae77f97ce98d19abfb61|1579082079|1579082079; webim_unReadCount=%7B%22time%22%3A1579082081587%2C%22dm_pub_total%22%3A0%2C%22chat_group_client%22%3A0%2C%22allcountNum%22%3A0%2C%22msgbox%22%3A0%7D");
         httpHeaders.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE);
 
         RestTemplate restTemplate = new RestTemplate();
