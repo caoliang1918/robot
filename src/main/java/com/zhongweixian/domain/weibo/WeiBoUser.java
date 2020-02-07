@@ -9,7 +9,7 @@ public class WeiBoUser implements Serializable {
 
     private Long id;
     private String usercard;
-    private String nikename;
+    private String nickname;
     private String address;
     private String cookie;
     private String clientId;
@@ -47,12 +47,12 @@ public class WeiBoUser implements Serializable {
         this.usercard = usercard;
     }
 
-    public String getNikename() {
-        return nikename;
+    public String getNickname() {
+        return nickname;
     }
 
-    public void setNikename(String nikename) {
-        this.nikename = nikename;
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
     }
 
     public String getAddress() {
@@ -124,7 +124,7 @@ public class WeiBoUser implements Serializable {
         return "WeiBoUser{" +
                 "id=" + id +
                 ", usercard='" + usercard + '\'' +
-                ", nikename='" + nikename + '\'' +
+                ", nickname='" + nickname + '\'' +
                 ", address='" + address + '\'' +
                 ", fans=" + fans +
                 ", follow=" + follow +

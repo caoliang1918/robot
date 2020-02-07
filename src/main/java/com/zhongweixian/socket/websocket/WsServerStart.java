@@ -1,15 +1,23 @@
 package com.zhongweixian.socket.websocket;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.zhongweixian.socket.websocket.channel.WebSocketChannelInitaializer;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.zhongweixian.listener.ConnectionListener;
+import org.zhongweixian.server.WebSocketServer;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -27,35 +35,74 @@ public class WsServerStart {
 
     @PostConstruct
     private void start() {
-        try {
-            ServerBootstrap serverBootstrap = new ServerBootstrap();
-            //使用服务端初始化自定义类WebSocketChannelInitaializer
-            serverBootstrap.group(boosGrop, workerGrop).channel(NioServerSocketChannel.class).
-                    localAddress(new InetSocketAddress(port)).
-                    childHandler(new WebSocketChannelInitaializer(new WsMessgaeService() {
-                        @Override
-                        public void readMessage(String message) {
-                            logger.info("接受到客户端消息:{}", message);
-                        }
-                    }));
+        WebSocketServer webSocketServer = new WebSocketServer(port, 60, "ws", new ConnectionListener() {
+            @Override
+            public void onClose(Channel channel, int i, String s) {
 
-            //使用了不同的端口绑定方式
-            ChannelFuture channelFuture = serverBootstrap.bind().sync();
-            if (channelFuture.isSuccess()) {
-                logger.info("websocket started on port :{} (websocket)", port);
             }
-            //阻塞关闭连接，需要使用子线程
-            //channelFuture.channel().closeFuture().sync();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+
+            @Override
+            public void onError(Throwable throwable) {
+
+            }
+
+            @Override
+            public void onFail(int i, String s) {
+
+            }
+
+            @Override
+            public void onMessage(Channel channel, String s) throws Exception {
+                logger.info("received client:{}  message:{}", channel.id(), s);
+                JSONObject json = JSONObject.parseObject(s);
+                if (json == null || !json.containsKey("cmd")) {
+                    return;
+                }
+                String cmd = json.getString("cmd");
+                switch (cmd) {
+                    case "logon":
+                        channel.writeAndFlush(new TextWebSocketFrame("{\"reason\":\"上班成功\",\"type\":\"logon\",\"systemtime\":\"2020-02-06 10:04:41\",\"status\":0}"));
+                        logger.info("send chient:{}  login success", channel.id());
+                        break;
+
+                    case "agentidle":
+                        channel.writeAndFlush(new TextWebSocketFrame("{\"reason\":\"示闲成功\",\"type\":\"agentidle\",\"status\":0}"));
+                        break;
+
+                    case "agentbusy":
+                        channel.writeAndFlush(new TextWebSocketFrame("{\"reason\":\"示忙成功\",\"agentkey\":\"1001@May1\",\"type\":\"agentbusy\",\"status\":0}"));
+                        break;
+
+                }
+            }
+
+            @Override
+            public void onMessage(Channel channel, ByteBuf byteBuf) throws Exception {
+
+            }
+
+            @Override
+            public void connect(Channel channel) throws Exception {
+                logger.info("has client connected:{}", channel);
+
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        while (true) {
+                            //channel.writeAndFlush(new TextWebSocketFrame("{\"type\":\"pong\",\"systemtime\":\"2020-02-06 10:04:41\",\"status\":0}"));
+                            try {
+                                Thread.sleep(5000);
+                            } catch (InterruptedException e) {
+                                logger.error("{}", e);
+                            }
+                        }
+                    }
+                }).start();
+            }
+        });
+        webSocketServer.start();
     }
-    @PreDestroy
-    public void destory() {
-        boosGrop.shutdownGracefully().syncUninterruptibly();
-        workerGrop.shutdownGracefully().syncUninterruptibly();
-        logger.info("websocket stop");
-    }
+
 
     /**
      * 发送消息

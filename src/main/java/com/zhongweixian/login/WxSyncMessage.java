@@ -178,7 +178,7 @@ public class WxSyncMessage {
                      * 给新加的好友发送一段话
                      */
                     if (wxUserCache.getUin().equals("5275953")) {
-                        String welcome = "你好，我是搬运工，输入:进群，我将拉你进入指定微信群。\n";
+                        String welcome = "你好，我是美股行情，很高兴认识你啊！\n";
                         wxHttpService.sendText(wxUserCache, welcome, message.getRecommendInfo().getUserName());
                     }
                 } else {

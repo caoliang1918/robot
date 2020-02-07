@@ -263,6 +263,7 @@ public class MessageController {
         sbf.append("画栋朝飞南浦云，珠帘暮卷西山雨。\n");
         sbf.append("闲云潭影日悠悠，物换星移几度秋。\n");
         sbf.append("阁中帝子今何在?槛外长江空自流。\n");
+        sbf.append("武汉疫情严重，让我们众志成城，响应党和国家的号召，不出门不聚会，玩福利微信群。私信'进群'即可进分享群。");
         WxUserCache userCache = cacheService.getUserCache(uid);
         if (userCache == null) {
             logger.error("user:{} is not login", uid);
@@ -271,12 +272,12 @@ public class MessageController {
         userCache.getChatContants().values().forEach(contact -> {
             SendMsgResponse response = wxMessageHandler.sendText(userCache, sbf.toString(), contact.getUserName());
             try {
-                Thread.sleep(50000);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
             logger.info("nickname:{} , response:{}", contact.getNickName(), response);
-            wxMessageHandler.revoke(userCache, response.getMsgID(), contact.getUserName());
+            //wxMessageHandler.revoke(userCache, response.getMsgID(), contact.getUserName());
         });
         return "send All test";
     }

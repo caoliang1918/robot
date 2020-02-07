@@ -10,7 +10,6 @@ import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -212,7 +211,7 @@ public class WbBlockUser {
      */
     private WeiBoUser parse(Element element) throws Exception {
         WeiBoUser user = new WeiBoUser();
-        user.setNikename(element.getElementsByClass("mod_pic").get(0).children().get(0).attr("title"));
+        user.setNickname(element.getElementsByClass("mod_pic").get(0).children().get(0).attr("title"));
         Elements elements = element.getElementsByClass("info_connect").get(0).children();
         //话题或者其他
         if (elements.size() == 0) {
@@ -241,7 +240,7 @@ public class WbBlockUser {
         /**
          * 贵州人民爱玩僵尸，僵尸用户的昵称一般包含中文和字母
          */
-        if ((user.getAddress().contains("贵州") || user.getWeibo() < 15L) && MessageUtils.checkLan(user.getNikename())) {
+        if ((user.getAddress().contains("贵州") || user.getWeibo() < 15L) && MessageUtils.checkLan(user.getNickname())) {
             logger.info("{}", user.toString());
             if (fans.size() < FANS_LIMIT) {
                 fans.add(user.getId());

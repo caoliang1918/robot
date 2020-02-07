@@ -8,14 +8,18 @@ import com.zhongweixian.domain.shared.*;
 import com.zhongweixian.service.WxHttpService;
 import com.zhongweixian.service.WxMessageHandler;
 import com.zhongweixian.utils.MessageUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -81,12 +85,23 @@ public class WxMessageHandlerImpl implements WxMessageHandler {
 
         switch (userCache.getUin()) {
             case "5275953":
-                if (message.getContent().contains("进群")) {
+                if (message.getContent().contains("行情")) {
+                    userCache.getChatRoomMembers().values().forEach(x -> {
+                        if (x.getNickName().startsWith("美股新闻")) {
+                            try {
+                                wxHttpService.addChatRoomMember(userCache, x.getUserName(), message.getFromUserName());
+                                logger.info("拉用户:{} 进 {} 群", message.getFromUserName(), x.getNickName());
+                            } catch (Exception e) {
+                                logger.error("chatRoom add member error:{} ", e);
+                            }
+                        }
+                    });
+                } else if (message.getContent().contains("进群")) {
                     userCache.getChatRoomMembers().values().forEach(x -> {
                         if (x.getNickName().startsWith("天南地北")) {
                             try {
                                 wxHttpService.addChatRoomMember(userCache, x.getUserName(), message.getFromUserName());
-                                logger.info("拉用户:{} 进 {} 群", message.getFromUserName(), x.getRemarkName());
+                                logger.info("拉用户:{} 进 {} 群", message.getFromUserName(), x.getNickName());
                             } catch (Exception e) {
                                 logger.error("chatRoom add member error:{} ", e);
                             }
@@ -95,7 +110,6 @@ public class WxMessageHandlerImpl implements WxMessageHandler {
                 }
                 break;
         }
-
     }
 
     @Override
@@ -165,14 +179,14 @@ public class WxMessageHandlerImpl implements WxMessageHandler {
     @Override
     public void onNewFriendsFound(Set<Contact> contacts) {
         contacts.forEach(x -> {
-            logger.info("onNewFriendsFound username:{} , nikename:{}", x.getUserName(), x.getNickName());
+            logger.info("onNewFriendsFound username:{} , nickname:{}", x.getUserName(), x.getNickName());
         });
     }
 
     @Override
     public void onFriendsDeleted(Set<Contact> contacts) {
         contacts.forEach(x -> {
-            logger.info("onFriendsDeleted username:{} , nikename:{}", x.getUserName(), x.getNickName());
+            logger.info("onFriendsDeleted username:{} , nickname:{}", x.getUserName(), x.getNickName());
         });
     }
 
@@ -216,9 +230,7 @@ public class WxMessageHandlerImpl implements WxMessageHandler {
     private void downloadImage(WxUserCache userCache, String imageUrl) {
         try {
             byte[] data = wxHttpService.downloadImage(userCache, imageUrl);
-            FileOutputStream fos = new FileOutputStream(imageDir + System.currentTimeMillis() + ".jpg");
-            fos.write(data);
-            fos.close();
+            FileUtils.writeByteArrayToFile(new File(imageDir + System.currentTimeMillis() + ".jpg"), data, true);
         } catch (Exception e) {
             logger.error("{}", e);
         }
