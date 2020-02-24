@@ -98,8 +98,8 @@ public class WbServiceImpl implements WbService {
         logger.info("login responseEntity :{}", responseEntity.getBody());
         String text = responseEntity.getBody();
         JSONObject jsonObject = JSON.parseObject(text);
-        if (!"0".equals(jsonObject.getString("retcode"))) {
-            logger.error("login error , username:{} , retcode:{}", username, jsonObject.getString("retcode"));
+        if (jsonObject==null || !"0".equals(jsonObject.getString("retcode"))) {
+            logger.error("login error , username:{} , text:{}", username, text);
             return null;
         }
 

@@ -45,7 +45,7 @@ public class MessageController {
 
     private Map<Long, List<RevokeRequst>> messageMap = new HashMap<>();
 
-    private String[] array = new String[]{"美股新闻机器人群"};
+    private String[] array = new String[]{"美股新闻群"};
     private String[] option = new String[]{"SPY末日期权"};
     private String[] position = new String[]{"曹亮"};
     private Set<String> toUsers = new HashSet<>();

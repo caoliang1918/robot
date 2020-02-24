@@ -1,27 +1,19 @@
 package com.zhongweixian.socket.websocket;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.zhongweixian.socket.websocket.channel.WebSocketChannelInitaializer;
-import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.zhongweixian.listener.ConnectionListener;
-import org.zhongweixian.server.WebSocketServer;
+import org.zhongweixian.server.websocket.WebSocketServer;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import java.net.InetSocketAddress;
 
 @Component
 public class WsServerStart {

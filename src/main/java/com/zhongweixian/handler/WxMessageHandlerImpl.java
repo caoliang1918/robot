@@ -87,7 +87,7 @@ public class WxMessageHandlerImpl implements WxMessageHandler {
             case "5275953":
                 if (message.getContent().contains("行情")) {
                     userCache.getChatRoomMembers().values().forEach(x -> {
-                        if (x.getNickName().startsWith("美股新闻")) {
+                        if (x.getNickName().startsWith("美股新闻群")) {
                             try {
                                 wxHttpService.addChatRoomMember(userCache, x.getUserName(), message.getFromUserName());
                                 logger.info("拉用户:{} 进 {} 群", message.getFromUserName(), x.getNickName());
