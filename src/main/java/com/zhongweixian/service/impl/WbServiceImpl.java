@@ -48,10 +48,6 @@ public class WbServiceImpl implements WbService {
 
     private WeiBoUser weiBoUser;
 
-    @Autowired
-    private RestTemplate restTemplate;
-
-
     private static final String HOME = "https://weibo.com/u/%s/home?topnav=1&wvr=6";
     private static final String userAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36 SE 2.X MetaSr 1.0";
     private static final String LOFIN_URL = "https://login.sina.com.cn/sso/login.php?client=ssologin.js(v1.4.15)";
@@ -59,7 +55,7 @@ public class WbServiceImpl implements WbService {
     private static final String DELETE_URL = "https://www.weibo.com/aj/mblog/del?ajwvr=6";
 
 
-    private String homeReferer = "https://www.weibo.com/u/%s/home?topnav=1&wvr=6";
+    private String homeReferer = "https://www.weibo.com/u/%s/home";
 
 
     @Override
@@ -153,8 +149,9 @@ public class WbServiceImpl implements WbService {
     }
 
     @Override
-    public String getCookie() {
-        return cookie;
+    public void setCookie(String cookie) {
+        weiBoUser.setCookie(cookie);
+        weiBoUser.getDefaultHeader().add("Cookie" , cookie);
     }
 
     @Override
@@ -178,9 +175,14 @@ public class WbServiceImpl implements WbService {
         String formData = null;
         ResponseEntity<String> responseEntity = null;
         try {
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.add("Content-Type", "application/x-www-form-urlencoded");
+            httpHeaders.add("Referer", "https://weibo.com/u/"+weiBoUser.getId()+"/home");
+            httpHeaders.add("Cookie", weiBoUser.getCookie());
+
             formData = "location=v6_content_home&text=" + URLEncoder.encode(httpMessage.getContent(), "UTF-8") + "&appkey=&style_type=1&pic_id=&tid=&pdetail=&mid=&isReEdit=false&rank=0&rankid=&module=stissue&pub_source=main_&pub_type=dialog&isPri=0&_t=0";
             responseEntity = new RestTemplate().exchange(SEND_URL + System.currentTimeMillis(), HttpMethod.POST,
-                    new HttpEntity<>(formData, weiBoUser.getDefaultHeader()), String.class);
+                    new HttpEntity<>(formData, httpHeaders), String.class);
         } catch (Exception e) {
             logger.error("{}", e);
             return;
@@ -220,7 +222,11 @@ public class WbServiceImpl implements WbService {
         if (revokeRequst == null || weiBoUser == null) {
             return;
         }
-        ResponseEntity<String> responseEntity = new RestTemplate().exchange(DELETE_URL, HttpMethod.POST, new HttpEntity<>("mid=" + revokeRequst.getClientMsgId(), weiBoUser.getDefaultHeader()), String.class);
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.add("Content-Type", "application/x-www-form-urlencoded");
+        httpHeaders.add("Referer", "https://weibo.com/u/"+weiBoUser.getId()+"/home");
+        httpHeaders.add("Cookie", weiBoUser.getCookie());
+        ResponseEntity<String> responseEntity = new RestTemplate().exchange(DELETE_URL, HttpMethod.POST, new HttpEntity<>("mid=" + revokeRequst.getClientMsgId(),  httpHeaders), String.class);
         if (responseEntity.getStatusCode() != HttpStatus.OK) {
             logger.error("delete weibo error : {}", responseEntity);
             return;

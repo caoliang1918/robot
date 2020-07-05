@@ -1,11 +1,10 @@
 package com.zhongweixian.web.controller;
 
-import com.zhongweixian.domain.WxUserCache;
+import com.zhongweixian.cache.CacheService;
 import com.zhongweixian.domain.HttpMessage;
+import com.zhongweixian.domain.WxUserCache;
 import com.zhongweixian.domain.request.RevokeRequst;
 import com.zhongweixian.domain.response.SendMsgResponse;
-import com.zhongweixian.cache.CacheService;
-import com.zhongweixian.domain.weibo.WeiBoUser;
 import com.zhongweixian.service.WbService;
 import com.zhongweixian.service.WxMessageHandler;
 import com.zhongweixian.utils.Levenshtein;
@@ -18,7 +17,10 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
@@ -41,11 +43,9 @@ public class MessageController {
     @Autowired
     private WbService wbService;
 
-    private WeiBoUser weiBoUser;
-
     private Map<Long, List<RevokeRequst>> messageMap = new HashMap<>();
 
-    private String[] array = new String[]{"美股新闻群"};
+    private String[] stock = new String[]{"美股行情"};
     private String[] option = new String[]{"SPY末日期权"};
     private String[] position = new String[]{"曹亮"};
     private Set<String> toUsers = new HashSet<>();
@@ -77,8 +77,8 @@ public class MessageController {
         }
         if (CollectionUtils.isEmpty(toUsers)) {
             userCache.getChatRoomMembers().values().forEach(room -> {
-                for (String s : array) {
-                    if (room.getNickName().equals(s)) {
+                for (String s : stock) {
+                    if (room.getNickName().contains(s)) {
                         toUsers.add(room.getUserName());
                     }
                 }
@@ -259,11 +259,8 @@ public class MessageController {
 
     @PostMapping("sendAll")
     public String sendAll(String uid) {
-        StringBuilder sbf = new StringBuilder("滕王高阁临江渚，佩玉鸣鸾罢歌舞。\n");
-        sbf.append("画栋朝飞南浦云，珠帘暮卷西山雨。\n");
-        sbf.append("闲云潭影日悠悠，物换星移几度秋。\n");
-        sbf.append("阁中帝子今何在?槛外长江空自流。\n");
-        sbf.append("武汉疫情严重，让我们众志成城，响应党和国家的号召，不出门不聚会，玩福利微信群。私信'进群'即可进分享群。");
+        StringBuilder sbf = new StringBuilder("鹤发垂肩尺许长，离家三十五端阳。\n");
+        sbf.append("儿童见说深惊讶，却问何方是故乡。\n");
         WxUserCache userCache = cacheService.getUserCache(uid);
         if (userCache == null) {
             logger.error("user:{} is not login", uid);
@@ -272,12 +269,12 @@ public class MessageController {
         userCache.getChatContants().values().forEach(contact -> {
             SendMsgResponse response = wxMessageHandler.sendText(userCache, sbf.toString(), contact.getUserName());
             try {
-                Thread.sleep(1000);
+                Thread.sleep(1500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
             logger.info("nickname:{} , response:{}", contact.getNickName(), response);
-            //wxMessageHandler.revoke(userCache, response.getMsgID(), contact.getUserName());
+            wxMessageHandler.revoke(userCache, response.getMsgID(), contact.getUserName());
         });
         return "send All test";
     }

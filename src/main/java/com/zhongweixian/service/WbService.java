@@ -16,13 +16,8 @@ public interface WbService {
      */
     WeiBoUser login(String username, String pwd);
 
-    /**
-     * 获取微博cookie
-     *
-     * @return
-     */
-    String getCookie();
 
+    void setCookie(String cookie);
 
     /**
      * 发送微博

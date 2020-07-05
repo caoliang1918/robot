@@ -403,8 +403,8 @@ public class WxHttpService {
             responseEntity = wxUserCache.getRestTemplate().exchange(uri, HttpMethod.GET, new HttpEntity<>(customHeader), String.class);
         } catch (Exception e) {
             Long t2 = System.currentTimeMillis();
-            logger.info("startTime {}" , DateFormatUtils.format(t1, "yyyy-MM-dd HH:mm:ss.SSS"));
-            logger.info("timeout {}" , DateFormatUtils.format(t2, "yyyy-MM-dd HH:mm:ss.SSS"));
+            logger.info("startTime {}", DateFormatUtils.format(t1, "yyyy-MM-dd HH:mm:ss.SSS"));
+            logger.info("timeout {}", DateFormatUtils.format(t2, "yyyy-MM-dd HH:mm:ss.SSS"));
             logger.error("linsten error:{}", e);
             return null;
         }
@@ -501,7 +501,7 @@ public class WxHttpService {
             builder.addParameter("pass_ticket", userCache.getPassTicket());
             uri = builder.build().toURL().toURI();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
         SendMsgRequest request = new SendMsgRequest();
         request.setBaseRequest(userCache.getBaseRequest());
@@ -517,11 +517,12 @@ public class WxHttpService {
         HttpHeaders customHeader = createPostCustomHeader(userCache);
         HeaderUtils.assign(customHeader, postHeader);
         try {
-            logger.debug("send to:{} ,  request:{}", toUserName, JSON.toJSONString(request));
+            logger.info("send to:{} ,  request:{}", userCache.getChatContants().get(toUserName).getNickName(), JSON.toJSONString(request));
             ResponseEntity<String> responseEntity = userCache.getRestTemplate().exchange(url, HttpMethod.POST, new HttpEntity<>(request, customHeader), String.class);
+            logger.info("发送给:{}, result:{}", userCache.getChatContants().get(toUserName).getNickName(), responseEntity.getBody());
             return jsonMapper.readValue(WechatUtils.textDecode(responseEntity.getBody()), SendMsgResponse.class);
         } catch (Exception e) {
-            logger.error("{}", e);
+            logger.error("发送:{}失败", userCache.getChatContants().get(toUserName).getNickName(), e);
         }
         return null;
     }
