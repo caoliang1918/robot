@@ -3,116 +3,146 @@
 <body th:fragment="page_tmp">
 
 <script id="page-tbody-option-sm-quality-page" type="text/html">
-    <a class="btn-sm btn-outline btn-primary" href="javascript:void(0);" data-type="ajax" data-code="quality_entity" data-params="id={{id}}" th:data-url="@{/manager/qualitytesting/one}" data-tmpjs="quality_entity"><i class="glyphicon glyphicon-pencil"></i></a>
+    <a class="btn-sm btn-outline btn-primary" href="javascript:void(0);" data-type="ajax" data-code="quality_entity"
+       data-params="id={{id}}" th:data-url="@{/manager/qualitytesting/one}" data-tmpjs="quality_entity"><i
+            class="glyphicon glyphicon-pencil"></i></a>
 </script>
 
 <script id="page-tbody-option-sm-opinion-page" type="text/html">
-    <a class="btn-sm btn-outline btn-primary" href="javascript:void(0);" data-type="ajax" data-code="opinion_entity" data-params="id={{id}}" th:data-url="@{/manager/opinion/one}" data-tmpjs="opinion_entity"><i class="glyphicon glyphicon-pencil"></i></a>
+    <a class="btn-sm btn-outline btn-primary" href="javascript:void(0);" data-type="ajax" data-code="opinion_entity"
+       data-params="id={{id}}" th:data-url="@{/manager/opinion/one}" data-tmpjs="opinion_entity"><i
+            class="glyphicon glyphicon-pencil"></i></a>
 </script>
 
 <script id="page-tbody-option-sm-business-type-page" type="text/html">
-    <a class="btn-sm btn-outline btn-primary" href="javascript:void(0);" data-type="ajax" data-code="business_type_entity" data-params="id={{id}}" th:data-url="@{/manager/business/type/one}" data-tmpjs="business_type_entity"><i class="glyphicon glyphicon-pencil"></i></a>
+    <a class="btn-sm btn-outline btn-primary" href="javascript:void(0);" data-type="ajax"
+       data-code="business_type_entity" data-params="id={{id}}" th:data-url="@{/manager/business/type/one}"
+       data-tmpjs="business_type_entity"><i class="glyphicon glyphicon-pencil"></i></a>
 </script>
 
 <script id="page-tbody-option-sm-business-page" type="text/html">
-    <a class="btn-sm btn-outline btn-primary" href="javascript:void(0);" data-type="ajax" data-code="business_entity" data-params="id={{id}}" th:data-url="@{/manager/business/one}" data-tmpjs="business_entity"><i class="glyphicon glyphicon-pencil"></i></a>
+    <a class="btn-sm btn-outline btn-primary" href="javascript:void(0);" data-type="ajax" data-code="business_entity"
+       data-params="id={{id}}" th:data-url="@{/manager/business/one}" data-tmpjs="business_entity"><i
+            class="glyphicon glyphicon-pencil"></i></a>
 </script>
 
 <script id="page-header" type="text/html">
     <thead>
-        <tr>
-            {{if table.keys != undefined && 'none' == table.keys}}
-            {{else}}
-            <th style="text-align: center">选择</th>
-            {{/if}}
-            <th style="text-align: center">序号</th>
-            {{each table.column as col }}
-            <th style="text-align: center">{{col.name}} </th>
-            {{/each}}
-            {{if template.bodyOption != undefined}}
-            <th style="text-align: center">{{ table.optionView == undefined ? '操作': table.optionView}}</th>
-            {{/if}}
-        </tr>
+    <tr>
+        {{if table.keys != undefined && 'none' == table.keys}}
+        {{else}}
+        <th style="text-align: center">选择</th>
+        {{/if}}
+        <th style="text-align: center">序号</th>
+        {{each table.column as col }}
+        <th style="text-align: center">{{col.name}}</th>
+        {{/each}}
+        {{if template.bodyOption != undefined}}
+        <th style="text-align: center">{{ table.optionView == undefined ? '操作': table.optionView}}</th>
+        {{/if}}
+    </tr>
     </thead>
     <tbody>
-        {{include template.body $value}}
+    {{include template.body $value}}
     </tbody>
 </script>
 <script id="page-tbody-sm" type="text/html">
     {{each ajaxParams.data as info i}}
     <tr>
-            {{if table.keys != undefined && 'none' == table.keys}}
-            {{else}}
-            <td><input type="checkbox" class="i-checks" name="{{ table.keys == undefined ? 'input[]' : table.keys.checkbox == undefined ? 'input[]' : table.keys.checkbox}}" value="{{info.id}}"></td>
-            {{/if}}
-            <td>{{ i + 1 + ((ajaxParams.param.pageNumber - 1) > 0 ? (ajaxParams.param.pageNumber - 1) * ajaxParams.size  : 0)}}</td>
-            {{each table.column as col}}
-                {{info_val = info[col.key]}}
+        {{if table.keys != undefined && 'none' == table.keys}}
+        {{else}}
+        <td><input type="checkbox" class="i-checks"
+                   name="{{ table.keys == undefined ? 'input[]' : table.keys.checkbox == undefined ? 'input[]' : table.keys.checkbox}}"
+                   value="{{info.id}}"></td>
+        {{/if}}
+        <td>{{ i + 1 + ((ajaxParams.param.pageNumber - 1) > 0 ? (ajaxParams.param.pageNumber - 1) * ajaxParams.size :
+            0)}}
+        </td>
+        {{each table.column as col}}
+        {{info_val = info[col.key]}}
 
-                {{if info_val == undefined}}
-                        <td>
-                        {{if col.defaultKey != undefined}}
-                            {{col.defaultKey}}
-                        {{/if}}
-                        </td>
-                {{else}}
-                    {{if col.key == 'ctime' || col.key == 'talk_time'}}
-                        <td>{{dateFormat info_val}}</td>
-                    {{else}}
-                        {{if col.view != undefined }}
-                            {{if col.view == 'popover' }}
-                                {{if col.func != undefined && info_val != undefined && (info_func = col.func(info_val)).length != info_val.length}}
-                                <td class="td-popover" data-container="body" data-toggle="popover" data-placement="bottom" data-content="{{info[col.key]}}">{{#info_func}}</td>
-                                {{else}}
-                                <td>{{info_val}}</td>
-                                {{/if}}
-                            {{else}}
-                                {{if col.view == 'popoverTime' && col.func != undefined && info_val != undefined && (info_func = col.func((popoverTime = dateFormat(info_val)))).length != info_val.length}}
-                                <td class="td-popover" data-container="body" data-toggle="popover" data-placement="bottom" data-content="{{popoverTime}}">{{#info_func}}</td>
-                                {{else}}
-                                <td>{{#col.func(info_val, info)}}</td>
-                                {{/if}}
-                            {{/if}}
-                        {{else}}
-                            {{if col.func != undefined}}
-                            <td>{{col.func(info_val, ajaxParams)}}</td>
-                            {{else}}
-                            <td>{{info_val}}</td>
-                            {{/if}}
-                        {{/if}}
-                    {{/if}}
-                {{/if}}
-            {{/each}}
-            {{if template.bodyOption != undefined}}
-                <td>
-                    {{include template.bodyOption info}}
-                </td>
+        {{if info_val == undefined}}
+        <td>
+            {{if col.defaultKey != undefined}}
+            {{col.defaultKey}}
             {{/if}}
+        </td>
+        {{else}}
+        {{if col.key == 'ctime' || col.key == 'talk_time'}}
+        <td>{{dateFormat info_val}}</td>
+        {{else}}
+        {{if col.view != undefined }}
+        {{if col.view == 'popover' }}
+        {{if col.func != undefined && info_val != undefined && (info_func = col.func(info_val)).length !=
+        info_val.length}}
+        <td class="td-popover" data-container="body" data-toggle="popover" data-placement="bottom"
+            data-content="{{info[col.key]}}">{{#info_func}}
+        </td>
+        {{else}}
+        <td>{{info_val}}</td>
+        {{/if}}
+        {{else}}
+        {{if col.view == 'popoverTime' && col.func != undefined && info_val != undefined && (info_func =
+        col.func((popoverTime = dateFormat(info_val)))).length != info_val.length}}
+        <td class="td-popover" data-container="body" data-toggle="popover" data-placement="bottom"
+            data-content="{{popoverTime}}">{{#info_func}}
+        </td>
+        {{else}}
+        <td>{{#col.func(info_val, info)}}</td>
+        {{/if}}
+        {{/if}}
+        {{else}}
+        {{if col.func != undefined}}
+        <td>{{col.func(info_val, ajaxParams)}}</td>
+        {{else}}
+        <td>{{info_val}}</td>
+        {{/if}}
+        {{/if}}
+        {{/if}}
+        {{/if}}
+        {{/each}}
+        {{if template.bodyOption != undefined}}
+        <td>
+            {{include template.bodyOption info}}
+        </td>
+        {{/if}}
 
-        </tr>
+    </tr>
     {{/each}}
 </script>
 <script id="page-tbody-option-sm-admin-page" type="text/html">
-    <a class="btn-sm btn-outline btn-primary" href="javascript:void(0);" data-type="ajax" data-code="admin_entity" data-params="id={{id}}" th:data-url="@{/manager/admin/one}" data-tmpjs="admin_entity"><i class="glyphicon glyphicon-pencil"></i></a>
+    <a class="btn-sm btn-outline btn-primary" href="javascript:void(0);" data-type="ajax" data-code="admin_entity"
+       data-params="id={{id}}" th:data-url="@{/manager/admin/one}" data-tmpjs="admin_entity"><i
+            class="glyphicon glyphicon-pencil"></i></a>
 </script>
 <script id="page-tbody-option-sm-environment-page" type="text/html">
-    <a class="btn-sm btn-outline btn-primary" href="javascript:void(0);" data-type="ajax" data-code="environment_entity" data-params="id={{id}}" th:data-url="@{/manager/cfg/environment/cmb/baidu/one}" data-tmpjs="environment_entity"><i class="glyphicon glyphicon-pencil"></i></a>
+    <a class="btn-sm btn-outline btn-primary" href="javascript:void(0);" data-type="ajax" data-code="environment_entity"
+       data-params="id={{id}}" th:data-url="@{/manager/cfg/environment/cmb/baidu/one}"
+       data-tmpjs="environment_entity"><i class="glyphicon glyphicon-pencil"></i></a>
 </script>
 <script id="page-tbody-option-sm-server-page" type="text/html">
-    <a class="btn-sm btn-outline btn-primary" href="javascript:void(0);" data-type="ajax" data-code="server_entity" data-params="id={{id}}" th:data-url="@{/manager/server/one}" data-tmpjs="server_entity"><i class="glyphicon glyphicon-pencil"></i></a>
+    <a class="btn-sm btn-outline btn-primary" href="javascript:void(0);" data-type="ajax" data-code="server_entity"
+       data-params="id={{id}}" th:data-url="@{/manager/server/one}" data-tmpjs="server_entity"><i
+            class="glyphicon glyphicon-pencil"></i></a>
 </script>
 <script id="page-tbody-option-sm-talk-page" type="text/html">
-    <a class="btn-sm btn-outline btn-primary right-sidebar-option-view" href="javascript:void(0);" data-type="ajax" data-code="talk_option" data-loadEle="#right-sidebar:first div.sidebar-container div.tab-content" data-params="id={{call_id}}&word={{opinion_content}}&type=1" th:data-url="@{/manager/talk/call}" data-tmpjs="option-sm-talk"><i class="fa fa-headphones"></i></a>
+    <a class="btn-sm btn-outline btn-primary right-sidebar-option-view" href="javascript:void(0);" data-type="ajax"
+       data-code="talk_option" data-loadEle="#right-sidebar:first div.sidebar-container div.tab-content"
+       data-params="id={{call_id}}&word={{opinion_content}}&type=1" th:data-url="@{/manager/talk/call}"
+       data-tmpjs="option-sm-talk"><i class="fa fa-headphones"></i></a>
 </script>
 
 <script id="page-tbody-option-sm-qualitytesting-page" type="text/html">
-    <a class="btn-sm btn-outline btn-primary right-sidebar-option-view" href="javascript:void(0);" data-type="ajax" data-code="talk_option" data-loadEle="#right-sidebar:first div.sidebar-container div.tab-content" data-params="id={{call_id}}&word={{banned_content}}&type=0" th:data-url="@{/manager/talk/call}" data-tmpjs="option-sm-talk"><i class="fa fa-headphones"></i></a>
+    <a class="btn-sm btn-outline btn-primary right-sidebar-option-view" href="javascript:void(0);" data-type="ajax"
+       data-code="talk_option" data-loadEle="#right-sidebar:first div.sidebar-container div.tab-content"
+       data-params="id={{call_id}}&word={{banned_content}}&type=0" th:data-url="@{/manager/talk/call}"
+       data-tmpjs="option-sm-talk"><i class="fa fa-headphones"></i></a>
 </script>
 
 <script id="option-sm-talk" type="text/html">
     <div id="tab-1" class="tab-pane active">
         <div class="sidebar-title">
-            <h3> <i class="fa fa-comments-o"></i>通话详情</h3>
+            <h3><i class="fa fa-comments-o"></i>通话详情</h3>
             <small><i class="fa fa-tim"></i> 通话标识: {{data.call_id}} .</small><br>
             <small><i class="fa fa-tim"></i> 主叫: {{data.calling_number}}, 被叫: {{data.called_number}} </small><br>
             <small><i class="fa fa-tim"></i> 坐席工号: {{data.agent_number}}, 坐席名称: {{data.agent_name}} </small>
@@ -121,12 +151,13 @@
         {{each data.data as info i}}
         {{if info.source_object == 1}}
         <div class="sidebar-message">
-            <div class="pull-left text-center"><img alt="image" class="img-circle message-avatar" th:src="@{/img/visit.png}"></div>
+            <div class="pull-left text-center"><img alt="image" class="img-circle message-avatar"
+                                                    th:src="@{/img/visit.png}"></div>
             <div class="media-body">
                 {{if data.type == info.source_object}}
-                    {{tabKeyWord info.record data.word}}
+                {{tabKeyWord info.record data.word}}
                 {{else}}
-                     {{info.record}}
+                {{info.record}}
                 {{/if }}
                 <br>
                 <small class="text-muted">{{dateFormat info.talk_start}}</small><br>
@@ -136,12 +167,13 @@
         </div>
         {{else}}
         <div class="sidebar-message">
-            <div class="pull-right text-center"><img alt="image" class="img-circle message-avatar" th:src="@{/img/robot.png}"></div>
+            <div class="pull-right text-center"><img alt="image" class="img-circle message-avatar"
+                                                     th:src="@{/img/robot.png}"></div>
             <div class="media-body text-right">
                 {{if data.type == info.source_object}}
-                    {{tabKeyWord info.record data.word}}
+                {{tabKeyWord info.record data.word}}
                 {{else}}
-                    {{info.record}}
+                {{info.record}}
                 {{/if }}
                 <br>
                 <small class="text-muted">{{dateFormat info.talk_start}}</small><br>

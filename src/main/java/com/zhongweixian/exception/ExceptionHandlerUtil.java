@@ -11,10 +11,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 public class ExceptionHandlerUtil {
     private Logger logger = LoggerFactory.getLogger(ExceptionHandlerUtil.class);
 
-    @ExceptionHandler(RobotException.class)
-    public void handleSystem(RobotException ex) {
-        logger.error("RobotException:{}", ex);
-    }
 
     @ExceptionHandler(WechatQRExpiredException.class)
     public void qrExpiredException(MissingServletRequestParameterException ex) {

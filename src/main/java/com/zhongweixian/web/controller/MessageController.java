@@ -1,12 +1,11 @@
 package com.zhongweixian.web.controller;
 
 import com.zhongweixian.cache.CacheService;
-import com.zhongweixian.domain.HttpMessage;
-import com.zhongweixian.domain.WxUserCache;
-import com.zhongweixian.domain.request.RevokeRequst;
-import com.zhongweixian.domain.response.SendMsgResponse;
-import com.zhongweixian.service.WbService;
-import com.zhongweixian.service.WxMessageHandler;
+import com.zhongweixian.wechat.domain.WxUserCache;
+import com.zhongweixian.wechat.domain.HttpMessage;
+import com.zhongweixian.wechat.domain.request.RevokeRequst;
+import com.zhongweixian.wechat.domain.response.SendMsgResponse;
+import com.zhongweixian.wechat.service.WxMessageHandler;
 import com.zhongweixian.utils.Levenshtein;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
@@ -40,15 +39,13 @@ public class MessageController {
     @Autowired
     private WxMessageHandler wxMessageHandler;
 
-    @Autowired
-    private WbService wbService;
+    /**
+     * 记录给每个人或者群组发的消息
+     */
+    private Map<String, List<RevokeRequst>> messageMap = new HashMap<>();
 
-    private Map<Long, List<RevokeRequst>> messageMap = new HashMap<>();
-
-    private String[] stock = new String[]{"美股行情"};
     private String[] option = new String[]{"SPY末日期权"};
     private String[] position = new String[]{"曹亮"};
-    private Set<String> toUsers = new HashSet<>();
     private Set<String> optionUser = new HashSet<>();
     private Set<String> positions = new HashSet<>();
 
@@ -56,34 +53,31 @@ public class MessageController {
     private String uid = "5275953";
 
     /**
-     * 给微信、微博推送美股实时资讯
+     * 给微信推送美股实时资讯
      *
      * @param httpMessage
      * @return
      */
     @PostMapping("sendMessage")
-    public String send(@RequestBody HttpMessage httpMessage) {
-        try {
-            wbService.sendWbBlog(httpMessage);
-        } catch (Exception e) {
-            logger.error("{}", e);
+    public String send(@RequestBody com.zhongweixian.wechat.domain.HttpMessage httpMessage) {
+        if (httpMessage == null || httpMessage.getChannel() == null) {
+            return "message is null";
         }
         WxUserCache userCache = cacheService.getUserCache(uid);
         if (userCache == null || !userCache.getAlive()) {
-            toUsers.clear();
             optionUser.clear();
             cacheService.deleteCacheUser(uid);
             return "user not login";
         }
-        if (CollectionUtils.isEmpty(toUsers)) {
-            userCache.getChatRoomMembers().values().forEach(room -> {
-                for (String s : stock) {
-                    if (room.getNickName().contains(s)) {
-                        toUsers.add(room.getUserName());
-                    }
-                }
-            });
-        }
+        Set<String> toUsers = new HashSet<>();
+        userCache.getChatRoomMembers().values().forEach(room -> {
+            if (httpMessage.getChannel().contains("金十") && room.getNickName().contains("金十")) {
+                toUsers.add(room.getUserName());
+            }
+            if (httpMessage.getChannel().contains("见闻") && room.getNickName().contains("美股行情")) {
+                toUsers.add(room.getUserName());
+            }
+        });
         System.out.println("\n");
         try {
             SendMsgResponse response = null;
@@ -101,22 +95,16 @@ public class MessageController {
                     return "delete ok";
                 }
             }
-            revokeRequsts = new ArrayList<>();
-            checkMessage(userCache, httpMessage.getContent());
             for (String user : toUsers) {
+                revokeRequsts = messageMap.getOrDefault(user, new ArrayList<>());
+                checkMessage(userCache, user, httpMessage.getContent());
                 response = wxMessageHandler.sendText(userCache, httpMessage.getContent(), user);
-                if (response == null || response.getMsgID() == null) {
-                    if (!cacheService.getUserCache(uid).getAlive()) {
-                        toUsers.clear();
-                        optionUser.clear();
-                        break;
-                    }
-                }
                 //保存消息
-                revokeRequsts.add(new RevokeRequst(user, response.getMsgID(), httpMessage.getContent()));
-                logger.info("send message : {} ,  {} , {} , {}", response.getMsgID(), httpMessage.getId(), httpMessage.getOption(), httpMessage.getContent());
+                revokeRequsts.add(new RevokeRequst(user, response.getMsgID(), httpMessage.getContent(), httpMessage.getId()));
+                logger.info("send message msgId:{}, channle:{} , content:{}", response.getMsgID(), httpMessage.getChannel(), httpMessage.getContent());
+                messageMap.put(user, revokeRequsts);
             }
-            messageMap.put(httpMessage.getId(), revokeRequsts);
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -193,15 +181,27 @@ public class MessageController {
     }
 
 
-    private void checkMessage(WxUserCache userCache, String content) throws IOException {
+    /**
+     * @param userCache
+     * @param toUserName
+     * @param content
+     * @throws IOException
+     */
+    private void checkMessage(WxUserCache userCache, String toUserName, String content) throws IOException {
         /**
          * 判断相似度
          */
         Levenshtein levenshtein = new Levenshtein();
         Date now = new Date();
-        Iterator<Long> iterable = messageMap.keySet().iterator();
-        while (iterable.hasNext()) {
-            List<RevokeRequst> revokeRequsts = messageMap.get(iterable.next());
+
+        List<RevokeRequst> list = messageMap.get(toUserName);
+        if (CollectionUtils.isEmpty(list)) {
+            return;
+        }
+
+        Iterator<RevokeRequst> iterator = list.iterator();
+        while (iterator.hasNext()) {
+            List<RevokeRequst> revokeRequsts = messageMap.get(iterator.next());
             if (CollectionUtils.isEmpty(revokeRequsts)) {
                 continue;
             }
@@ -209,11 +209,10 @@ public class MessageController {
             /**
              * 已经超时
              */
-            if (now.getTime() - revokeRequst.getDate().getTime() > 100 * 1000L) {
-                iterable.remove();
+            if (now.getTime() - revokeRequst.getDate().getTime() > 100 * 1000L && iterator.next().equals(toUserName)) {
+                iterator.remove();
                 continue;
             }
-
             /**
              * 文本相似度
              */
@@ -225,7 +224,7 @@ public class MessageController {
                 }
             }
             if (check) {
-                iterable.remove();
+                iterator.remove();
             }
         }
     }
@@ -244,7 +243,6 @@ public class MessageController {
         httpHeaders.add("Origin", "https://wx2.qq.com");
         httpHeaders.add("Referer", "https://wx2.qq.com/");
         httpHeaders.add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36");
-        httpHeaders.add("", "");
         httpHeaders.add("Cookie", "webwxuvid=4bcb051b6d8811919a2f3cc6385b10d03b33cfdbcc4bfa1d4d26a06f6544b077ebf97cb2b4deb10842828e058cf8e34e; pgv_pvid=5686192450; pgv_pvi=3331826688; RK=mvKwIBzca8; ptcz=f12d4fd1e4283a56f3cd4af477a1234bb4caa300311da731c07ee7df5421a5fb; sd_userid=45821558332466871; sd_cookie_crttime=1558332466871; pac_uid=0_5d3a990e00957; wxuin=5275953; wxsid=lYKqV77B63JPTcQE; mm_lang=zh_CN; webwx_data_ticket=gSdPFAcsoYLJOYT1I6cwZ3K2; webwx_auth_ticket=CIsBEMKG474PGoABew76Yqf7InsKPwWqyzvodWbXgBfucypOKDxi5+AK7IlHWSHgRx3Iwc3IzV7g6B992dJYtHK+3mzQopu6SYQytobZVF+3qwoW1C6oG+Mg8UpZ4swkHZsUrwFh5y6AT2xlJ2SuXvHhOq7S54fVOmXbaduGx58pnY5jwQ6B1e883TI=; MM_WX_NOTIFY_STATE=1; MM_WX_SOUND_STATE=1; wxloadtime=1567328345_expired; wxpluginkey=1567322642");
 
         Long time = System.currentTimeMillis() * 10000;

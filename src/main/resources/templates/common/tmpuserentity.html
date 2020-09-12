@@ -22,36 +22,42 @@
                     <div class="col-lg-12">
                         <div class="ibox float-e-margins">
                             <div class="ibox-content">
-                                <form class="form-horizontal user_form" th:action="@{/manager/user/update}" method="post" autocomplete="off">
+                                <form class="form-horizontal user_form" th:action="@{/manager/user/update}"
+                                      method="post" autocomplete="off">
                                     <input type="hidden" class="form-control" name="id" value="{{data.id}}">
                                     <div class="form-group">
                                         <label class="col-sm-2 control-label">登录名称</label>
                                         <div class="col-sm-10">
-                                            <input type="text" class="form-control" readonly required="required" name="login_name" value="{{data.login_name}}">
+                                            <input type="text" class="form-control" readonly required="required"
+                                                   name="login_name" value="{{data.login_name}}">
                                         </div>
                                     </div>
                                     <div class="form-group">
                                         <label class="col-sm-2 control-label">用户昵称</label>
                                         <div class="col-sm-10">
-                                            <input type="text" class="form-control" required="required" name="user_name" value="{{data.user_name}}">
+                                            <input type="text" class="form-control" required="required" name="user_name"
+                                                   value="{{data.user_name}}">
                                         </div>
                                     </div>
                                     <div class="form-group">
                                         <label class="col-sm-2 control-label">旧密码</label>
                                         <div class="col-sm-10">
-                                            <input type="password" class="form-control" required="required" name="oldPassword">
+                                            <input type="password" class="form-control" required="required"
+                                                   name="oldPassword">
                                         </div>
                                     </div>
                                     <div class="form-group">
                                         <label class="col-sm-2 control-label">新密码</label>
                                         <div class="col-sm-10">
-                                            <input type="password" class="form-control" required="required" name="password">
+                                            <input type="password" class="form-control" required="required"
+                                                   name="password">
                                         </div>
                                     </div>
                                     <div class="form-group">
                                         <label class="col-sm-2 control-label">确认密码</label>
                                         <div class="col-sm-10">
-                                            <input type="password" class="form-control" required="required" name="confirmPassword">
+                                            <input type="password" class="form-control" required="required"
+                                                   name="confirmPassword">
                                         </div>
                                     </div>
                                     <div class="hr-line-dashed"></div>

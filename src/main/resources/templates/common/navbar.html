@@ -4,155 +4,140 @@
     <meta charset="utf-8">
 </head>
 <body th:fragment="navbar">
-    <div class="sidebar-collapse" th:if="${session.USER1LOCAL != null}">
-        <ul class="nav metismenu" id="side-menu">
-            <li class="nav-header">
-                <div class="dropdown profile-element">
-                    <span><img alt="image" class="img-circle" th:src="@{/img/visit.png}" style="width: 50px;" /></span>
-                    <a data-toggle="dropdown" class="dropdown-toggle" href="javascript:void(0);">
-                        <span class="clear"> <span class="block m-t-xs"> <strong class="font-bold" th:text="${session.USER1LOCAL.user_name}"></strong></span>
+<div class="sidebar-collapse">
+    <ul class="nav metismenu" id="side-menu">
+        <li class="nav-header">
+            <div class="dropdown profile-element">
+                <span><img alt="image" class="img-circle" th:src="@{/img/visit.png}" style="width: 50px;"/></span>
+                <a data-toggle="dropdown" class="dropdown-toggle" href="javascript:void(0);">
+                        <span class="clear"> <span class="block m-t-xs"> <strong class="font-bold"
+                                                                                 th:text="${username}"></strong></span>
                         <span class="text-muted text-xs block">欢迎光临,管理员 <b class="caret"></b></span> </span>
-                    </a>
-                    <ul class="dropdown-menu animated fadeInRight m-t-xs">
-                        <li><a href="javascript:void(0);" data-type="ajax" data-code="user_info" data-loadEle="div#page-wrapper:first div.side-content:first" th:data-url="@{/manager/user/info}" data-tmpjs="user_entity" >个人信息</a></li>
-                        <li class="divider"></li>
-                        <li><a th:href="@{/manager/user/loginout}">登出</a></li>
-                    </ul>
-                </div>
-                <div class="logo-element">AIC</div>
-            </li>
-            <li class="active">
-                <a href="javascript:void(0);"><i class="glyphicon glyphicon-dashboard"></i> <span class="nav-label">系统监控</span> <span class="fa arrow"></span></a>
-                <ul class="nav nav-second-level">
-                    <li><a th:href="@{/manager/monitor/view}" class="menu-entity" data-load="true">坐席辅助监控</a></li>
+                </a>
+                <ul class="dropdown-menu animated fadeInRight m-t-xs">
+                    <li><a href="javascript:void(0);" data-type="ajax" data-code="user_info"
+                           data-loadEle="div#page-wrapper:first div.side-content:first" th:data-url="@{/admin/userInfo}"
+                           data-tmpjs="user_entity">个人信息</a></li>
+                    <li class="divider"></li>
+                    <li><a th:href="@{/index/logout}">登出</a></li>
                 </ul>
-            </li>
-            <li>
-                <a href="javascript:void(0);"><i class="glyphicon glyphicon-list-alt"></i> <span class="nav-label">报表管理</span> <span class="fa arrow"></span></a>
-                <ul class="nav nav-second-level">
-                    <li><a th:href="@{/manager/quality/info/pageview}" class="menu-entity">实时质检详单</a></li>
-                    <li><a th:href="@{/manager/quality/info/statistical/pageview}" class="menu-entity">实时质检统计报表</a></li>
-                    <li><a th:href="@{/manager/opinion/info/pageview}" class="menu-entity">舆情监控详单</a></li>
-                    <li><a th:href="@{/manager/opinion/info/statistical/pageview}" class="menu-entity">舆情统计报表</a></li>
-                </ul>
-            </li>
-            <li th:if="${session.USER1LOCAL.admin != null && session.USER1LOCAL.admin == 1}">
-                <a href="javascript:void(0);"><i class="fa fa-user"></i> <span class="nav-label">账户管理</span> <span class="fa arrow"></span></a>
-                <ul class="nav nav-second-level">
-                    <li><a th:href="@{/manager/admin/pageview}" class="menu-entity">管理员管理</a></li>
-                </ul>
-            </li>
-            <li>
-                <a href="javascript:void(0);"><i class="glyphicon glyphicon-hdd"></i> <span class="nav-label">配置管理</span> <span class="fa arrow"></span></a>
-                <ul class="nav nav-second-level">
-                    <li><a th:href="@{/manager/business/type/pageview}" class="menu-entity">业务类型配置</a></li>
-                    <li><a th:href="@{/manager/business/pageview}" class="menu-entity">业务类型绑定</a></li>
-                    <li><a th:href="@{/manager/qualitytesting/pageview}" class="menu-entity">实时质检配置</a></li>
-                    <li><a th:href="@{/manager/opinion/pageview}" class="menu-entity">舆情监控配置</a></li>
-                </ul>
-            </li>
-            <li>
-                <a href="javascript:void(0);"><i class="fa fa-dashboard"></i> <span class="nav-label">历史告警</span> <span class="fa arrow"></span></a>
-                <ul class="nav nav-second-level">
-                    <li><a th:href="@{/manager/quality/info/history/pageview}" class="menu-entity">质检告警信息</a></li>
-                    <li><a th:href="@{/manager/opinion/info/history/pageview}" class="menu-entity">舆情告警信息</a></li>
-                </ul>
-            </li>
-        </ul>
-    </div>
-    <div th:include="common/tmpuserentity.html :: user_tmp"></div>
-    <script th:inline="javascript">
-        $(document).ready(function(){
-            _app.ajaxDomParam.user_info = function(data){
-                _app.doBootstrapValidator({formEle:"div#wrapper div#page-wrapper div.side-content div.wrapper-content form.user_form:first", fields: {
-                        /*需要分别去配置不同的校验规则*/
-                        /*通过表单元素的name属性去匹配*/
-                        login_name: {
-                            /*具体的规则  不止一个*/
-                            validators: {
-                                /*指定校验规则*/
-                                /*非空校验*/
-                                notEmpty: {
-                                    message: '登录名称必填'
-                                },
-                                /*定义一个自定义规则 必须加callback*/
-                                callback: {
-                                    message: '登录名称重复'
-                                }
-                            }
-                        },
-                        user_name: {
-                            /*具体的规则  不止一个*/
-                            validators: {
-                                /*指定校验规则*/
-                                /*非空校验*/
-                                notEmpty: {
-                                    message: '管理员名称必填'
-                                }
+            </div>
+            <div class="logo-element">robot</div>
+        </li>
+
+        <li>
+            <a href="javascript:void(0);"><i class="glyphicon glyphicon-list-alt"></i> <span
+                    class="nav-label">我的微信</span> <span class="fa arrow"></span></a>
+            <ul class="nav nav-second-level">
+                <li><a th:href="@{/}" class="menu-entity">好友列表</a></li>
+                <li><a th:href="@{/}" class="menu-entity">我的群组</a></li>
+                <li><a th:href="@{/}" class="menu-entity">已发消息</a></li>
+                <li><a th:href="@{/}" class="menu-entity">定时任务</a></li>
+            </ul>
+        </li>
+
+
+    </ul>
+</div>
+<div th:include="common/tmpuserentity.html :: user_tmp"></div>
+<script th:inline="javascript">
+    $(document).ready(function () {
+        _app.ajaxDomParam.user_info = function (data) {
+            _app.doBootstrapValidator({
+                formEle: "div#wrapper div#page-wrapper div.side-content div.wrapper-content form.user_form:first",
+                fields: {
+                    /*需要分别去配置不同的校验规则*/
+                    /*通过表单元素的name属性去匹配*/
+                    login_name: {
+                        /*具体的规则  不止一个*/
+                        validators: {
+                            /*指定校验规则*/
+                            /*非空校验*/
+                            notEmpty: {
+                                message: '登录名称必填'
+                            },
+                            /*定义一个自定义规则 必须加callback*/
+                            callback: {
+                                message: '登录名称重复'
                             }
                         }
-                        , oldPassword: {
-                            validators: {
-                                notEmpty: {
-                                    message: '旧密码必填'
-                                },
-                                /*更多校验规则*/
-                                stringLength: {
-                                    min: 6,
-                                    max: 32,
-                                    message: '旧密码必须6到32位'
-                                },
-                                callback: {
-                                    message: '请确认登录名称以及旧密码正确'
-                                }
-                            }
-                        }
-                        , password: {
-                            validators: {
-                                notEmpty: {
-                                    message: '密码必填'
-                                },
-                                /*更多校验规则*/
-                                stringLength: {
-                                    min: 6,
-                                    max: 32,
-                                    message: '密码必须6到32位'
-                                },
-                                different: {
-                                    field: 'oldPassword',
-                                    message: '用户新密码与旧密码一致'
-                                }
-                            }
-                        }
-                        , confirmPassword: {
-                            validators: {
-                                notEmpty: {
-                                    message: '确认密码必填'
-                                },
-                                /*更多校验规则*/
-                                stringLength: {
-                                    min: 6,
-                                    max: 32,
-                                    message: '确认密码必须6到32位'
-                                },
-                                identical: {
-                                    field: 'password',
-                                    message: '用户确认密码与密码不一致！'
-                                }
+                    },
+                    user_name: {
+                        /*具体的规则  不止一个*/
+                        validators: {
+                            /*指定校验规则*/
+                            /*非空校验*/
+                            notEmpty: {
+                                message: '管理员名称必填'
                             }
                         }
                     }
-                    ,func: function (data) {
-                        if(data.error_code == 0){
-                            location.href= _app.getContentUrl('/manager/main');
-                        }else{
-                            switch (data.error_code) {
-                                case 1025: this.formEle.data('bootstrapValidator').updateStatus('oldPassword', 'INVALID', "callback"); break;
+                    , oldPassword: {
+                        validators: {
+                            notEmpty: {
+                                message: '旧密码必填'
+                            },
+                            /*更多校验规则*/
+                            stringLength: {
+                                min: 6,
+                                max: 32,
+                                message: '旧密码必须6到32位'
+                            },
+                            callback: {
+                                message: '请确认登录名称以及旧密码正确'
                             }
                         }
-                    }})
-            }
-        });
-    </script>
+                    }
+                    , password: {
+                        validators: {
+                            notEmpty: {
+                                message: '密码必填'
+                            },
+                            /*更多校验规则*/
+                            stringLength: {
+                                min: 6,
+                                max: 32,
+                                message: '密码必须6到32位'
+                            },
+                            different: {
+                                field: 'oldPassword',
+                                message: '用户新密码与旧密码一致'
+                            }
+                        }
+                    }
+                    , confirmPassword: {
+                        validators: {
+                            notEmpty: {
+                                message: '确认密码必填'
+                            },
+                            /*更多校验规则*/
+                            stringLength: {
+                                min: 6,
+                                max: 32,
+                                message: '确认密码必须6到32位'
+                            },
+                            identical: {
+                                field: 'password',
+                                message: '用户确认密码与密码不一致！'
+                            }
+                        }
+                    }
+                }
+                ,
+                func: function (data) {
+                    if (data.error_code == 0) {
+                        location.href = _app.getContentUrl('/manager/main');
+                    } else {
+                        switch (data.error_code) {
+                            case 1025:
+                                this.formEle.data('bootstrapValidator').updateStatus('oldPassword', 'INVALID', "callback");
+                                break;
+                        }
+                    }
+                }
+            })
+        }
+    });
+</script>
 </body>
 </html>

@@ -1,8 +1,7 @@
 package com.zhongweixian.utils;
 
-import com.zhongweixian.domain.shared.Contact;
-import com.zhongweixian.domain.response.component.WechatHttpResponseBase;
-import com.zhongweixian.exception.RobotException;
+import com.zhongweixian.wechat.domain.shared.Contact;
+import com.zhongweixian.wechat.domain.response.component.WechatHttpResponseBase;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +14,6 @@ public class WechatUtils {
     public static void checkBaseResponse(WechatHttpResponseBase response) {
         if (response.getBaseResponse().getRet() != 0) {
             logger.error("ret:{} , errorMsg:{}", response.getBaseResponse().getRet(), response.getBaseResponse().getErrMsg());
-            throw new RobotException(response.getClass().getSimpleName() + " ret = " + response.getBaseResponse().getRet());
         }
     }
 

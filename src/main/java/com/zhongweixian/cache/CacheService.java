@@ -1,6 +1,6 @@
 package com.zhongweixian.cache;
 
-import com.zhongweixian.domain.WxUserCache;
+import com.zhongweixian.wechat.domain.WxUserCache;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;

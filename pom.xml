@@ -9,7 +9,7 @@
     <packaging>jar</packaging>
 
     <name>robot</name>
-    <description>spring-boot for weixin/weibo bot</description>
+    <description>spring-boot for weixin bot</description>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -130,7 +130,7 @@
                     <dependency>
                         <groupId>mysql</groupId>
                         <artifactId>mysql-connector-java</artifactId>
-                        <version>5.1.44</version>
+                        <version>8.0.20</version>
                     </dependency>
                     <dependency>
                         <groupId>org.mybatis.generator</groupId>

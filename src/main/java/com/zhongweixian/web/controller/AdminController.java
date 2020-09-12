@@ -15,7 +15,18 @@ public class AdminController {
 
 
     @GetMapping("")
-    public ModelAndView page(){
-        return new ModelAndView("/common/main");
+    public ModelAndView page() {
+        ModelAndView mav = new ModelAndView("/common/main");
+        mav.addObject("username", "admin");
+        return mav;
     }
+
+    @GetMapping("loginInfo")
+    public ModelAndView loginInfo(){
+        ModelAndView mav = new ModelAndView("/admin/loginInfo");
+
+        return mav;
+    }
+
+
 }
