@@ -214,7 +214,7 @@ public class WxIMThread implements Runnable {
                     break;
                 }
             } catch (Exception e) {
-                logger.error("synccheck error:{}", e);
+                logger.error("synccheck error:{}", e.getMessage(), e);
             }
         }
     }

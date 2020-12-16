@@ -44,7 +44,7 @@ public class WxSyncMessage {
         try {
             syncCheckResponse = wxHttpService.syncCheck(wxUserCache);
         } catch (Exception e) {
-            logger.error("syncCheckResponse error:{}", e);
+            logger.error("syncCheckResponse error:{}", e.getMessage(), e);
         }
         /**
          * 可能存在为空
@@ -98,7 +98,7 @@ public class WxSyncMessage {
             verifyUserResponse = wxHttpService.acceptFriend(wxUserCache, new VerifyUser[]{user});
             WechatUtils.checkBaseResponse(verifyUserResponse);
         } catch (Exception e) {
-            logger.error("{}", e);
+            logger.error(e.getMessage(), e);
         }
     }
 

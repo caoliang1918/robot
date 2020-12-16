@@ -71,11 +71,20 @@ public class MessageController {
         }
         Set<String> toUsers = new HashSet<>();
         userCache.getChatRoomMembers().values().forEach(room -> {
-            if (httpMessage.getChannel().contains("金十") && room.getNickName().contains("金十")) {
-                toUsers.add(room.getUserName());
+            if (httpMessage.getChannel().contains("金十")) {
+                if (room.getNickName().contains("金十")) {
+                    toUsers.add(room.getUserName());
+                }
             }
-            if (httpMessage.getChannel().contains("见闻") && room.getNickName().contains("美股行情")) {
-                toUsers.add(room.getUserName());
+            if (httpMessage.getChannel().contains("见闻") || httpMessage.getChannel().contains("美港电讯")) {
+                if (room.getNickName().contains("美股行情") || room.getNickName().equals("九财久富美股学院")) {
+                    toUsers.add(room.getUserName());
+                }
+            }
+            if (httpMessage.getChannel().contains("智通财经")) {
+                if (room.getNickName().contains("财经")) {
+                    toUsers.add(room.getUserName());
+                }
             }
         });
         System.out.println("\n");
@@ -105,7 +114,8 @@ public class MessageController {
                 messageMap.put(user, revokeRequsts);
             }
 
-        } catch (IOException e) {
+        } catch (
+                IOException e) {
             e.printStackTrace();
         }
         return "send success";
