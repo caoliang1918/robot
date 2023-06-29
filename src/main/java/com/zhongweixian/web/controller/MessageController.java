@@ -1,12 +1,12 @@
 package com.zhongweixian.web.controller;
 
 import com.zhongweixian.cache.CacheService;
-import com.zhongweixian.wechat.domain.WxUserCache;
+import com.zhongweixian.utils.Levenshtein;
 import com.zhongweixian.wechat.domain.HttpMessage;
+import com.zhongweixian.wechat.domain.WxUserCache;
 import com.zhongweixian.wechat.domain.request.RevokeRequst;
 import com.zhongweixian.wechat.domain.response.SendMsgResponse;
 import com.zhongweixian.wechat.service.WxMessageHandler;
-import com.zhongweixian.utils.Levenshtein;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,12 +77,12 @@ public class MessageController {
                 }
             }
             if (httpMessage.getChannel().contains("见闻") || httpMessage.getChannel().contains("美港电讯")) {
-                if (room.getNickName().contains("美股行情") || room.getNickName().equals("九财久富美股学院")) {
+                if (room.getNickName().contains("美股行情") || room.getNickName().contains("九财久富")) {
                     toUsers.add(room.getUserName());
                 }
             }
             if (httpMessage.getChannel().contains("智通财经")) {
-                if (room.getNickName().contains("财经")) {
+                if (room.getNickName().contains("财经") || room.getNickName().contains("九财久富")) {
                     toUsers.add(room.getUserName());
                 }
             }
