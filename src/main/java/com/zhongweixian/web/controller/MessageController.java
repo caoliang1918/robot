@@ -1,10 +1,9 @@
 package com.zhongweixian.web.controller;
 
 import com.zhongweixian.cache.CacheService;
-import com.zhongweixian.utils.Levenshtein;
+import com.zhongweixian.web.service.SendMessageService;
 import com.zhongweixian.wechat.domain.HttpMessage;
 import com.zhongweixian.wechat.domain.WxUserCache;
-import com.zhongweixian.wechat.domain.request.RevokeRequst;
 import com.zhongweixian.wechat.domain.response.SendMsgResponse;
 import com.zhongweixian.wechat.service.WxMessageHandler;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -22,8 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.IOException;
-import java.util.*;
+import java.util.List;
 
 /**
  * Created by caoliang on 2019/1/11
@@ -39,18 +37,8 @@ public class MessageController {
     @Autowired
     private WxMessageHandler wxMessageHandler;
 
-    /**
-     * 记录给每个人或者群组发的消息
-     */
-    private Map<String, List<RevokeRequst>> messageMap = new HashMap<>();
-
-    private String[] option = new String[]{"SPY末日期权"};
-    private String[] position = new String[]{"曹亮"};
-    private Set<String> optionUser = new HashSet<>();
-    private Set<String> positions = new HashSet<>();
-
-    @Value("${wx.uid}")
-    private String uid = "5275953";
+    @Autowired
+    private SendMessageService sendMessageService;
 
     /**
      * 给微信推送美股实时资讯
@@ -59,185 +47,11 @@ public class MessageController {
      * @return
      */
     @PostMapping("sendMessage")
-    public String send(@RequestBody com.zhongweixian.wechat.domain.HttpMessage httpMessage) {
-        if (httpMessage == null || httpMessage.getChannel() == null) {
-            return "message is null";
-        }
-        WxUserCache userCache = cacheService.getUserCache(uid);
-        if (userCache == null || !userCache.getAlive()) {
-            optionUser.clear();
-            cacheService.deleteCacheUser(uid);
-            return "user not login";
-        }
-        Set<String> toUsers = new HashSet<>();
-        userCache.getChatRoomMembers().values().forEach(room -> {
-            if (httpMessage.getChannel().contains("金十")) {
-                if (room.getNickName().contains("金十")) {
-                    toUsers.add(room.getUserName());
-                }
-            }
-            if (httpMessage.getChannel().contains("见闻") || httpMessage.getChannel().contains("美港电讯")) {
-                if (room.getNickName().contains("美股行情") || room.getNickName().contains("九财久富")) {
-                    toUsers.add(room.getUserName());
-                }
-            }
-            if (httpMessage.getChannel().contains("智通财经")) {
-                if (room.getNickName().contains("财经") || room.getNickName().contains("九财久富")) {
-                    toUsers.add(room.getUserName());
-                }
-            }
-        });
-        System.out.println("\n");
-        try {
-            SendMsgResponse response = null;
-            httpMessage.setSendTime(new Date());
-            List<RevokeRequst> revokeRequsts = null;
-            if ("delete".equals(httpMessage.getOption()) || "update".equals(httpMessage.getOption())) {
-                revokeRequsts = messageMap.get(httpMessage.getId());
-                if (!CollectionUtils.isEmpty(revokeRequsts)) {
-                    for (RevokeRequst revokeRequst : revokeRequsts) {
-                        wxMessageHandler.revoke(userCache, revokeRequst.getClientMsgId(), revokeRequst.getToUserName());
-                    }
-                    messageMap.remove(httpMessage.getId());
-                }
-                if ("delete".equals(httpMessage.getOption())) {
-                    return "delete ok";
-                }
-            }
-            for (String user : toUsers) {
-                revokeRequsts = messageMap.getOrDefault(user, new ArrayList<>());
-                checkMessage(userCache, user, httpMessage.getContent());
-                response = wxMessageHandler.sendText(userCache, httpMessage.getContent(), user);
-                //保存消息
-                revokeRequsts.add(new RevokeRequst(user, response.getMsgID(), httpMessage.getContent(), httpMessage.getId()));
-                logger.info("send message msgId:{}, channle:{} , content:{}", response.getMsgID(), httpMessage.getChannel(), httpMessage.getContent());
-                messageMap.put(user, revokeRequsts);
-            }
-
-        } catch (
-                IOException e) {
-            e.printStackTrace();
-        }
+    public String send(@RequestBody HttpMessage httpMessage) {
+        sendMessageService.sendMessage(httpMessage);
         return "send success";
     }
 
-
-    /**
-     * 给指定的微信群推送期权数据
-     *
-     * @param httpMessage
-     * @return
-     */
-    @PostMapping("sendOption")
-    public String sendOption(@RequestBody HttpMessage httpMessage) {
-        System.out.println("\n");
-        WxUserCache userCache = cacheService.getUserCache(uid);
-        if (userCache == null || !userCache.getAlive()) {
-            return "user  not login";
-        }
-        try {
-            if (CollectionUtils.isEmpty(optionUser)) {
-                cacheService.getUserCache(uid).getChatRoomMembers().values().forEach(room -> {
-                    for (String s : option) {
-                        if (room.getNickName().equals(s)) {
-                            optionUser.add(room.getUserName());
-                        }
-                    }
-                });
-            }
-            SendMsgResponse response = null;
-            httpMessage.setSendTime(new Date());
-            for (String user : optionUser) {
-                response = wxMessageHandler.sendText(userCache, httpMessage.getContent(), user);
-                logger.info("sendOption message : {} ,  {} , {} , {}", response.getMsgID(), httpMessage.getId(), httpMessage.getOption(), httpMessage.getContent());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return "send success";
-    }
-
-    /**
-     * 持仓位置变更，给指定的微信好友发送消息
-     *
-     * @param httpMessage
-     * @return
-     */
-    @PostMapping("positionChange")
-    public String positionChange(@RequestBody HttpMessage httpMessage) {
-        WxUserCache userCache = cacheService.getUserCache(uid);
-        if (userCache == null || !userCache.getAlive()) {
-            return "user  not login";
-        }
-
-        if (CollectionUtils.isEmpty(positions)) {
-            userCache.getChatContants().values().forEach(contact -> {
-                for (String s : position) {
-                    if (contact.getNickName().equals(s)) {
-                        positions.add(contact.getUserName());
-                    }
-                }
-            });
-        }
-
-        SendMsgResponse response = null;
-        httpMessage.setSendTime(new Date());
-        for (String user : positions) {
-            response = wxMessageHandler.sendText(userCache, httpMessage.getContent(), user);
-            logger.info("send message : {} ,  {} , {} , {}", response.getMsgID(), httpMessage.getId(), httpMessage.getOption(), httpMessage.getContent());
-        }
-
-        return "send success";
-    }
-
-
-    /**
-     * @param userCache
-     * @param toUserName
-     * @param content
-     * @throws IOException
-     */
-    private void checkMessage(WxUserCache userCache, String toUserName, String content) throws IOException {
-        /**
-         * 判断相似度
-         */
-        Levenshtein levenshtein = new Levenshtein();
-        Date now = new Date();
-
-        List<RevokeRequst> list = messageMap.get(toUserName);
-        if (CollectionUtils.isEmpty(list)) {
-            return;
-        }
-
-        Iterator<RevokeRequst> iterator = list.iterator();
-        while (iterator.hasNext()) {
-            List<RevokeRequst> revokeRequsts = messageMap.get(iterator.next());
-            if (CollectionUtils.isEmpty(revokeRequsts)) {
-                continue;
-            }
-            RevokeRequst revokeRequst = revokeRequsts.get(0);
-            /**
-             * 已经超时
-             */
-            if (now.getTime() - revokeRequst.getDate().getTime() > 100 * 1000L && iterator.next().equals(toUserName)) {
-                iterator.remove();
-                continue;
-            }
-            /**
-             * 文本相似度
-             */
-            Boolean check = false;
-            if (levenshtein.getSimilarityRatio(revokeRequst.getContent(), content) > 0.6F) {
-                check = true;
-                for (RevokeRequst revoke : revokeRequsts) {
-                    wxMessageHandler.revoke(userCache, revoke.getClientMsgId(), revoke.getToUserName());
-                }
-            }
-            if (check) {
-                iterator.remove();
-            }
-        }
-    }
 
     RestTemplate restTemplate = new RestTemplate();
 

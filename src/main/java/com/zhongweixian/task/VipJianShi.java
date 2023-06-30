@@ -2,6 +2,8 @@ package com.zhongweixian.task;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.zhongweixian.web.service.SendMessageService;
+import com.zhongweixian.wechat.domain.HttpMessage;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +13,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -25,6 +29,9 @@ public class VipJianShi {
 
     @Autowired
     private RestTemplate restTemplate;
+
+    @Autowired
+    private SendMessageService sendMessageService;
 
     private List<String> flagList = new ArrayList<>();
 
@@ -64,12 +71,15 @@ public class VipJianShi {
             return;
         }
         JSONObject element = items.getJSONObject(0);
-
-        logger.debug("element: \n{}", element);
-
         String content = element.getString("content_text");
         Long id = element.getLong("id");
-        logger.info("=====:{} {}", id, content);
+        logger.info("华尔街见闻: {}", content);
+
+        HttpMessage httpMessage = new HttpMessage();
+        httpMessage.setContent(content);
+        httpMessage.setChannel("见闻");
+        httpMessage.setId(id);
+        sendMessageService.sendMessage(httpMessage);
     }
 
 }

@@ -1,5 +1,7 @@
 package com.zhongweixian.task;
 
+import com.zhongweixian.web.service.SendMessageService;
+import com.zhongweixian.wechat.domain.HttpMessage;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -27,6 +29,9 @@ public class JinShi {
 
     @Autowired
     private RestTemplate restTemplate;
+
+    @Autowired
+    private SendMessageService sendMessageService;
 
     private List<String> flagList = new ArrayList<>();
 
@@ -68,14 +73,21 @@ public class JinShi {
         }
 
         String id = element.attr("id");
-        flagList.forEach(s -> {
-            if (content.contains(s)) {
-                String text = content;
-                text = text.replace("<b>", "").replace("</b>", "");
-                text = text.replace("<br>", "\n").replace("</br>", "");
-                text = (text.replace("<h4>", "").replace("</h4>", ""));
-                logger.info("====:{}", text);
+        for (String s : flagList) {
+            if (!content.contains(s)) {
+                continue;
             }
-        });
+            String text = content;
+            text = text.replace("<b>", "").replace("</b>", "");
+            text = text.replace("<br>", "\n").replace("</br>", "");
+            text = (text.replace("<h4>", "").replace("</h4>", ""));
+            logger.info("金十数据 :{}", text);
+
+            HttpMessage httpMessage = new HttpMessage();
+            httpMessage.setContent(content);
+            httpMessage.setChannel("金十");
+            httpMessage.setId(Long.parseLong(id.substring(5, 23)));
+            sendMessageService.sendMessage(httpMessage);
+        }
     }
 }

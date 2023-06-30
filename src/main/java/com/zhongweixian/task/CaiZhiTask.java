@@ -1,5 +1,7 @@
 package com.zhongweixian.task;
 
+import com.zhongweixian.web.service.SendMessageService;
+import com.zhongweixian.wechat.domain.HttpMessage;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -25,6 +27,9 @@ public class CaiZhiTask {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    private SendMessageService sendMessageService;
+
 
     @Scheduled(cron = "0/10 * * * * ?")
     public void task() throws Exception {
@@ -35,6 +40,13 @@ public class CaiZhiTask {
         Document document = Jsoup.parse(responseEntity.getBody());
         Element element = document.getElementsByClass("allday-box").first();
         Element dl = element.child(1);
-        logger.debug("智通财经:{} , {}", dl.childNodeSize(), dl.child(0));
+        String content = dl.getElementsByClass("allday-item-content").get(0).child(0).text();
+        logger.info("智通财经 :{} ", content);
+
+        HttpMessage httpMessage = new HttpMessage();
+        httpMessage.setContent(content);
+        httpMessage.setChannel("智通");
+        httpMessage.setId((long) content.hashCode());
+        sendMessageService.sendMessage(httpMessage);
     }
 }

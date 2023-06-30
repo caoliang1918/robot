@@ -27,7 +27,7 @@ public class KuaiLanSiTask {
     /**
      *
      */
-    @Scheduled(cron = "0/10 * * * * ?")
+    @Scheduled(cron = "0/30 * * * * ?")
     public void task() {
         ResponseEntity<String> response = restTemplate.getForEntity("http://m.fbecn.com/24h/news_fbe0406.json?newsid=0", String.class);
         if (response == null || response.getStatusCode() != HttpStatus.OK) {
@@ -37,7 +37,7 @@ public class KuaiLanSiTask {
         JSONArray jsonArray = JSON.parseArray(json.getString("list"));
 
         for (Object obj : jsonArray) {
-            logger.info("====:{}", obj);
+            logger.info("快兰斯  :{}", obj);
         }
     }
 }

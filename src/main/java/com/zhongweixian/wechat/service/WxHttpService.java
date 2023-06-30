@@ -93,7 +93,7 @@ public class WxHttpService {
     private String BROWSER_DEFAULT_ACCEPT_ENCODING = "gzip, deflate, br";
 
     @Autowired
-    public WxHttpService(@Value("${User-Agent}") String BROWSER_DEFAULT_USER_AGENT) {
+    public WxHttpService(@Value("${User-Agent:Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36}") String BROWSER_DEFAULT_USER_AGENT) {
         this.postHeader = new HttpHeaders();
         postHeader.set(HttpHeaders.USER_AGENT, BROWSER_DEFAULT_USER_AGENT);
         postHeader.set(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString());
